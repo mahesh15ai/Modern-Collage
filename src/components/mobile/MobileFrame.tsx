@@ -17,6 +17,16 @@ import {
   BarChart3,
   UserCheck,
   Check,
+  Menu,
+  IdCard,
+  LogOut,
+  Monitor,
+  TrendingUp,
+  Calendar,
+  BookOpen,
+  AlertCircle,
+  Trophy,
+  CreditCard,
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
@@ -42,10 +52,53 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
     currentUser,
     students,
     attendance,
+    result,
+    fees,
+    notices,
+    events,
     recordAttendance,
+    isDrawerOpen,
+    setIsDrawerOpen,
+    setViewMode,
+    logout,
   } = useApp();
 
   const isFullScreenMode = activeScreen === 'splash' || activeScreen === 'login';
+
+  // Navigation Drawer Sections configuration
+  const drawerNavSections = [
+    {
+      title: 'ACADEMICS & LEARNING',
+      items: [
+        { id: 'dashboard', label: 'Dashboard / Home', icon: Home, screen: 'dashboard' as const, badge: null, color: 'text-blue-600 bg-blue-50' },
+        { id: 'profile', label: 'Digital ID Card & Profile', icon: IdCard, screen: 'profile' as const, badge: 'Verified', color: 'text-indigo-600 bg-indigo-50' },
+        { id: 'attendance', label: 'QR Attendance Pass', icon: QrCode, screen: 'attendance' as const, badge: `${attendance.overallPercentage}%`, color: 'text-emerald-600 bg-emerald-50' },
+        { id: 'results', label: 'Examination Results', icon: TrendingUp, screen: 'results' as const, badge: `${result.overallPercentage}%`, color: 'text-purple-600 bg-purple-50' },
+        { id: 'timetable', label: 'Daily Timetable', icon: Calendar, screen: 'timetable' as const, badge: null, color: 'text-sky-600 bg-sky-50' },
+        { id: 'materials', label: 'Study Materials & Notes', icon: BookOpen, screen: 'materials' as const, badge: null, color: 'text-teal-600 bg-teal-50' },
+      ],
+    },
+    {
+      title: 'CAMPUS SERVICES & SUPPORT',
+      items: [
+        { id: 'fees', label: 'College Fees & Dues', icon: CreditCard, screen: 'fees' as const, badge: fees.pendingAmount > 0 ? `₹${fees.pendingAmount.toLocaleString('en-IN')}` : 'Paid', color: 'text-amber-600 bg-amber-50' },
+        { id: 'notices', label: 'Notice Board & Circulars', icon: Bell, screen: 'notices' as const, badge: notices.length > 0 ? `${notices.length} New` : null, color: 'text-rose-600 bg-rose-50' },
+        { id: 'events', label: 'Events, Sports & Fests', icon: Trophy, screen: 'events' as const, badge: events.length > 0 ? `${events.length}` : null, color: 'text-violet-600 bg-violet-50' },
+        { id: 'complaints', label: 'Grievance & Student Support', icon: AlertCircle, screen: 'complaints' as const, badge: null, color: 'text-slate-600 bg-slate-100' },
+      ],
+    },
+  ];
+
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDrawerOpen) {
+        setIsDrawerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawerOpen, setIsDrawerOpen]);
 
   // Center QR Attendance Modal State
   const [showQrModal, setShowQrModal] = useState(false);
@@ -131,7 +184,14 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             )}
             <h1 className="font-extrabold text-slate-900 text-base">{title}</h1>
           </div>
-          <div className="w-6" />
+          <button
+            type="button"
+            onClick={() => setIsDrawerOpen(true)}
+            className="p-1.5 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5 text-slate-800" />
+          </button>
         </header>
       ) : null}
 
@@ -369,6 +429,222 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           </div>
         </div>
       )}
+
+      {/* =========================================================================
+          SLIDE-OVER NAVIGATION MENU DRAWER (Centered with max-w-lg on desktop)
+         ========================================================================= */}
+      {/* 1. Backdrop Overlay */}
+      <div
+        className={`fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 transition-opacity duration-300 ${
+          isDrawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsDrawerOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* 2. Responsive Anchor Wrapper (Always aligned with the centered app on desktop) */}
+      <div
+        className={`fixed inset-0 z-50 pointer-events-none flex justify-center transition-opacity duration-300 ${
+          isDrawerOpen ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        <div className="w-full max-w-lg h-full relative pointer-events-none overflow-hidden">
+          <aside
+            className={`absolute inset-y-0 left-0 w-[84%] max-w-[340px] bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-out pointer-events-auto ${
+              isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+            aria-label="Campus Navigation Drawer"
+          >
+            {/* Drawer Header with College Brand & Student Snapshot */}
+            <div className="relative bg-gradient-to-br from-[#071D3A] via-[#0B254E] to-[#1E3A8A] text-white p-4 pt-5 shadow-lg shrink-0">
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setIsDrawerOpen(false)}
+                className="absolute top-3.5 right-3.5 p-1.5 rounded-full bg-white/10 hover:bg-white/25 text-white/90 hover:text-white transition-all active:scale-95"
+                aria-label="Close navigation drawer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* College Identity */}
+              <div className="flex items-center space-x-3 pr-8">
+                <CollegeLogo size={44} className="shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-1.5">
+                    <h3 className="font-extrabold text-sm text-white tracking-wide truncate">
+                      MODERN COLLEGE
+                    </h3>
+                  </div>
+                  <p className="text-[10px] text-blue-200 font-medium leading-tight">
+                    Ganeshkhind, Pune • Autonomous
+                  </p>
+                  <div className="mt-1 flex items-center space-x-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-bold text-emerald-300 tracking-wider uppercase">
+                      NAAC &apos;A+&apos; Grade • SPPU
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Student Profile Snapshot inside Drawer */}
+              <div
+                onClick={() => {
+                  setIsDrawerOpen(false);
+                  setActiveScreen('profile');
+                }}
+                className="mt-3.5 p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between cursor-pointer hover:bg-white/20 transition-all group"
+                title="View Full Digital ID Card"
+              >
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border-2 border-blue-400/60 shrink-0 shadow-sm">
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-xs text-white truncate flex items-center space-x-1">
+                      <span>{currentUser.name}</span>
+                    </div>
+                    <div className="text-[10px] text-blue-200 font-mono truncate">
+                      {currentUser.rollNo || currentUser.prn || 'CS-320'} • {currentUser.course ? currentUser.course.split(' ')[0] : 'Student'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1 text-blue-200 group-hover:text-white transition-colors shrink-0 pl-1">
+                  <span className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded-lg border border-white/20">
+                    ID Card 🪪
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick KPI Stats Row inside Drawer */}
+              <div className="mt-2.5 grid grid-cols-4 gap-1.5 pt-2 border-t border-white/10 text-center">
+                <div className="p-1 rounded-lg bg-white/5">
+                  <div className="text-xs font-black text-emerald-300">{attendance.overallPercentage}%</div>
+                  <div className="text-[8px] text-blue-200 font-medium">Attend.</div>
+                </div>
+                <div className="p-1 rounded-lg bg-white/5">
+                  <div className="text-xs font-black text-purple-300">{result.overallPercentage}%</div>
+                  <div className="text-[8px] text-blue-200 font-medium">Result</div>
+                </div>
+                <div className="p-1 rounded-lg bg-white/5">
+                  <div className="text-xs font-black text-amber-300">
+                    {fees.pendingAmount === 0 ? '₹0' : `₹${fees.pendingAmount}`}
+                  </div>
+                  <div className="text-[8px] text-blue-200 font-medium">Dues</div>
+                </div>
+                <div className="p-1 rounded-lg bg-white/5">
+                  <div className="text-xs font-black text-sky-300">{notices.length}</div>
+                  <div className="text-[8px] text-blue-200 font-medium">Notices</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Navigation List (Clean modern scrollbar) */}
+            <div className="flex-1 overflow-y-auto py-3 px-3 space-y-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {drawerNavSections.map((section, sIdx) => (
+                <div key={sIdx} className="space-y-1">
+                  <div className="px-3 py-1 text-[9px] font-bold tracking-wider text-slate-400 uppercase">
+                    {section.title}
+                  </div>
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeScreen === item.screen;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setIsDrawerOpen(false);
+                          setActiveScreen(item.screen);
+                        }}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left group ${
+                          isActive
+                            ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+                            : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 min-w-0">
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                              isActive ? 'bg-white/20 text-white' : item.color
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className={`text-xs truncate ${isActive ? 'text-white font-bold' : 'font-semibold text-slate-800 group-hover:text-blue-900'}`}>
+                            {item.label}
+                          </span>
+                        </div>
+                        {item.badge && (
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${
+                              isActive
+                                ? 'bg-white/20 text-white border-white/30'
+                                : 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200'
+                            }`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="p-3 border-t border-slate-100 bg-slate-50 space-y-2 shrink-0">
+              {/* Switch to Desktop ERP */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDrawerOpen(false);
+                  setViewMode('desktop');
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-xs font-bold"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0 border border-white/20">
+                    <Monitor className="w-3.5 h-3.5 text-blue-200" />
+                  </div>
+                  <span>Desktop ERP Portal</span>
+                </div>
+                <span className="text-[9px] bg-blue-500/80 px-2 py-0.5 rounded-md font-mono border border-blue-300/30">
+                  OPEN ↗
+                </span>
+              </button>
+
+              {/* Logout Button */}
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsDrawerOpen(false);
+                  await logout();
+                }}
+                className="w-full flex items-center space-x-2.5 p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-100 transition-all text-xs font-bold active:scale-[0.98]"
+              >
+                <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <LogOut className="w-3.5 h-3.5" />
+                </div>
+                <span>Sign Out / Log Out</span>
+              </button>
+
+              <div className="pt-0.5 text-center">
+                <span className="text-[9px] text-slate-400 font-medium">
+                  Modern College Autonomous Pune • v2.4
+                </span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
     </div>
   );
 };

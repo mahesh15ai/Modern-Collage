@@ -129,6 +129,8 @@ interface AppContextType {
   authError: string | null;
   activeScreen: MobileScreen;
   setActiveScreen: (screen: MobileScreen) => void;
+  isDrawerOpen: boolean;
+  setIsDrawerOpen: (open: boolean) => void;
   adminSection: AdminSection;
   setAdminSection: (section: AdminSection) => void;
   viewMode: 'mobile' | 'desktop';
@@ -214,7 +216,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authLoading, setAuthLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [activeScreen, setActiveScreen] = useState<MobileScreen>('dashboard');
+  const [activeScreen, setActiveScreenState] = useState<MobileScreen>('dashboard');
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+
+  const setActiveScreen = (screen: MobileScreen) => {
+    setIsDrawerOpen(false);
+    setActiveScreenState(screen);
+  };
   const [adminSection, setAdminSection] = useState<AdminSection>('overview');
   const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('mobile');
 
@@ -839,6 +847,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         authError,
         activeScreen,
         setActiveScreen,
+        isDrawerOpen,
+        setIsDrawerOpen,
         adminSection,
         setAdminSection,
         viewMode,
