@@ -206,9 +206,42 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
          ========================================================================= */}
       {showNav && !isFullScreenMode && (
         <div className="fixed bottom-3 inset-x-3 max-w-lg mx-auto z-40 pointer-events-none">
-          <nav className="relative h-[72px] bg-white rounded-[32px] shadow-[0_12px_40px_rgba(0,0,0,0.13)] border border-slate-100/90 px-2 sm:px-3 flex items-center justify-between pointer-events-auto">
-            {/* Top decorative subtle blue accent line on the left side (matches reference image) */}
-            <div className="absolute top-0 left-6 w-24 h-[2.5px] bg-gradient-to-r from-blue-600 via-blue-500 to-transparent rounded-full" />
+          <nav className="relative h-[74px] bg-white rounded-[32px] shadow-[0_12px_45px_rgba(0,0,0,0.12)] border border-slate-100/90 px-3 flex items-center justify-between pointer-events-auto">
+            {/* Top border line: Solid Blue on left side (matching reference image) */}
+            <div className="absolute top-0 left-6 right-[calc(50%+58px)] h-[2.5px] bg-[#2563eb] rounded-l-full" />
+
+            {/* Top border line: Light gray on right side (matching reference image) */}
+            <div className="absolute top-0 left-[calc(50%+58px)] right-6 h-[2px] bg-slate-200/90 rounded-r-full" />
+
+            {/* Center Curved Cradle SVG (Seamless sculpted mound connecting flat bar to circular button) */}
+            <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 w-[140px] h-[28px] pointer-events-none overflow-visible">
+              <svg
+                viewBox="0 0 140 28"
+                className="w-full h-full"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* White filled background body extending navbar */}
+                <path
+                  d="M 0 18 C 28 18, 42 4, 70 4 C 98 4, 112 18, 140 18 L 140 28 L 0 28 Z"
+                  fill="#ffffff"
+                />
+                {/* Left blue curved stroke */}
+                <path
+                  d="M 0 18 C 28 18, 42 4, 70 4"
+                  stroke="#2563eb"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+                {/* Right gray curved stroke */}
+                <path
+                  d="M 70 4 C 98 4, 112 18, 140 18"
+                  stroke="#e2e8f0"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
 
             {/* 1. Home */}
             <button
@@ -218,14 +251,14 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             >
               <Home
                 className={`w-6 h-6 transition-colors ${activeScreen === 'dashboard'
-                    ? 'text-blue-600 stroke-[2.4]'
-                    : 'text-slate-400 group-hover:text-slate-600'
+                  ? 'text-[#2563eb] stroke-[2.4]'
+                  : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
                   }`}
               />
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'dashboard'
-                    ? 'font-bold text-blue-600'
-                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  ? 'font-bold text-[#2563eb]'
+                  : 'font-medium text-slate-500 group-hover:text-slate-700'
                   }`}
               >
                 Home
@@ -233,8 +266,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               {/* Active Dot Indicator */}
               <span
                 className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'dashboard'
-                    ? 'bg-blue-600 opacity-100 scale-100'
-                    : 'bg-transparent opacity-0 scale-50'
+                  ? 'bg-[#2563eb] opacity-100 scale-100 shadow-sm'
+                  : 'bg-transparent opacity-0 scale-50'
                   }`}
               />
             </button>
@@ -247,14 +280,14 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             >
               <Award
                 className={`w-6 h-6 transition-colors ${activeScreen === 'results'
-                    ? 'text-blue-600 stroke-[2.4]'
-                    : 'text-slate-400 group-hover:text-slate-600'
+                  ? 'text-[#2563eb] stroke-[2.4]'
+                  : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
                   }`}
               />
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'results'
-                    ? 'font-bold text-blue-600'
-                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  ? 'font-bold text-[#2563eb]'
+                  : 'font-medium text-slate-500 group-hover:text-slate-700'
                   }`}
               >
                 Results
@@ -262,27 +295,33 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               {/* Active Dot Indicator */}
               <span
                 className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'results'
-                    ? 'bg-blue-600 opacity-100 scale-100'
-                    : 'bg-transparent opacity-0 scale-50'
+                  ? 'bg-[#2563eb] opacity-100 scale-100 shadow-sm'
+                  : 'bg-transparent opacity-0 scale-50'
                   }`}
               />
             </button>
 
-            {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button with curved white halo) */}
-            <div className="flex-1 flex flex-col items-center justify-center -mt-8 shrink-0">
+            {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button with white halo & starburst) */}
+            <div className="flex-1 flex flex-col items-center justify-center -mt-9 shrink-0 z-10">
               {/* Outer halo / cradle ring */}
-              <div className="p-1.5 bg-white rounded-full shadow-[0_8px_25px_rgba(37,99,235,0.35)] ring-4 ring-white transition-transform hover:scale-105 active:scale-95">
+              <div className="p-1 bg-white rounded-full shadow-[0_8px_25px_rgba(37,99,235,0.38)] ring-4 ring-white transition-transform hover:scale-105 active:scale-95">
                 <button
                   type="button"
                   onClick={() => setShowQrModal(true)}
-                  className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-inner border-2 border-white/80 group"
+                  className="w-[58px] h-[58px] rounded-full bg-gradient-to-tr from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] text-white flex items-center justify-center shadow-inner border-2 border-white/80 group"
                   title="Attendance QR Pass & Scanner"
                   aria-label="Attendance QR Pass"
                 >
-                  <QrCode className="w-7 h-7 text-white transition-transform group-hover:rotate-6" />
+                  <div className="relative flex items-center justify-center">
+                    <QrCode className="w-7 h-7 text-white stroke-[2.2] transition-transform group-hover:rotate-6" />
+                    {/* Starburst icon in exact center of QR code (matching reference image) */}
+                    <span className="absolute text-[11px] text-white font-extrabold pointer-events-none drop-shadow-sm leading-none select-none">
+                      ✦
+                    </span>
+                  </div>
                 </button>
               </div>
-              <span className="text-[9.5px] font-black text-blue-900 mt-1 tracking-tight uppercase whitespace-nowrap">
+              <span className="text-[10px] font-black text-[#0f2c77] mt-1 tracking-tight uppercase whitespace-nowrap">
                 ATTENDANCE QR
               </span>
             </div>
@@ -296,17 +335,17 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               <div className="relative">
                 <Bell
                   className={`w-6 h-6 transition-colors ${activeScreen === 'notices'
-                      ? 'text-blue-600 stroke-[2.4]'
-                      : 'text-slate-400 group-hover:text-slate-600'
+                    ? 'text-[#2563eb] stroke-[2.4]'
+                    : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
                     }`}
                 />
                 {/* Red notification dot */}
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full shadow-sm" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#ef4444] border-2 border-white rounded-full shadow-sm" />
               </div>
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'notices'
-                    ? 'font-bold text-blue-600'
-                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  ? 'font-bold text-[#2563eb]'
+                  : 'font-medium text-slate-500 group-hover:text-slate-700'
                   }`}
               >
                 Notices
@@ -314,8 +353,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               {/* Active Dot Indicator */}
               <span
                 className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'notices'
-                    ? 'bg-blue-600 opacity-100 scale-100'
-                    : 'bg-transparent opacity-0 scale-50'
+                  ? 'bg-[#2563eb] opacity-100 scale-100 shadow-sm'
+                  : 'bg-transparent opacity-0 scale-50'
                   }`}
               />
             </button>
@@ -328,14 +367,14 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             >
               <LayoutGrid
                 className={`w-6 h-6 transition-colors ${activeScreen === 'profile'
-                    ? 'text-blue-600 stroke-[2.4]'
-                    : 'text-slate-400 group-hover:text-slate-600'
+                  ? 'text-[#2563eb] stroke-[2.4]'
+                  : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
                   }`}
               />
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'profile'
-                    ? 'font-bold text-blue-600'
-                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  ? 'font-bold text-[#2563eb]'
+                  : 'font-medium text-slate-500 group-hover:text-slate-700'
                   }`}
               >
                 Profile / ID
@@ -343,8 +382,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               {/* Active Dot Indicator */}
               <span
                 className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'profile'
-                    ? 'bg-blue-600 opacity-100 scale-100'
-                    : 'bg-transparent opacity-0 scale-50'
+                  ? 'bg-[#2563eb] opacity-100 scale-100 shadow-sm'
+                  : 'bg-transparent opacity-0 scale-50'
                   }`}
               />
             </button>
@@ -591,8 +630,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                           setActiveScreen(item.screen);
                         }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left group ${isActive
-                            ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                            : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
+                          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+                          : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
                           }`}
                       >
                         <div className="flex items-center space-x-3 min-w-0">
@@ -609,8 +648,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                         {item.badge && (
                           <span
                             className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${isActive
-                                ? 'bg-white/20 text-white border-white/30'
-                                : 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200'
+                              ? 'bg-white/20 text-white border-white/30'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200'
                               }`}
                           >
                             {item.badge}
