@@ -230,7 +230,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             <button
               type="button"
               onClick={() => setShowQrModal(true)}
-              className="w-13 h-13 p-3 rounded-full bg-gradient-to-tr from-blue-700 via-blue-800 to-indigo-950 text-white flex items-center justify-center shadow-xl shadow-blue-900/40 border-[3px] border-white transition-all active:scale-90 hover:scale-105 group"
+              className="w-14 h-14 p-3 rounded-full bg-gradient-to-tr from-blue-700 via-blue-800 to-indigo-950 text-white flex items-center justify-center shadow-xl shadow-blue-900/40 border-[3px] border-white transition-all active:scale-90 hover:scale-105 group"
               title="Attendance QR Pass & Scanner"
               aria-label="Attendance QR Pass"
             >

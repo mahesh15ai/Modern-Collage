@@ -64,12 +64,33 @@ export default function Home() {
     }
   }, [login]);
 
-  // Register PWA Service Worker
+  // Register PWA Service Worker & Auto-Purge Stale Caches
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
-        console.log('SW registration failed: ', err);
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      // Force update any existing service worker
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const reg of registrations) {
+          reg.update();
+        }
       });
+
+      // Clear any outdated caches from mobile device
+      if ('caches' in window) {
+        caches.keys().then((cacheNames) => {
+          cacheNames.forEach((name) => {
+            if (name === 'modern-campus-v1' || name === 'modern-campus-v2') {
+              console.log('[PWA] Purging outdated cache:', name);
+              caches.delete(name);
+            }
+          });
+        });
+      }
+
+      if (process.env.NODE_ENV === 'production') {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.log('SW registration failed: ', err);
+        });
+      }
     }
   }, []);
 
