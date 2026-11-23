@@ -1,0 +1,28 @@
+{
+  "name": "Modern College Smart Campus",
+  "short_name": "Smart Campus",
+  "description": "Smart Campus Portal for Modern College of Computer Science & Information Technology, Nanded",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1B3D",
+  "theme_color": "#1E3A8A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/college-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/college-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}
