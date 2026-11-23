@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Trophy,
   CreditCard,
+  LayoutGrid,
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
@@ -196,74 +197,159 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
       ) : null}
 
       {/* Screen Content Container */}
-      <main className={`flex-1 w-full bg-slate-50 relative flex flex-col ${showNav && !isFullScreenMode ? 'pb-20' : ''}`}>
+      <main className={`flex-1 w-full bg-slate-50 relative flex flex-col ${showNav && !isFullScreenMode ? 'pb-28' : ''}`}>
         {children}
       </main>
 
       {/* =========================================================================
-          BOTTOM NAVIGATION WITH CENTER ATTENDANCE QR BUTTON
+          FLOATING CAPSULE BOTTOM NAVIGATION (Matches Reference Image Exactly)
          ========================================================================= */}
       {showNav && !isFullScreenMode && (
-        <nav className="fixed bottom-0 inset-x-0 max-w-lg mx-auto h-16 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 sm:px-4 flex items-center justify-between z-40 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
-          {/* 1. Home */}
-          <button
-            onClick={() => setActiveScreen('dashboard')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'dashboard' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            <Home className="w-5 h-5" />
-            <span className="text-[10px]">Home</span>
-          </button>
+        <div className="fixed bottom-3 inset-x-3 max-w-lg mx-auto z-40 pointer-events-none">
+          <nav className="relative h-[72px] bg-white rounded-[32px] shadow-[0_12px_40px_rgba(0,0,0,0.13)] border border-slate-100/90 px-2 sm:px-3 flex items-center justify-between pointer-events-auto">
+            {/* Top decorative subtle blue accent line on the left side (matches reference image) */}
+            <div className="absolute top-0 left-6 w-24 h-[2.5px] bg-gradient-to-r from-blue-600 via-blue-500 to-transparent rounded-full" />
 
-          {/* 2. Results */}
-          <button
-            onClick={() => setActiveScreen('results')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'results' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            <Award className="w-5 h-5" />
-            <span className="text-[10px]">Results</span>
-          </button>
-
-          {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button) */}
-          <div className="flex-1 flex flex-col items-center justify-center -mt-6">
+            {/* 1. Home */}
             <button
               type="button"
-              onClick={() => setShowQrModal(true)}
-              className="w-14 h-14 p-3 rounded-full bg-gradient-to-tr from-blue-700 via-blue-800 to-indigo-950 text-white flex items-center justify-center shadow-xl shadow-blue-900/40 border-[3px] border-white transition-all active:scale-90 hover:scale-105 group"
-              title="Attendance QR Pass & Scanner"
-              aria-label="Attendance QR Pass"
+              onClick={() => setActiveScreen('dashboard')}
+              className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
             >
-              <QrCode className="w-6 h-6 text-white group-hover:rotate-6 transition-transform" />
+              <Home
+                className={`w-6 h-6 transition-colors ${activeScreen === 'dashboard'
+                    ? 'text-blue-600 stroke-[2.4]'
+                    : 'text-slate-400 group-hover:text-slate-600'
+                  }`}
+              />
+              <span
+                className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'dashboard'
+                    ? 'font-bold text-blue-600'
+                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  }`}
+              >
+                Home
+              </span>
+              {/* Active Dot Indicator */}
+              <span
+                className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'dashboard'
+                    ? 'bg-blue-600 opacity-100 scale-100'
+                    : 'bg-transparent opacity-0 scale-50'
+                  }`}
+              />
             </button>
-            <span className="text-[9px] font-black text-blue-900 mt-0.5 tracking-tight uppercase whitespace-nowrap">
-              Attendance QR
-            </span>
-          </div>
 
-          {/* 4. Notices */}
-          <button
-            onClick={() => setActiveScreen('notices')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'notices' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            <div className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+            {/* 2. Results */}
+            <button
+              type="button"
+              onClick={() => setActiveScreen('results')}
+              className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
+            >
+              <Award
+                className={`w-6 h-6 transition-colors ${activeScreen === 'results'
+                    ? 'text-blue-600 stroke-[2.4]'
+                    : 'text-slate-400 group-hover:text-slate-600'
+                  }`}
+              />
+              <span
+                className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'results'
+                    ? 'font-bold text-blue-600'
+                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  }`}
+              >
+                Results
+              </span>
+              {/* Active Dot Indicator */}
+              <span
+                className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'results'
+                    ? 'bg-blue-600 opacity-100 scale-100'
+                    : 'bg-transparent opacity-0 scale-50'
+                  }`}
+              />
+            </button>
+
+            {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button with curved white halo) */}
+            <div className="flex-1 flex flex-col items-center justify-center -mt-8 shrink-0">
+              {/* Outer halo / cradle ring */}
+              <div className="p-1.5 bg-white rounded-full shadow-[0_8px_25px_rgba(37,99,235,0.35)] ring-4 ring-white transition-transform hover:scale-105 active:scale-95">
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal(true)}
+                  className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-inner border-2 border-white/80 group"
+                  title="Attendance QR Pass & Scanner"
+                  aria-label="Attendance QR Pass"
+                >
+                  <QrCode className="w-7 h-7 text-white transition-transform group-hover:rotate-6" />
+                </button>
+              </div>
+              <span className="text-[9.5px] font-black text-blue-900 mt-1 tracking-tight uppercase whitespace-nowrap">
+                ATTENDANCE QR
+              </span>
             </div>
-            <span className="text-[10px]">Notices</span>
-          </button>
 
-          {/* 5. Profile / ID */}
-          <button
-            onClick={() => setActiveScreen('profile')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'profile' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            <Grid className="w-5 h-5" />
-            <span className="text-[10px]">Profile / ID</span>
-          </button>
-        </nav>
+            {/* 4. Notices */}
+            <button
+              type="button"
+              onClick={() => setActiveScreen('notices')}
+              className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
+            >
+              <div className="relative">
+                <Bell
+                  className={`w-6 h-6 transition-colors ${activeScreen === 'notices'
+                      ? 'text-blue-600 stroke-[2.4]'
+                      : 'text-slate-400 group-hover:text-slate-600'
+                    }`}
+                />
+                {/* Red notification dot */}
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full shadow-sm" />
+              </div>
+              <span
+                className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'notices'
+                    ? 'font-bold text-blue-600'
+                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  }`}
+              >
+                Notices
+              </span>
+              {/* Active Dot Indicator */}
+              <span
+                className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'notices'
+                    ? 'bg-blue-600 opacity-100 scale-100'
+                    : 'bg-transparent opacity-0 scale-50'
+                  }`}
+              />
+            </button>
+
+            {/* 5. Profile / ID */}
+            <button
+              type="button"
+              onClick={() => setActiveScreen('profile')}
+              className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
+            >
+              <LayoutGrid
+                className={`w-6 h-6 transition-colors ${activeScreen === 'profile'
+                    ? 'text-blue-600 stroke-[2.4]'
+                    : 'text-slate-400 group-hover:text-slate-600'
+                  }`}
+              />
+              <span
+                className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'profile'
+                    ? 'font-bold text-blue-600'
+                    : 'font-medium text-slate-500 group-hover:text-slate-700'
+                  }`}
+              >
+                Profile / ID
+              </span>
+              {/* Active Dot Indicator */}
+              <span
+                className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'profile'
+                    ? 'bg-blue-600 opacity-100 scale-100'
+                    : 'bg-transparent opacity-0 scale-50'
+                  }`}
+              />
+            </button>
+          </nav>
+        </div>
       )}
 
       {/* =========================================================================
