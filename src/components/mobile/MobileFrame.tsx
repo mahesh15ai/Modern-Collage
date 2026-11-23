@@ -148,9 +148,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           {/* 1. Home */}
           <button
             onClick={() => setActiveScreen('dashboard')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${
-              activeScreen === 'dashboard' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'dashboard' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
             <Home className="w-5 h-5" />
             <span className="text-[10px]">Home</span>
@@ -159,9 +158,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           {/* 2. Results */}
           <button
             onClick={() => setActiveScreen('results')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${
-              activeScreen === 'results' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'results' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
             <Award className="w-5 h-5" />
             <span className="text-[10px]">Results</span>
@@ -186,9 +184,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           {/* 4. Notices */}
           <button
             onClick={() => setActiveScreen('notices')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${
-              activeScreen === 'notices' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'notices' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
             <div className="relative">
               <Bell className="w-5 h-5" />
@@ -200,9 +197,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           {/* 5. Profile / ID */}
           <button
             onClick={() => setActiveScreen('profile')}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${
-              activeScreen === 'profile' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`flex flex-col items-center justify-center space-y-1 transition-colors flex-1 ${activeScreen === 'profile' ? 'text-blue-700 font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
             <Grid className="w-5 h-5" />
             <span className="text-[10px]">Profile / ID</span>
@@ -241,11 +237,10 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             <div className="mt-3 flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
               <button
                 onClick={() => setQrModalTab('pass')}
-                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${
-                  qrModalTab === 'pass'
+                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${qrModalTab === 'pass'
                     ? 'bg-white text-blue-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 <QrCode className="w-3.5 h-3.5" />
                 <span>My QR Pass</span>
@@ -253,11 +248,10 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
 
               <button
                 onClick={() => setQrModalTab('scanner')}
-                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${
-                  qrModalTab === 'scanner'
+                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${qrModalTab === 'scanner'
                     ? 'bg-white text-blue-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 <Camera className="w-3.5 h-3.5" />
                 <span>Scan Classroom QR</span>
