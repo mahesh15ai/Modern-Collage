@@ -298,8 +298,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               <button
                 onClick={() => setQrModalTab('pass')}
                 className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${qrModalTab === 'pass'
-                    ? 'bg-white text-blue-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white text-blue-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
                   }`}
               >
                 <QrCode className="w-3.5 h-3.5" />
@@ -309,8 +309,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               <button
                 onClick={() => setQrModalTab('scanner')}
                 className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${qrModalTab === 'scanner'
-                    ? 'bg-white text-blue-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white text-blue-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
                   }`}
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -435,24 +435,21 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
          ========================================================================= */}
       {/* 1. Backdrop Overlay */}
       <div
-        className={`fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 transition-opacity duration-300 ${
-          isDrawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={() => setIsDrawerOpen(false)}
         aria-hidden="true"
       />
 
       {/* 2. Responsive Anchor Wrapper (Always aligned with the centered app on desktop) */}
       <div
-        className={`fixed inset-0 z-50 pointer-events-none flex justify-center transition-opacity duration-300 ${
-          isDrawerOpen ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`fixed inset-0 z-50 pointer-events-none flex justify-center transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0'
+          }`}
       >
         <div className="w-full max-w-lg h-full relative pointer-events-none overflow-hidden">
           <aside
-            className={`absolute inset-y-0 left-0 w-[84%] max-w-[340px] bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-out pointer-events-auto ${
-              isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className={`absolute inset-y-0 left-0 w-[84%] max-w-[340px] bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-out pointer-events-auto ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
             aria-label="Campus Navigation Drawer"
           >
             {/* Drawer Header with College Brand & Student Snapshot */}
@@ -487,62 +484,6 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   </div>
                 </div>
               </div>
-
-              {/* Student Profile Snapshot inside Drawer */}
-              <div
-                onClick={() => {
-                  setIsDrawerOpen(false);
-                  setActiveScreen('profile');
-                }}
-                className="mt-3.5 p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between cursor-pointer hover:bg-white/20 transition-all group"
-                title="View Full Digital ID Card"
-              >
-                <div className="flex items-center space-x-2.5 min-w-0">
-                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border-2 border-blue-400/60 shrink-0 shadow-sm">
-                    <img
-                      src={currentUser.avatar}
-                      alt={currentUser.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-bold text-xs text-white truncate flex items-center space-x-1">
-                      <span>{currentUser.name}</span>
-                    </div>
-                    <div className="text-[10px] text-blue-200 font-mono truncate">
-                      {currentUser.rollNo || currentUser.prn || 'CS-320'} • {currentUser.course ? currentUser.course.split(' ')[0] : 'Student'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1 text-blue-200 group-hover:text-white transition-colors shrink-0 pl-1">
-                  <span className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded-lg border border-white/20">
-                    ID Card 🪪
-                  </span>
-                </div>
-              </div>
-
-              {/* Quick KPI Stats Row inside Drawer */}
-              <div className="mt-2.5 grid grid-cols-4 gap-1.5 pt-2 border-t border-white/10 text-center">
-                <div className="p-1 rounded-lg bg-white/5">
-                  <div className="text-xs font-black text-emerald-300">{attendance.overallPercentage}%</div>
-                  <div className="text-[8px] text-blue-200 font-medium">Attend.</div>
-                </div>
-                <div className="p-1 rounded-lg bg-white/5">
-                  <div className="text-xs font-black text-purple-300">{result.overallPercentage}%</div>
-                  <div className="text-[8px] text-blue-200 font-medium">Result</div>
-                </div>
-                <div className="p-1 rounded-lg bg-white/5">
-                  <div className="text-xs font-black text-amber-300">
-                    {fees.pendingAmount === 0 ? '₹0' : `₹${fees.pendingAmount}`}
-                  </div>
-                  <div className="text-[8px] text-blue-200 font-medium">Dues</div>
-                </div>
-                <div className="p-1 rounded-lg bg-white/5">
-                  <div className="text-xs font-black text-sky-300">{notices.length}</div>
-                  <div className="text-[8px] text-blue-200 font-medium">Notices</div>
-                </div>
-              </div>
             </div>
 
             {/* Scrollable Navigation List (Clean modern scrollbar) */}
@@ -563,17 +504,15 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                           setIsDrawerOpen(false);
                           setActiveScreen(item.screen);
                         }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left group ${
-                          isActive
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left group ${isActive
                             ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
                             : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center space-x-3 min-w-0">
                           <div
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                              isActive ? 'bg-white/20 text-white' : item.color
-                            }`}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-white/20 text-white' : item.color
+                              }`}
                           >
                             <Icon className="w-4 h-4" />
                           </div>
@@ -583,11 +522,10 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                         </div>
                         {item.badge && (
                           <span
-                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${
-                              isActive
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${isActive
                                 ? 'bg-white/20 text-white border-white/30'
                                 : 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200'
-                            }`}
+                              }`}
                           >
                             {item.badge}
                           </span>
