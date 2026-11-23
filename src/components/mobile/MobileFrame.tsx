@@ -206,38 +206,25 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
          ========================================================================= */}
       {showNav && !isFullScreenMode && (
         <div className="fixed bottom-3 inset-x-3 max-w-lg mx-auto z-40 pointer-events-none">
-          <nav className="relative h-[74px] bg-white rounded-[32px] shadow-[0_12px_45px_rgba(0,0,0,0.12)] border border-slate-100/90 px-3 flex items-center justify-between pointer-events-auto">
-            {/* Top border line: Solid Blue on left side (matching reference image) */}
-            <div className="absolute top-0 left-6 right-[calc(50%+58px)] h-[2.5px] bg-[#2563eb] rounded-l-full" />
-
-            {/* Top border line: Light gray on right side (matching reference image) */}
-            <div className="absolute top-0 left-[calc(50%+58px)] right-6 h-[2px] bg-slate-200/90 rounded-r-full" />
-
-            {/* Center Curved Cradle SVG (Seamless sculpted mound connecting flat bar to circular button) */}
-            <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 w-[140px] h-[28px] pointer-events-none overflow-visible">
+          <nav className="relative h-[72px] bg-white rounded-full shadow-[0_12px_45px_rgba(0,0,0,0.12)] border-t-[2.5px] border-blue-600 border-x border-b border-slate-100/90 px-3 flex items-center justify-between pointer-events-auto">
+            {/* Center Curved Cradle SVG (Smoothly elevates top border around center button) */}
+            <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 w-[110px] h-[16px] pointer-events-none overflow-visible">
               <svg
-                viewBox="0 0 140 28"
+                viewBox="0 0 110 16"
                 className="w-full h-full"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                {/* White filled background body extending navbar */}
+                {/* White filled body that covers the straight border directly under the cradle */}
                 <path
-                  d="M 0 18 C 28 18, 42 4, 70 4 C 98 4, 112 18, 140 18 L 140 28 L 0 28 Z"
+                  d="M 0 14 C 22 14, 35 1, 55 1 C 75 1, 88 14, 110 14 L 110 20 L 0 20 Z"
                   fill="#ffffff"
                 />
-                {/* Left blue curved stroke */}
+                {/* Continuous blue arch stroke matching the top border */}
                 <path
-                  d="M 0 18 C 28 18, 42 4, 70 4"
+                  d="M 0 14 C 22 14, 35 1, 55 1 C 75 1, 88 14, 110 14"
                   stroke="#2563eb"
                   strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                {/* Right gray curved stroke */}
-                <path
-                  d="M 70 4 C 98 4, 112 18, 140 18"
-                  stroke="#e2e8f0"
-                  strokeWidth="2"
                   strokeLinecap="round"
                 />
               </svg>
