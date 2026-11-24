@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { ChevronRight, CheckCircle2, Receipt, CreditCard } from 'lucide-react';
 
@@ -8,6 +8,25 @@ export const FeesView: React.FC = () => {
   const { fees, payFees, currentUser } = useApp();
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
+
+  // Intercept mobile hardware back button to close Receipt modal
+  useEffect(() => {
+    if (selectedReceipt) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ modal: 'receipt' }, '', window.location.href);
+      }
+      const handleModalPop = () => {
+        setSelectedReceipt(null);
+      };
+      window.addEventListener('popstate', handleModalPop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handleModalPop);
+        if (typeof window !== 'undefined' && window.history.state?.modal === 'receipt') {
+          window.history.back();
+        }
+      };
+    }
+  }, [selectedReceipt]);
 
   const handlePayNow = () => {
     setPaying(true);

@@ -62,6 +62,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
     recordAttendance,
     isDrawerOpen,
     setIsDrawerOpen,
+    backExitToast,
     setViewMode,
     logout,
     setRole,
@@ -167,6 +168,25 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
   const [isScanning, setIsScanning] = useState(false);
   const [scanSuccess, setScanSuccess] = useState<string | null>(null);
 
+  // Intercept mobile hardware back button to close QR modal
+  useEffect(() => {
+    if (showQrModal) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ modal: 'attendanceQr' }, '', window.location.href);
+      }
+      const handleModalPop = () => {
+        setShowQrModal(false);
+      };
+      window.addEventListener('popstate', handleModalPop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handleModalPop);
+        if (typeof window !== 'undefined' && window.history.state?.modal === 'attendanceQr') {
+          window.history.back();
+        }
+      };
+    }
+  }, [showQrModal]);
+
   const currentStudent = students.find((s) => s.id === currentUser.id) || students[0];
 
   const studentName = currentUser.name || currentStudent?.name || 'Rahul Ramesh Shinde';
@@ -250,7 +270,15 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           <div className="flex items-center space-x-2">
             {showBack && (
               <button
-                onClick={onBack || (() => setActiveScreen('dashboard'))}
+                onClick={() => {
+                  if (onBack) {
+                    onBack();
+                  } else if (typeof window !== 'undefined' && window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    setActiveScreen('dashboard');
+                  }
+                }}
                 className="p-1.5 rounded-full text-slate-700 hover:bg-slate-100 transition-colors"
                 aria-label="Go back"
               >
@@ -810,6 +838,14 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           </aside>
         </div>
       </div>
+
+      {/* Android Hardware Back Double-Tap Exit Alert Toast */}
+      {backExitToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl border border-slate-700/80 flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-3 duration-200 pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <span>Press back again to exit</span>
+        </div>
+      )}
     </div>
   );
 };

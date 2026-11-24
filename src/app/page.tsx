@@ -210,7 +210,13 @@ export default function Home() {
         <MobileFrame
           title={screenTitleMap[activeScreen]}
           showBack={activeScreen !== 'dashboard' && activeScreen !== 'splash' && activeScreen !== 'login'}
-          onBack={() => setActiveScreen('dashboard')}
+          onBack={() => {
+            if (typeof window !== 'undefined' && window.history.length > 1) {
+              window.history.back();
+            } else {
+              setActiveScreen('dashboard');
+            }
+          }}
           showNav={activeScreen !== 'splash' && activeScreen !== 'login'}
         >
           {renderActiveMobileScreen()}

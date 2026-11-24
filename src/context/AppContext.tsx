@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
   UserProfile,
   UserRole,
@@ -135,6 +135,7 @@ interface AppContextType {
   setActiveScreen: (screen: MobileScreen) => void;
   isDrawerOpen: boolean;
   setIsDrawerOpen: (open: boolean) => void;
+  backExitToast: boolean;
   adminSection: AdminSection;
   setAdminSection: (section: AdminSection) => void;
   viewMode: 'mobile' | 'desktop';
@@ -230,12 +231,138 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authError, setAuthError] = useState<string | null>(null);
 
   const [activeScreen, setActiveScreenState] = useState<MobileScreen>('dashboard');
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isDrawerOpen, setIsDrawerOpenState] = useState<boolean>(false);
+  const [backExitToast, setBackExitToast] = useState<boolean>(false);
 
-  const setActiveScreen = (screen: MobileScreen) => {
-    setIsDrawerOpen(false);
+  const activeScreenRef = useRef<MobileScreen>('dashboard');
+  activeScreenRef.current = activeScreen;
+
+  const isDrawerOpenRef = useRef<boolean>(false);
+  isDrawerOpenRef.current = isDrawerOpen;
+
+  const lastBackPressRef = useRef<number>(0);
+
+  // Helper to open / close drawer with history awareness
+  const setIsDrawerOpen = useCallback((open: boolean) => {
+    if (open && !isDrawerOpenRef.current) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState(
+          { screen: activeScreenRef.current, drawer: true },
+          '',
+          window.location.href
+        );
+      }
+    } else if (!open && isDrawerOpenRef.current) {
+      if (typeof window !== 'undefined' && window.history.state?.drawer) {
+        window.history.back();
+        return;
+      }
+    }
+    setIsDrawerOpenState(open);
+  }, []);
+
+  // Helper to change screen with history push
+  const setActiveScreen = useCallback((screen: MobileScreen, replace: boolean = false) => {
+    setIsDrawerOpenState(false);
+    if (screen === activeScreenRef.current) return;
+
+    if (typeof window !== 'undefined') {
+      const hash = screen === 'dashboard' ? '' : `#${screen}`;
+      const url = window.location.pathname + hash;
+      const historyPayload = { screen, root: screen === 'dashboard' };
+
+      if (replace) {
+        window.history.replaceState(historyPayload, '', url);
+      } else {
+        window.history.pushState(historyPayload, '', url);
+      }
+    }
+
     setActiveScreenState(screen);
-  };
+  }, []);
+
+  // Browser History & Mobile Hardware Back Button Navigation Handler
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const validScreens: MobileScreen[] = [
+      'splash',
+      'login',
+      'dashboard',
+      'attendance',
+      'results',
+      'timetable',
+      'materials',
+      'fees',
+      'complaints',
+      'events',
+      'notices',
+      'profile',
+    ];
+
+    const hash = window.location.hash.replace('#', '') as MobileScreen;
+    const initialScreen = validScreens.includes(hash) ? hash : 'dashboard';
+
+    // Seed history stack so that dashboard has a guard state
+    if (initialScreen === 'dashboard') {
+      window.history.replaceState({ screen: 'dashboard', root: true, guard: true }, '', window.location.pathname);
+      window.history.pushState({ screen: 'dashboard', root: true }, '', window.location.pathname);
+    } else {
+      window.history.replaceState({ screen: 'dashboard', root: true, guard: true }, '', window.location.pathname);
+      window.history.pushState({ screen: initialScreen }, '', window.location.pathname + `#${initialScreen}`);
+      setActiveScreenState(initialScreen);
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 1. If drawer is currently open, close the drawer and stay on the current screen
+      if (isDrawerOpenRef.current) {
+        setIsDrawerOpenState(false);
+        return;
+      }
+
+      const state = event.state;
+      const current = activeScreenRef.current;
+
+      // 2. If user is currently on a sub-screen (notices, attendance, profile, results, etc.)
+      if (current !== 'dashboard' && current !== 'splash' && current !== 'login') {
+        const targetScreen =
+          state?.screen && validScreens.includes(state.screen)
+            ? (state.screen as MobileScreen)
+            : 'dashboard';
+
+        setActiveScreenState(targetScreen);
+        return;
+      }
+
+      // 3. User is on Root Dashboard screen: Handle double-tap back to exit
+      if (current === 'dashboard') {
+        const now = Date.now();
+        const timeDiff = now - lastBackPressRef.current;
+
+        if (timeDiff < 2000) {
+          // Double tapped back within 2 seconds: allow exit/navigate back!
+          return;
+        } else {
+          // First tap: intercept exit, restore dashboard state, show toast
+          lastBackPressRef.current = now;
+          window.history.pushState(
+            { screen: 'dashboard', root: true },
+            '',
+            window.location.pathname
+          );
+          setBackExitToast(true);
+          setTimeout(() => {
+            setBackExitToast(false);
+          }, 2000);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
   const [adminSection, setAdminSection] = useState<AdminSection>('overview');
   const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('mobile');
 
@@ -1267,6 +1394,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveScreen,
         isDrawerOpen,
         setIsDrawerOpen,
+        backExitToast,
         adminSection,
         setAdminSection,
         viewMode,

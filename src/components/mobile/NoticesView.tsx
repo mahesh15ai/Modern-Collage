@@ -66,8 +66,8 @@ export const NoticesView: React.FC = () => {
           type="button"
           onClick={() => setFilter('all')}
           className={`flex-1 py-1.5 rounded-xl transition-all flex items-center justify-center space-x-1.5 ${filter === 'all'
-              ? 'bg-white text-blue-900 shadow-sm font-extrabold'
-              : 'text-slate-600 hover:text-slate-900'
+            ? 'bg-white text-blue-900 shadow-sm font-extrabold'
+            : 'text-slate-600 hover:text-slate-900'
             }`}
         >
           <span>All Circulars</span>
@@ -80,8 +80,8 @@ export const NoticesView: React.FC = () => {
           type="button"
           onClick={() => setFilter('unread')}
           className={`flex-1 py-1.5 rounded-xl transition-all flex items-center justify-center space-x-1.5 ${filter === 'unread'
-              ? 'bg-blue-600 text-white shadow-sm font-extrabold'
-              : 'text-slate-600 hover:text-slate-900'
+            ? 'bg-blue-600 text-white shadow-sm font-extrabold'
+            : 'text-slate-600 hover:text-slate-900'
             }`}
         >
           <span>Unread</span>
@@ -101,8 +101,8 @@ export const NoticesView: React.FC = () => {
             type="button"
             onClick={() => setSelectedCategory(cat)}
             className={`px-3 py-1 rounded-full text-[10.5px] font-bold transition-all shrink-0 ${selectedCategory === cat
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
           >
             {cat}
@@ -121,8 +121,8 @@ export const NoticesView: React.FC = () => {
               key={notice.id}
               onClick={() => handleCardClick(notice.id, isRead)}
               className={`rounded-2xl p-4 transition-all cursor-pointer space-y-2.5 ${isRead
-                  ? 'bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 opacity-90'
-                  : 'bg-white border-2 border-blue-500/80 shadow-md ring-1 ring-blue-500/20'
+                ? 'bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 opacity-90'
+                : 'bg-white border-2 border-blue-500/80 shadow-md ring-1 ring-blue-500/20'
                 }`}
             >
               {/* Header Badges */}
@@ -135,12 +135,12 @@ export const NoticesView: React.FC = () => {
                   )}
                   <span
                     className={`text-[9.5px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${notice.category === 'Exam'
-                        ? 'bg-rose-100 text-rose-700'
-                        : notice.category === 'Academic'
-                          ? 'bg-blue-100 text-blue-700'
-                          : notice.category === 'Urgent'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-rose-100 text-rose-700'
+                      : notice.category === 'Academic'
+                        ? 'bg-blue-100 text-blue-700'
+                        : notice.category === 'Urgent'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-emerald-100 text-emerald-700'
                       }`}
                   >
                     {notice.category}
@@ -191,8 +191,8 @@ export const NoticesView: React.FC = () => {
                     toggleNoticeRead(notice.id);
                   }}
                   className={`px-2.5 py-1 rounded-xl text-[10.5px] font-bold flex items-center space-x-1 transition-all active:scale-95 ${!isRead
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                     }`}
                 >
                   <Check className="w-3 h-3" />

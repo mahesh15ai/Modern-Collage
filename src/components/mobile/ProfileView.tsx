@@ -93,6 +93,25 @@ export const ProfileView: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Intercept mobile hardware back button to close Edit Profile modal
+  useEffect(() => {
+    if (showEditModal) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ modal: 'editProfile' }, '', window.location.href);
+      }
+      const handleModalPop = () => {
+        setShowEditModal(false);
+      };
+      window.addEventListener('popstate', handleModalPop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handleModalPop);
+        if (typeof window !== 'undefined' && window.history.state?.modal === 'editProfile') {
+          window.history.back();
+        }
+      };
+    }
+  }, [showEditModal]);
+
   // Field values for Student
   const studentName =
     currentUser.name && currentUser.name !== 'Student' && currentUser.name !== 'Rahul Ramesh Shinde'

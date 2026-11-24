@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Plus, ChevronRight, CheckCircle2, Clock, X } from 'lucide-react';
 import { ComplaintItem } from '@/types';
@@ -11,6 +11,25 @@ export const ComplaintsView: React.FC = () => {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ComplaintItem['category']>('Infrastructure');
   const [description, setDescription] = useState('');
+
+  // Intercept mobile hardware back button to close modal
+  useEffect(() => {
+    if (showModal) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ modal: 'complaint' }, '', window.location.href);
+      }
+      const handleModalPop = () => {
+        setShowModal(false);
+      };
+      window.addEventListener('popstate', handleModalPop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handleModalPop);
+        if (typeof window !== 'undefined' && window.history.state?.modal === 'complaint') {
+          window.history.back();
+        }
+      };
+    }
+  }, [showModal]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
