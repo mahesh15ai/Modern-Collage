@@ -72,21 +72,19 @@ export const TimetableView: React.FC = () => {
           <div className="bg-slate-100 p-1 rounded-2xl flex items-center justify-between text-xs font-bold">
             <button
               onClick={() => setFacultyFilter('my')}
-              className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
-                facultyFilter === 'my'
+              className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${facultyFilter === 'my'
                   ? 'bg-blue-900 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>👨‍🏫 My Assigned Lectures</span>
             </button>
             <button
               onClick={() => setFacultyFilter('all')}
-              className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
-                facultyFilter === 'all'
+              className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${facultyFilter === 'all'
                   ? 'bg-blue-900 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>🏫 All Dept Classes</span>
             </button>
@@ -97,21 +95,19 @@ export const TimetableView: React.FC = () => {
         <div className="bg-slate-100 p-1 rounded-full flex items-center justify-between text-xs font-semibold">
           <button
             onClick={() => setViewType('class')}
-            className={`flex-1 py-1.5 text-center rounded-full transition-all ${
-              viewType === 'class'
+            className={`flex-1 py-1.5 text-center rounded-full transition-all ${viewType === 'class'
                 ? 'bg-blue-900 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             Class Wise
           </button>
           <button
             onClick={() => setViewType('subject')}
-            className={`flex-1 py-1.5 text-center rounded-full transition-all ${
-              viewType === 'subject'
+            className={`flex-1 py-1.5 text-center rounded-full transition-all ${viewType === 'subject'
                 ? 'bg-blue-900 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             Subject Wise
           </button>
@@ -124,11 +120,10 @@ export const TimetableView: React.FC = () => {
           <button
             key={day}
             onClick={() => setSelectedDay(day)}
-            className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${
-              selectedDay === day
+            className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${selectedDay === day
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
+              }`}
           >
             {day}
           </button>
@@ -144,18 +139,16 @@ export const TimetableView: React.FC = () => {
             return (
               <div
                 key={slot.id}
-                className={`bg-white rounded-2xl p-4 border shadow-sm flex items-start space-x-3.5 transition-all ${
-                  isAssignedToMe
+                className={`bg-white rounded-2xl p-4 border shadow-sm flex items-start space-x-3.5 transition-all ${isAssignedToMe
                     ? 'border-blue-500 ring-2 ring-blue-500/10'
                     : 'border-slate-100 hover:border-blue-200'
-                }`}
+                  }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs flex-shrink-0 ${
-                    slot.category === 'CS'
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs flex-shrink-0 ${slot.category === 'CS'
                       ? 'bg-blue-100 text-blue-800'
                       : 'bg-indigo-100 text-indigo-800'
-                  }`}
+                    }`}
                 >
                   {slot.category}
                 </div>
@@ -253,8 +246,8 @@ export const TimetableView: React.FC = () => {
           {currentUser.role === 'faculty'
             ? 'Faculty Academic Timetable • Realtime Synchronized'
             : currentUser.semester
-            ? `${currentUser.semester} Academic Calendar Active`
-            : 'Academic Calendar Active'}
+              ? `${currentUser.semester} Academic Calendar Active`
+              : 'Academic Calendar Active'}
         </span>
       </div>
     </div>

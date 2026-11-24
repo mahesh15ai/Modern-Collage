@@ -336,9 +336,64 @@ export async function loginWithGoogle(preferredRole: UserRole = 'student'): Prom
 
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
+      const userEmail = (user.email || '').toLowerCase().trim();
+
+      // Priority 1: Check if this user exists in faculty collection
+      if (userEmail) {
+        const facQuery = query(collection(db, 'faculty'), where('email', '==', userEmail));
+        const facSnap = await getDocs(facQuery);
+        if (!facSnap.empty) {
+          const f = facSnap.docs[0].data();
+          const facProfile: UserProfile = {
+            id: user.uid,
+            name: f.name || user.displayName || 'Faculty Member',
+            email: userEmail,
+            role: 'faculty',
+            phone: f.phone,
+            department: f.department,
+            designation: f.designation,
+            employeeId: f.employeeId,
+            qualification: f.qualification,
+            workloadHours: f.workloadHours,
+            classTeacherOf: f.classTeacherOf,
+            subjectsAssigned: f.subjectsAssigned,
+            avatar: user.photoURL || f.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+          };
+          await setDoc(userDocRef, facProfile, { merge: true });
+          return facProfile;
+        }
+
+        // Priority 2: Check if this user exists in students collection
+        const stuQuery = query(collection(db, 'students'), where('email', '==', userEmail));
+        const stuSnap = await getDocs(stuQuery);
+        if (!stuSnap.empty) {
+          const s = stuSnap.docs[0].data();
+          const stuProfile: UserProfile = {
+            id: user.uid,
+            name: s.name || user.displayName || 'Student',
+            email: userEmail,
+            role: 'student',
+            phone: s.phone,
+            department: s.department,
+            course: s.course,
+            semester: s.semester,
+            rollNo: s.rollNo,
+            prn: s.prn,
+            avatar: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          };
+          await setDoc(userDocRef, stuProfile, { merge: true });
+          return stuProfile;
+        }
+      }
 
       if (userDocSnap.exists()) {
-        return userDocSnap.data() as UserProfile;
+        const existingData = userDocSnap.data() as UserProfile;
+        if (preferredRole && preferredRole !== existingData.role) {
+          const updated = { ...existingData, role: preferredRole };
+          await setDoc(userDocRef, updated, { merge: true });
+          return updated;
+        }
+        return existingData;
       }
 
       const newProfile: UserProfile = {

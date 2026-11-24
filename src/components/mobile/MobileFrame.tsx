@@ -690,56 +690,41 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 </div>
               </div>
 
-              {/* User Profile Card & 1-Tap Role Switcher */}
+              {/* Authenticated User Identity Snapshot (Student shows Student info, Teacher shows Teacher info) */}
               <div className="mt-3.5 pt-3 border-t border-white/15">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 rounded-lg overflow-hidden border border-white/30 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                    <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/30 shrink-0">
                       <img src={currentUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-                      <p className="text-[9px] text-blue-200 truncate">
-                        {isFaculty ? (currentUser.designation || 'Faculty Member') : (currentUser.course || 'Student')}
+                      <p className="text-[10px] text-blue-200 truncate">
+                        {isFaculty
+                          ? `${currentUser.designation || 'Faculty Member'} • ${currentUser.department ? `${currentUser.department} Dept` : 'CS Dept'}`
+                          : `${currentUser.course || 'B.Sc Computer Science'} ${currentUser.semester ? `• ${currentUser.semester}` : ''}`}
                       </p>
+                      {isFaculty && currentUser.classTeacherOf && (
+                        <p className="text-[9px] text-amber-300 font-bold truncate mt-0.5">
+                          ⭐ Class Teacher: {currentUser.classTeacherOf}
+                        </p>
+                      )}
+                      {!isFaculty && currentUser.rollNo && (
+                        <p className="text-[9px] text-blue-300 font-mono mt-0.5">
+                          Roll No: {currentUser.rollNo}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                    isFaculty ? 'bg-amber-400/20 text-amber-300 border-amber-400/30' : 'bg-blue-400/20 text-blue-200 border-blue-400/30'
-                  }`}>
+                  <span
+                    className={`text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full border shrink-0 ${
+                      isFaculty
+                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                        : 'bg-blue-400/20 text-blue-200 border-blue-400/40'
+                    }`}
+                  >
                     {isFaculty ? 'FACULTY' : 'STUDENT'}
                   </span>
-                </div>
-
-                {/* 1-Tap Mode Switcher */}
-                <div className="bg-black/25 p-1 rounded-xl flex items-center justify-between text-xs font-bold border border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRole('student');
-                      setActiveScreen('dashboard');
-                      setIsDrawerOpen(false);
-                    }}
-                    className={`flex-1 py-1.5 rounded-lg text-[11px] transition-all flex items-center justify-center space-x-1 ${
-                      !isFaculty ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-200 hover:text-white'
-                    }`}
-                  >
-                    <span>🎓 Student</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRole('faculty');
-                      setActiveScreen('dashboard');
-                      setIsDrawerOpen(false);
-                    }}
-                    className={`flex-1 py-1.5 rounded-lg text-[11px] transition-all flex items-center justify-center space-x-1 ${
-                      isFaculty ? 'bg-amber-400 text-slate-900 shadow-sm' : 'text-blue-200 hover:text-white'
-                    }`}
-                  >
-                    <span>👨‍🏫 Faculty</span>
-                  </button>
                 </div>
               </div>
             </div>

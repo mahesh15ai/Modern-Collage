@@ -56,8 +56,8 @@ export const ProfileView: React.FC = () => {
   const studentYear = currentUser.semester
     ? `(${currentUser.semester})`
     : currentStudent?.semester
-    ? `(${currentStudent.semester})`
-    : '(First Year)';
+      ? `(${currentStudent.semester})`
+      : '(First Year)';
   const studentRoll = currentUser.rollNo || currentStudent?.rollNo || 'CS-329';
   const studentDob = currentUser.dob || currentStudent?.dob || '15/08/2004';
   const studentMobile = currentUser.phone || currentStudent?.phone || '9023456789';
@@ -268,66 +268,32 @@ export const ProfileView: React.FC = () => {
         </div>
       </div>
 
-      {/* 1-Tap Toggle: Student ID Card vs Faculty / Teacher ID Card */}
-      <div className="bg-slate-100 p-1 rounded-2xl flex items-center justify-between text-xs font-bold border border-slate-200">
-        <button
-          type="button"
-          onClick={() => {
-            if (isFaculty) setRole('student');
-          }}
-          className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
-            !isFaculty
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <span>🎓 Student ID Card</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            if (!isFaculty) setRole('faculty');
-          }}
-          className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
-            isFaculty
-              ? 'bg-blue-900 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <span>👨‍🏫 Faculty / Staff ID</span>
-        </button>
-      </div>
-
       {/* Side Switcher Tab Pills */}
       <div className="flex items-center bg-slate-200/80 p-1 rounded-2xl text-xs font-bold">
         <button
           onClick={() => setActiveSide('front')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${
-            activeSide === 'front'
+          className={`flex-1 py-1.5 rounded-xl transition-all ${activeSide === 'front'
               ? 'bg-white text-blue-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
-          }`}
+            }`}
         >
           🪪 Front Side
         </button>
         <button
           onClick={() => setActiveSide('back')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${
-            activeSide === 'back'
+          className={`flex-1 py-1.5 rounded-xl transition-all ${activeSide === 'back'
               ? 'bg-white text-blue-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
-          }`}
+            }`}
         >
           🔄 Back Side
         </button>
         <button
           onClick={() => setActiveSide('both')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${
-            activeSide === 'both'
+          className={`flex-1 py-1.5 rounded-xl transition-all ${activeSide === 'both'
               ? 'bg-white text-blue-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
-          }`}
+            }`}
         >
           📑 Both Sides
         </button>
@@ -886,11 +852,10 @@ export const ProfileView: React.FC = () => {
                       key={idx}
                       type="button"
                       onClick={() => setEditAvatar(url)}
-                      className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                        editAvatar === url
+                      className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${editAvatar === url
                           ? 'border-blue-600 ring-2 ring-blue-500/30 scale-105'
                           : 'border-slate-200 hover:border-slate-400'
-                      }`}
+                        }`}
                     >
                       <img src={url} alt="preset" className="w-full h-full object-cover object-top" />
                       {editAvatar === url && (

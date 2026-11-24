@@ -248,7 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const saved = localStorage.getItem('smart_campus_timetable');
         if (saved) return JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
     return [
       {
@@ -410,6 +410,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (remoteStudents) {
         setStudents(remoteStudents);
         setStats((prev) => ({ ...prev, totalStudents: remoteStudents.length }));
+
+        // Realtime automatic role sync: if current user is in students, ensure student role and details
+        try {
+          const savedSession = localStorage.getItem('smart_campus_session');
+          const current = savedSession ? JSON.parse(savedSession)?.user : null;
+          if (current && current.role !== 'admin' && current.role !== 'faculty') {
+            const stuMatch = remoteStudents.find(
+              (s) =>
+                (s.email && current.email && s.email.toLowerCase() === current.email.toLowerCase()) ||
+                (s.name && current.name && s.name.toLowerCase() === current.name.toLowerCase()) ||
+                (current.name && s.name && current.name.toLowerCase().includes(s.name.toLowerCase()))
+            );
+            if (stuMatch) {
+              const updatedUser: UserProfile = {
+                ...current,
+                name: stuMatch.name || current.name,
+                role: 'student',
+                department: stuMatch.department,
+                course: stuMatch.course,
+                semester: stuMatch.semester,
+                rollNo: stuMatch.rollNo,
+                prn: stuMatch.prn,
+              };
+              setCurrentUser(updatedUser);
+              setRoleState('student');
+              localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
+            }
+          }
+        } catch (e) {}
       }
     });
 
@@ -417,6 +446,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (remoteFaculty) {
         setFacultyList(remoteFaculty);
         setStats((prev) => ({ ...prev, totalFaculty: remoteFaculty.length }));
+
+        // Realtime automatic role sync: if current user is in faculty, ensure faculty role and details
+        try {
+          const savedSession = localStorage.getItem('smart_campus_session');
+          const current = savedSession ? JSON.parse(savedSession)?.user : null;
+          if (current && current.role !== 'admin') {
+            const facMatch = remoteFaculty.find(
+              (f) =>
+                (f.email && current.email && f.email.toLowerCase() === current.email.toLowerCase()) ||
+                (f.name && current.name && f.name.toLowerCase() === current.name.toLowerCase()) ||
+                (current.name && f.name && current.name.toLowerCase().includes(f.name.toLowerCase()))
+            );
+            if (facMatch) {
+              const updatedUser: UserProfile = {
+                ...current,
+                name: facMatch.name || current.name,
+                role: 'faculty',
+                department: facMatch.department,
+                designation: facMatch.designation,
+                employeeId: facMatch.employeeId,
+                phone: facMatch.phone,
+                qualification: facMatch.qualification,
+                classTeacherOf: facMatch.classTeacherOf,
+                subjectsAssigned: facMatch.subjectsAssigned,
+              };
+              setCurrentUser(updatedUser);
+              setRoleState('faculty');
+              localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
+            }
+          }
+        } catch (e) {}
       }
     });
 
@@ -797,6 +857,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const updatedUser: UserProfile = {
         ...currentUser,
         name: updatedFaculty.name,
+        role: 'faculty',
         department: updatedFaculty.department,
         designation: updatedFaculty.designation,
         employeeId: updatedFaculty.employeeId,
@@ -806,6 +867,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         subjectsAssigned: updatedFaculty.subjectsAssigned,
       };
       setCurrentUser(updatedUser);
+      setRoleState('faculty');
       localStorage.setItem(
         'smart_campus_session',
         JSON.stringify({ user: updatedUser, timestamp: Date.now() })
