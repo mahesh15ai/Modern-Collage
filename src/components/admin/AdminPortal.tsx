@@ -909,7 +909,7 @@ export const AdminPortal: React.FC = () => {
                           setTimeout(() => setSyncedCount(null), 5000);
                         } catch (err: any) {
                           if (err?.code === 'permission-denied' || err?.message?.includes('permission')) {
-                            setSyncError("Firestore Security Rules Note: Firebase Console मध्ये Firestore Database -> Rules मध्ये जावून 'allow read, write: if true;' करा आणि Publish वर क्लिक करा.");
+                            setSyncError("Firestore Security Rules: In Firebase Console -> Firestore Database -> Rules, set 'allow read, write: if true;' and click Publish.");
                           } else {
                             setSyncError(err?.message || "Sync failed. Please check Firestore connection.");
                           }
@@ -2420,16 +2420,16 @@ export const AdminPortal: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium"
                 >
                   <option value="None">None / General Faculty</option>
-                  <option value="TY B.Sc Computer Science">⭐ TY B.Sc Computer Science</option>
-                  <option value="SY B.Sc Computer Science">⭐ SY B.Sc Computer Science</option>
-                  <option value="FY B.Sc Computer Science">⭐ FY B.Sc Computer Science</option>
-                  <option value="TY B.Sc IT">⭐ TY B.Sc IT</option>
-                  <option value="SY B.Sc IT">⭐ SY B.Sc IT</option>
-                  <option value="FY B.Sc IT">⭐ FY B.Sc IT</option>
-                  <option value="BCA - TY">⭐ BCA - TY</option>
-                  <option value="BCA - SY">⭐ BCA - SY</option>
-                  <option value="M.Sc Computer Science - Part I">⭐ M.Sc Computer Science - Part I</option>
-                  <option value="M.Sc Computer Science - Part II">⭐ M.Sc Computer Science - Part II</option>
+                  <option value="TY B.Sc Computer Science">TY B.Sc Computer Science</option>
+                  <option value="SY B.Sc Computer Science">SY B.Sc Computer Science</option>
+                  <option value="FY B.Sc Computer Science">FY B.Sc Computer Science</option>
+                  <option value="TY B.Sc IT">TY B.Sc IT</option>
+                  <option value="SY B.Sc IT">SY B.Sc IT</option>
+                  <option value="FY B.Sc IT">FY B.Sc IT</option>
+                  <option value="BCA - TY">BCA - TY</option>
+                  <option value="BCA - SY">BCA - SY</option>
+                  <option value="M.Sc Computer Science - Part I">M.Sc Computer Science - Part I</option>
+                  <option value="M.Sc Computer Science - Part II">M.Sc Computer Science - Part II</option>
                 </select>
               </div>
 
@@ -3462,7 +3462,7 @@ export const AdminPortal: React.FC = () => {
               <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1.5">
                 <label className="font-bold text-amber-900 block flex items-center space-x-1.5">
                   <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span>Class Teacher Appointment (वर्गशिक्षक जबाबदारी)</span>
+                  <span>Class Teacher Appointment</span>
                 </label>
                 <select
                   value={editFacClassTeacher}
@@ -3470,17 +3470,17 @@ export const AdminPortal: React.FC = () => {
                   className="w-full px-3 py-2.5 bg-white border border-amber-300 rounded-xl font-bold text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   <option value="None">None (No Class Teacher duty assigned)</option>
-                  <option value="TY B.Sc Computer Science">⭐ TY B.Sc Computer Science</option>
-                  <option value="SY B.Sc Computer Science">⭐ SY B.Sc Computer Science</option>
-                  <option value="FY B.Sc Computer Science">⭐ FY B.Sc Computer Science</option>
-                  <option value="TY B.Sc IT">⭐ TY B.Sc IT</option>
-                  <option value="SY B.Sc IT">⭐ SY B.Sc IT</option>
-                  <option value="FY B.Sc IT">⭐ FY B.Sc IT</option>
-                  <option value="BCA - TY">⭐ BCA - TY</option>
-                  <option value="BCA - SY">⭐ BCA - SY</option>
-                  <option value="BCA - FY">⭐ BCA - FY</option>
-                  <option value="M.Sc Computer Science - Part I">⭐ M.Sc Computer Science - Part I</option>
-                  <option value="M.Sc Computer Science - Part II">⭐ M.Sc Computer Science - Part II</option>
+                  <option value="TY B.Sc Computer Science">TY B.Sc Computer Science</option>
+                  <option value="SY B.Sc Computer Science">SY B.Sc Computer Science</option>
+                  <option value="FY B.Sc Computer Science">FY B.Sc Computer Science</option>
+                  <option value="TY B.Sc IT">TY B.Sc IT</option>
+                  <option value="SY B.Sc IT">SY B.Sc IT</option>
+                  <option value="FY B.Sc IT">FY B.Sc IT</option>
+                  <option value="BCA - TY">BCA - TY</option>
+                  <option value="BCA - SY">BCA - SY</option>
+                  <option value="BCA - FY">BCA - FY</option>
+                  <option value="M.Sc Computer Science - Part I">M.Sc Computer Science - Part I</option>
+                  <option value="M.Sc Computer Science - Part II">M.Sc Computer Science - Part II</option>
                 </select>
                 <p className="text-[10px] text-amber-700">
                   Appointing this teacher will display their Class Teacher badge across their mobile app and campus portal.
@@ -3490,7 +3490,7 @@ export const AdminPortal: React.FC = () => {
               {/* ASSIGNED SUBJECTS */}
               <div className="space-y-2">
                 <label className="font-bold text-slate-700 block">
-                  Assigned Teaching Subjects (विषय वाटप)
+                  Assigned Teaching Subjects
                 </label>
                 <input
                   type="text"
@@ -3612,12 +3612,12 @@ export const AdminPortal: React.FC = () => {
                     onChange={(e: any) => setSlotDay(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-blue-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   >
-                    <option value="Mon">Monday (सोमवार)</option>
-                    <option value="Tue">Tuesday (मंगळवार)</option>
-                    <option value="Wed">Wednesday (बुधवार)</option>
-                    <option value="Thu">Thursday (गुरुवार)</option>
-                    <option value="Fri">Friday (शुक्रवार)</option>
-                    <option value="Sat">Saturday (शनिवार)</option>
+                    <option value="Mon">Monday</option>
+                    <option value="Tue">Tuesday</option>
+                    <option value="Wed">Wednesday</option>
+                    <option value="Thu">Thursday</option>
+                    <option value="Fri">Friday</option>
+                    <option value="Sat">Saturday</option>
                   </select>
                 </div>
 

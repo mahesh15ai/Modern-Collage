@@ -15,6 +15,9 @@ import {
   Trophy,
   ChevronRight,
   Sparkles,
+  Award,
+  BadgeCheck,
+  IdCard,
 } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
@@ -80,12 +83,9 @@ export const StudentDashboard: React.FC = () => {
             <Menu className="w-5 h-5 text-slate-800" />
           </button>
           <div>
-            <div className="flex items-center space-x-1">
-              <h2 className="font-extrabold text-slate-900 text-base">
-                Hello, {currentUser.role === 'admin' ? (currentUser.name.includes('College') ? 'Admin' : currentUser.name.split(' ')[0]) : currentUser.name.split(' ')[0]}!
-              </h2>
-              <span>👋</span>
-            </div>
+            <h2 className="font-extrabold text-slate-900 text-base">
+              Hello, {currentUser.role === 'admin' ? (currentUser.name.includes('College') ? 'Admin' : currentUser.name.split(' ')[0]) : currentUser.name.split(' ')[0]}!
+            </h2>
             <p className="text-[11px] text-slate-500 font-medium">
               {currentUser.role === 'faculty' ? 'Faculty Portal • Smart Campus' : 'Welcome back to Smart Campus'}
             </p>
@@ -158,7 +158,7 @@ export const StudentDashboard: React.FC = () => {
                 {myClassTeacherOf && (
                   <div className="mt-1 flex items-center space-x-1">
                     <span className="text-[10px] bg-amber-400 text-slate-900 font-black px-2 py-0.5 rounded-full inline-flex items-center">
-                      ⭐ Class Teacher: {myClassTeacherOf}
+                      <Award className="w-3 h-3 mr-1 text-slate-900 inline" /> Class Teacher: {myClassTeacherOf}
                     </span>
                   </div>
                 )}
@@ -168,8 +168,8 @@ export const StudentDashboard: React.FC = () => {
               <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full font-mono font-bold border border-amber-400/30">
                 {currentUser.employeeId || linkedFaculty?.employeeId || currentUser.id || 'FACULTY'}
               </span>
-              <span className="text-[9px] text-blue-200 font-semibold mt-0.5">
-                Faculty ID 🪪
+              <span className="text-[9px] text-blue-200 font-semibold mt-0.5 inline-flex items-center">
+                Faculty ID <BadgeCheck className="w-3 h-3 text-amber-300 ml-1 inline" />
               </span>
             </div>
           </div>
@@ -179,7 +179,7 @@ export const StudentDashboard: React.FC = () => {
             <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                  My Assigned Teaching Subjects (विषय वाटप)
+                  My Assigned Teaching Subjects
                 </span>
                 <span className="text-[10px] font-bold text-blue-600">
                   {mySubjectsAssigned.length} Subjects
@@ -189,9 +189,9 @@ export const StudentDashboard: React.FC = () => {
                 {mySubjectsAssigned.map((sub, idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-[11px] font-semibold flex items-center space-x-1"
+                    className="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-[11px] font-semibold flex items-center space-x-1.5"
                   >
-                    <span>📘</span>
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                     <span>{sub}</span>
                   </span>
                 ))}
@@ -253,7 +253,7 @@ export const StudentDashboard: React.FC = () => {
               {myClassTeacherOf || 'CS & IT Dept'}
             </div>
             <div className="text-[11px] text-slate-500 font-medium">
-              {myClassTeacherOf ? '⭐ Class Teacher' : 'Faculty Member'}
+              {myClassTeacherOf ? 'Class Teacher' : 'Faculty Member'}
             </div>
           </div>
 

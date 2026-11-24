@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import CollegeLogo from '@/components/common/CollegeLogo';
-import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, X, LogIn, QrCode, Sparkles, UploadCloud } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, X, LogIn, QrCode, Sparkles, UploadCloud, GraduationCap, Users, ShieldCheck } from 'lucide-react';
 import { sendResetPassword } from '@/services/authService';
 import { UserRole } from '@/types';
 
@@ -96,37 +96,37 @@ export const LoginScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => setPortalRole('student')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${
-            portalRole === 'student'
+          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'student'
               ? 'bg-blue-600 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
-          }`}
+            }`}
         >
-          <span>🎓 Student</span>
+          <GraduationCap className="w-3.5 h-3.5 mr-1" />
+          <span>Student</span>
         </button>
 
         <button
           type="button"
           onClick={() => setPortalRole('faculty')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${
-            portalRole === 'faculty'
+          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'faculty'
               ? 'bg-blue-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
-          }`}
+            }`}
         >
-          <span>👨‍🏫 Teacher</span>
+          <Users className="w-3.5 h-3.5 mr-1" />
+          <span>Teacher</span>
         </button>
 
         <button
           type="button"
           onClick={() => setPortalRole('admin')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${
-            portalRole === 'admin'
+          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'admin'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
-          }`}
+            }`}
         >
-          <span>💻 Admin</span>
+          <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+          <span>Admin</span>
         </button>
       </div>
 
@@ -205,7 +205,7 @@ export const LoginScreen: React.FC = () => {
           className="w-full py-3 bg-gradient-to-r from-slate-100 to-blue-50/70 hover:from-blue-50 hover:to-indigo-50 text-blue-900 rounded-xl font-bold text-xs border border-blue-200/80 shadow-xs flex items-center justify-center space-x-2 transition-all active:scale-95"
         >
           <QrCode className="w-4 h-4 text-blue-700" />
-          <span>📷 Digital QR Pass द्वारे लॉगिन करा</span>
+          <span>Login with Digital QR Pass</span>
         </button>
       </form>
 

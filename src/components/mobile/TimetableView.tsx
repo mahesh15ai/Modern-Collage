@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Clock, MapPin, User, Calendar as CalendarIcon, Sparkles, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Clock, MapPin, User, Calendar as CalendarIcon, Sparkles, BookOpen, CheckCircle2, UserCheck, Building2 } from 'lucide-react';
 
 export const TimetableView: React.FC = () => {
   const { timetable, currentUser, facultyList } = useApp();
@@ -77,7 +77,8 @@ export const TimetableView: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
-              <span>👨‍🏫 My Assigned Lectures</span>
+              <UserCheck className="w-3.5 h-3.5 mr-1" />
+              <span>My Assigned Lectures</span>
             </button>
             <button
               onClick={() => setFacultyFilter('all')}
@@ -86,7 +87,8 @@ export const TimetableView: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
-              <span>🏫 All Dept Classes</span>
+              <Building2 className="w-3.5 h-3.5 mr-1" />
+              <span>All Dept Classes</span>
             </button>
           </div>
         </div>

@@ -23,6 +23,8 @@ import {
   Download,
   Laptop,
   LogOut,
+  Building2,
+  IdCard,
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
@@ -51,18 +53,22 @@ export const ProfileView: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Field values for Student
-  const studentName = currentUser.name || currentStudent?.name || 'Rahul Ramesh Shinde';
-  const studentClass = currentUser.course || currentStudent?.course || 'B.Sc Computer Science';
+  const studentName =
+    currentUser.name && currentUser.name !== 'Student' && currentUser.name !== 'Rahul Ramesh Shinde'
+      ? (currentUser.name.toLowerCase().includes('gomaskar') ? 'Mahesh Gomaskar' : currentUser.name)
+      : 'Mahesh Gomaskar';
+  const studentClass = currentUser.course || 'B.Sc Computer Science (First Year (FY))';
   const studentYear = currentUser.semester
-    ? `(${currentUser.semester})`
-    : currentStudent?.semester
-      ? `(${currentStudent.semester})`
-      : '(First Year)';
-  const studentRoll = currentUser.rollNo || currentStudent?.rollNo || 'CS-329';
-  const studentDob = currentUser.dob || currentStudent?.dob || '15/08/2004';
-  const studentMobile = currentUser.phone || currentStudent?.phone || '9023456789';
-  const studentPrn = currentUser.prn || currentStudent?.prn || '2024015200678912';
-  const studentAvatar = currentUser.avatar || PRESET_AVATARS[0];
+    ? (currentUser.semester.startsWith('(') ? currentUser.semester : `(${currentUser.semester})`)
+    : '(Semester I)';
+  const studentRoll = currentUser.rollNo || 'CS- 329';
+  const studentDob = currentUser.dob || '15/08/2004';
+  const studentMobile = currentUser.phone || '7896541230';
+  const studentPrn = currentUser.prn || '202580019329';
+  const studentEmail = currentUser.email || 'gomaskarm@gmail.com';
+  const studentAvatar = currentUser.avatar && !currentUser.avatar.includes('unsplash')
+    ? currentUser.avatar
+    : '/student-avatar.jpg';
 
   // Field values for Faculty
   const facultyName = currentUser.name || 'Dr. Nitish Sharma';
@@ -234,24 +240,31 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
 
-      {/* Header & Controls Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-        <div>
-          <h2 className="font-black text-base sm:text-lg text-slate-900 tracking-tight flex items-center space-x-1.5">
-            <span>{isFaculty ? 'Faculty Identity Card' : 'Student Identity Card'}</span>
-            <Sparkles className="w-4 h-4 text-amber-500" />
-          </h2>
-          <p className="text-[11px] text-slate-500">
-            {isFaculty
-              ? 'Official Campus Faculty & Staff ID with Verification QR'
-              : 'Official Campus ID with Attendance Verification QR'}
-          </p>
+      {/* Header & Controls Bar matching reference mockup */}
+      <div className="flex items-center justify-between gap-2 pt-1 max-w-[500px] mx-auto w-full">
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#1d4ed8] flex items-center justify-center shrink-0 border border-blue-200/60 shadow-xs">
+            <IdCard className="w-5 h-5 text-[#1d4ed8]" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight flex items-center space-x-1.5 truncate">
+              <span>{isFaculty ? 'Faculty Identity Card' : 'Student Identity Card'}</span>
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-slate-900 font-black text-[10px] shadow-xs shrink-0">
+                ✓
+              </span>
+            </h2>
+            <p className="text-[11px] text-slate-500 font-medium truncate">
+              {isFaculty
+                ? 'Official Campus Faculty & Staff ID with Verification QR'
+                : 'Official Campus ID with Attendance Verification QR'}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2 self-start sm:self-auto">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={handleOpenEdit}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm transition-all active:scale-95"
+            className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-full text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
             <span>Edit Profile</span>
@@ -259,43 +272,48 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => window.print()}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm transition-all active:scale-95"
+            className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-full text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-all"
             title="Print Official ID Card Slip"
           >
-            <Printer className="w-3.5 h-3.5 text-amber-300" />
+            <Printer className="w-3.5 h-3.5 text-slate-700" />
             <span>Print</span>
           </button>
         </div>
       </div>
 
-      {/* Side Switcher Tab Pills */}
-      <div className="flex items-center bg-slate-200/80 p-1 rounded-2xl text-xs font-bold">
+      {/* Side Switcher Tab Pills matching reference mockup */}
+      <div className="flex items-center bg-[#edf2f7] p-1.5 rounded-full text-xs font-bold border border-slate-200/80 max-w-[500px] mx-auto w-full">
         <button
           onClick={() => setActiveSide('front')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${activeSide === 'front'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+          className={`flex-1 py-2 rounded-full transition-all flex items-center justify-center space-x-1.5 ${activeSide === 'front'
+              ? 'bg-[#1d4ed8] text-white shadow-md'
+              : 'text-slate-700 hover:text-slate-950 font-semibold'
             }`}
         >
-          🪪 Front Side
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Front Side</span>
         </button>
+
         <button
           onClick={() => setActiveSide('back')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${activeSide === 'back'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+          className={`flex-1 py-2 rounded-full transition-all flex items-center justify-center space-x-1.5 ${activeSide === 'back'
+              ? 'bg-[#1d4ed8] text-white shadow-md'
+              : 'text-slate-700 hover:text-slate-950 font-semibold'
             }`}
         >
-          🔄 Back Side
+          <RotateCw className="w-3.5 h-3.5" />
+          <span>Back Side</span>
         </button>
+
         <button
           onClick={() => setActiveSide('both')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${activeSide === 'both'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+          className={`flex-1 py-2 rounded-full transition-all flex items-center justify-center space-x-1.5 ${activeSide === 'both'
+              ? 'bg-[#1d4ed8] text-white shadow-md'
+              : 'text-slate-700 hover:text-slate-950 font-semibold'
             }`}
         >
-          📑 Both Sides
+          <IdCard className="w-3.5 h-3.5" />
+          <span>Both Sides</span>
         </button>
       </div>
 
@@ -305,63 +323,73 @@ export const ProfileView: React.FC = () => {
       <div className="space-y-4">
         {/* FRONT CARD (Shown on 'front' or 'both') */}
         {(activeSide === 'front' || activeSide === 'both') && (
-          <div className="relative w-full max-w-[500px] mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden text-slate-900 select-none">
-            {/* Top Navy Header Banner with Gold Swoosh */}
-            <div className="relative bg-[#071D3A] text-white pt-3 pb-2.5 px-3 sm:px-4 overflow-hidden">
-              {/* Golden Wave Graphic across right corner */}
+          <div className="relative w-full max-w-[500px] mx-auto bg-white rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.10)] border border-slate-200/90 overflow-hidden text-slate-900 select-none">
+            {/* Top Navy Header Banner with Flowing Waves */}
+            <div className="relative bg-gradient-to-r from-[#031846] via-[#072460] to-[#0c397f] text-white pt-3.5 pb-3 px-3.5 sm:px-4 overflow-hidden">
+              {/* Layered Blue Wave Graphic on right */}
               <svg
-                className="absolute top-0 right-0 h-full w-28 sm:w-36 pointer-events-none"
-                viewBox="0 0 140 70"
+                className="absolute top-0 right-0 h-full w-40 sm:w-48 pointer-events-none"
+                viewBox="0 0 180 75"
                 preserveAspectRatio="none"
               >
                 <path
-                  d="M 0 0 C 45 40 85 55 140 25 L 140 70 L 140 0 Z"
-                  fill="#E5A93B"
+                  d="M 0 0 C 60 50 110 70 180 30 L 180 75 L 180 0 Z"
+                  fill="#1d4ed8"
+                  opacity="0.45"
                 />
                 <path
-                  d="M 12 0 C 50 35 90 48 140 20 L 140 0 Z"
-                  fill="#071D3A"
+                  d="M 20 0 C 70 45 120 60 180 22 L 180 0 Z"
+                  fill="#031846"
                 />
                 <path
-                  d="M 0 0 C 45 40 85 55 140 25 L 140 38 C 85 68 45 52 0 0 Z"
-                  fill="#F5B945"
+                  d="M 0 0 C 65 50 125 65 180 25 L 180 40 C 120 85 60 60 0 0 Z"
+                  fill="#38bdf8"
+                  opacity="0.7"
                 />
               </svg>
 
               <div className="relative z-10 flex items-center space-x-2.5 sm:space-x-3">
                 {/* College Logo in White Circular Badge */}
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white p-1 flex items-center justify-center shrink-0 shadow-md">
-                  <CollegeLogo size={36} />
+                <div className="w-12 h-12 rounded-full bg-white p-1 flex items-center justify-center shrink-0 shadow-md">
+                  <CollegeLogo size={38} />
                 </div>
 
                 {/* Vertical Divider Line */}
-                <div className="w-[1.5px] h-9 bg-white/40 shrink-0" />
+                <div className="w-[1.5px] h-9 bg-white/35 shrink-0" />
 
                 {/* College Title & Affiliation */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h3 className="font-black text-sm sm:text-base tracking-wider text-white uppercase leading-tight font-sans">
                     MODERN COLLEGE
                   </h3>
-                  <p className="text-[10px] sm:text-[11px] font-semibold text-white/95 leading-tight">
+                  <p className="text-[10.5px] sm:text-[11.5px] font-semibold text-white/95 leading-tight">
                     Computer Science &amp; IT, Nanded
                   </p>
                   <div className="flex items-center space-x-1.5 mt-0.5">
-                    <span className="w-6 h-[1px] bg-white/60 inline-block" />
-                    <span className="text-[8px] sm:text-[9px] font-bold text-white/90 uppercase tracking-widest">
-                      {isFaculty ? 'Autonomous • Staff Pass' : 'SRTMUN Affiliated'}
+                    <span className="w-6 h-[1px] bg-white/50 inline-block" />
+                    <span className="text-[8.5px] sm:text-[9.5px] font-bold text-cyan-200 uppercase tracking-widest">
+                      {isFaculty ? 'Autonomous • Staff Pass' : 'SRTMUN AFFILIATED'}
                     </span>
-                    <span className="w-6 h-[1px] bg-white/60 inline-block" />
+                    <span className="w-6 h-[1px] bg-white/50 inline-block" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Front Card Body (Photo on Left, Details on Right) */}
-            <div className="p-3 sm:p-4 relative">
-              <div className="flex items-start gap-3 sm:gap-4">
-                {/* Left: Photo */}
+            {/* Sub-Header Ribbon with STUDENT ID CARD / FACULTY ID CARD */}
+            <div className="relative my-2.5 px-4 flex items-center justify-center">
+              <div className="w-full border-t border-slate-200" />
+              <span className="absolute bg-[#0a2356] text-white text-[9.5px] font-black uppercase tracking-wider px-4 py-0.5 rounded-full shadow-sm">
+                {isFaculty ? 'FACULTY ID CARD' : 'STUDENT ID CARD'}
+              </span>
+            </div>
+
+            {/* Front Card Body (Photo on Left, Key-Value Table on Right) */}
+            <div className="px-3.5 sm:px-4.5 pt-1 pb-0 relative">
+              <div className="flex items-start gap-3.5 sm:gap-4">
+                {/* Left: Passport Size Student Photo */}
                 <div className="shrink-0 flex flex-col items-center">
-                  <div className="w-24 sm:w-28 h-32 sm:h-36 rounded-xl border border-slate-900 overflow-hidden shadow-sm bg-slate-100">
+                  <div className="w-[112px] sm:w-[124px] h-[146px] sm:h-[158px] rounded-2xl border border-slate-200 overflow-hidden shadow-xs bg-blue-50">
                     <img
                       src={isFaculty ? facultyAvatar : studentAvatar}
                       alt={isFaculty ? facultyName : studentName}
@@ -370,158 +398,149 @@ export const ProfileView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Right: Details with Circular Blue Icons */}
-                <div className="flex-1 min-w-0 space-y-2">
-                  {/* Badge: FACULTY ID CARD vs STUDENT ID CARD */}
-                  <div className="flex items-center justify-center space-x-1.5 pt-0.5">
-                    <span className="w-5 sm:w-7 h-[1px] bg-slate-400" />
-                    <span className="px-3 py-0.5 bg-[#071D3A] text-white font-black text-[9px] sm:text-[10px] uppercase tracking-wider rounded-full shadow-sm">
-                      {isFaculty ? 'FACULTY ID CARD' : 'STUDENT ID CARD'}
-                    </span>
-                    <span className="w-5 sm:w-7 h-[1px] bg-slate-400" />
-                  </div>
-
+                {/* Right: Student Details Table */}
+                <div className="flex-1 min-w-0">
                   {/* Name */}
-                  <div className="text-center sm:text-left pb-0.5">
-                    <h4 className="font-extrabold text-xs sm:text-sm text-slate-950 truncate">
-                      {isFaculty ? facultyName : studentName}
-                    </h4>
-                  </div>
+                  <h4 className="font-black text-base sm:text-lg text-slate-900 tracking-tight leading-tight mb-2.5">
+                    {isFaculty ? facultyName : studentName}
+                  </h4>
 
                   {isFaculty ? (
-                    <>
-                      {/* Faculty Field 1: Designation */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <Sparkles className="w-3.5 h-3.5" />
+                    /* Faculty Details Rows */
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <Sparkles className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Designation</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-extrabold text-blue-900 truncate text-[11px] text-right">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Designation</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-bold text-[#1d4ed8] text-[11px] text-right flex-1 min-w-0">
                             {facultyDesignation}
                           </span>
                         </div>
                       </div>
 
-                      {/* Faculty Field 2: Department */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <GraduationCap className="w-3.5 h-3.5" />
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <GraduationCap className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Department</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-bold text-slate-900 truncate text-[11px] text-right">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Department</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-bold text-slate-900 text-[11px] text-right flex-1 min-w-0">
                             {facultyDepartment}
                           </span>
                         </div>
                       </div>
 
-                      {/* Faculty Field 3: Employee ID */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <CreditCard className="w-3.5 h-3.5" />
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <CreditCard className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Employee ID</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-extrabold font-mono text-slate-950 text-xs">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Employee ID</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-black font-mono text-slate-900 text-xs text-right flex-1 min-w-0">
                             {facultyEmpId}
                           </span>
                         </div>
                       </div>
 
-                      {/* Faculty Field 4: Mobile Number */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <Phone className="w-3.5 h-3.5" />
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <Phone className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Mobile Number</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-bold font-mono text-slate-900 text-[11px]">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Mobile Number</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-bold font-mono text-slate-900 text-xs text-right flex-1 min-w-0">
                             {facultyMobile}
                           </span>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <>
-                      {/* Field 1: Class */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <GraduationCap className="w-3.5 h-3.5" />
+                    /* Student Details Rows matching reference mockup */
+                    <div className="space-y-2">
+                      {/* Row 1: Class */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                          <GraduationCap className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-baseline justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Class</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-bold text-slate-900 truncate text-[11px] text-right">
-                            {studentClass} <span className="block text-[9px] text-blue-900 font-semibold">{studentYear}</span>
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Class</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-bold text-slate-900 text-[11px] text-right flex-1 min-w-0">
+                            {studentClass}
+                            <span className="block text-[10px] text-[#1d4ed8] font-bold mt-0.5">
+                              {studentYear}
+                            </span>
                           </span>
                         </div>
                       </div>
 
-                      {/* Field 2: Roll Number */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <CreditCard className="w-3.5 h-3.5" />
+                      {/* Row 2: Roll Number */}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <IdCard className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Roll Number</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-extrabold font-mono text-slate-950 text-xs">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Roll Number</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-black font-mono text-slate-900 text-xs text-right flex-1 min-w-0">
                             {studentRoll}
                           </span>
                         </div>
                       </div>
 
-                      {/* Field 3: Date of Birth */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <Calendar className="w-3.5 h-3.5" />
+                      {/* Row 3: Date of Birth */}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <Calendar className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Date of Birth</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-bold text-slate-900 text-[11px]">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Date of Birth</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-bold text-slate-900 text-xs text-right flex-1 min-w-0">
                             {studentDob}
                           </span>
                         </div>
                       </div>
 
-                      {/* Field 4: Mobile Number */}
-                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                          <Phone className="w-3.5 h-3.5" />
+                      {/* Row 4: Mobile Number */}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
+                          <Phone className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Mobile Number</span>
-                          <span className="text-slate-400 mx-1">:</span>
-                          <span className="font-bold font-mono text-slate-900 text-[11px]">
+                          <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Mobile Number</span>
+                          <span className="text-slate-400 font-bold mx-1 shrink-0">:</span>
+                          <span className="font-bold font-mono text-slate-900 text-xs text-right flex-1 min-w-0">
                             {studentMobile}
                           </span>
                         </div>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Bottom Decorative Wave */}
-              <div className="mt-3 -mx-4 -mb-4 h-6 relative bg-gradient-to-r from-[#071D3A] via-[#0E2D58] to-[#071D3A] overflow-hidden">
+              {/* Bottom Decorative Smooth Wave */}
+              <div className="h-7 w-full relative overflow-hidden mt-3 -mx-4">
                 <svg
                   className="absolute inset-0 w-full h-full"
-                  viewBox="0 0 500 24"
+                  viewBox="0 0 500 28"
                   preserveAspectRatio="none"
                 >
                   <path
-                    d="M 0 0 C 150 15 350 5 500 24 L 500 0 Z"
-                    fill="#F5B945"
+                    d="M 0 10 C 140 28 360 0 500 16 L 500 28 L 0 28 Z"
+                    fill="#2563eb"
+                    opacity="0.4"
                   />
                   <path
-                    d="M 0 0 C 140 18 340 8 500 24 L 0 24 Z"
-                    fill="#071D3A"
+                    d="M 0 18 C 140 6 360 26 500 8 L 500 28 L 0 28 Z"
+                    fill="#031846"
                   />
                 </svg>
               </div>
@@ -531,43 +550,41 @@ export const ProfileView: React.FC = () => {
 
         {/* BACK CARD (Shown on 'back' or 'both') */}
         {(activeSide === 'back' || activeSide === 'both') && (
-          <div className="relative w-full max-w-[500px] mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden text-slate-900 select-none">
-            {/* Top Script Header Banner with Gold Ribbon */}
-            <div className="relative pt-3 pb-1 px-4 sm:px-5 flex items-center justify-between border-b border-slate-100">
-              {/* Left Script / Cursive Title */}
+          <div className="relative w-full max-w-[500px] mx-auto bg-white rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.10)] border border-slate-200/90 overflow-hidden text-slate-900 select-none">
+            {/* Top Header Banner with Blue Ribbon */}
+            <div className="relative pt-3.5 pb-2 px-4 sm:px-5 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="font-serif italic font-black text-xl sm:text-2xl text-[#071D3A] tracking-tight">
+                  <span className="font-serif italic font-black text-xl sm:text-2xl text-[#0a2356] tracking-tight">
                     Modern College
                   </span>
-                  <div className="w-16 sm:w-24 h-[1.5px] bg-[#071D3A] shrink-0" />
+                  <div className="w-16 sm:w-24 h-[1.5px] bg-[#0a2356] shrink-0" />
                 </div>
-                <p className="text-[10px] sm:text-[11px] font-bold text-[#071D3A] leading-tight">
+                <p className="text-[10px] sm:text-[11px] font-bold text-[#0a2356] leading-tight">
                   Computer Science &amp; IT, Nanded
                 </p>
               </div>
 
-              {/* Top-Right Gold & Blue Ribbon Corner */}
+              {/* Top-Right Blue Ribbon Corner */}
               <svg
                 className="absolute top-0 right-0 h-10 w-24 pointer-events-none"
                 viewBox="0 0 100 40"
                 preserveAspectRatio="none"
               >
-                <path d="M 0 0 C 40 25 70 30 100 10 L 100 0 Z" fill="#F5B945" />
-                <path d="M 15 0 C 50 20 80 25 100 8 L 100 0 Z" fill="#071D3A" />
+                <path d="M 0 0 C 40 25 70 30 100 10 L 100 0 Z" fill="#38bdf8" opacity="0.8" />
+                <path d="M 15 0 C 50 20 80 25 100 8 L 100 0 Z" fill="#0a2356" />
               </svg>
             </div>
 
             {/* Back Card Body: Instructions on Left, QR on Right */}
-            <div className="p-3 sm:p-4">
+            <div className="p-3.5 sm:p-4">
               <div className="flex items-start gap-3 sm:gap-4">
                 {/* Left Column: 4 Rules with Circular Dark Blue Badges */}
                 <div className="flex-1 space-y-2.5 text-slate-800 text-[10px] sm:text-[11px]">
                   {isFaculty ? (
                     <>
-                      {/* Faculty Rule 1 */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <AlertCircle className="w-3.5 h-3.5 font-bold" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -575,9 +592,8 @@ export const ProfileView: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Faculty Rule 2 */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <FileText className="w-3.5 h-3.5" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -585,9 +601,8 @@ export const ProfileView: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Faculty Rule 3 */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <Users className="w-3.5 h-3.5" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -595,9 +610,8 @@ export const ProfileView: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Faculty Rule 4 */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <CornerDownLeft className="w-3.5 h-3.5" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -607,9 +621,8 @@ export const ProfileView: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      {/* Rule 1: Exclamation */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <AlertCircle className="w-3.5 h-3.5 font-bold" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -617,9 +630,8 @@ export const ProfileView: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Rule 2: Show when required */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <FileText className="w-3.5 h-3.5" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -627,9 +639,8 @@ export const ProfileView: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Rule 3: Do not share */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <Users className="w-3.5 h-3.5" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -637,9 +648,8 @@ export const ProfileView: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Rule 4: Return if found */}
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-[#0a2356] text-white flex items-center justify-center shrink-0 mt-0.5">
                           <CornerDownLeft className="w-3.5 h-3.5" />
                         </div>
                         <p className="font-semibold text-slate-800 leading-snug">
@@ -651,12 +661,11 @@ export const ProfileView: React.FC = () => {
                 </div>
 
                 {/* Vertical Divider */}
-                <div className="w-[1.5px] h-32 bg-slate-300 shrink-0 self-center" />
+                <div className="w-[1.5px] h-32 bg-slate-200 shrink-0 self-center" />
 
                 {/* Right Column: Attendance / Faculty Verification QR Box */}
                 <div className="shrink-0 flex flex-col items-center">
-                  <div className="w-28 sm:w-32 rounded-2xl border-2 border-[#071D3A] overflow-hidden bg-white shadow-md">
-                    {/* QR Code */}
+                  <div className="w-28 sm:w-32 rounded-2xl border-2 border-[#0a2356] overflow-hidden bg-white shadow-md">
                     <div className="p-1.5 flex items-center justify-center">
                       {qrDataUrl ? (
                         <img
@@ -671,8 +680,7 @@ export const ProfileView: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Bottom Pill: Scan for Verification */}
-                    <div className="bg-[#071D3A] text-white py-1 px-2 text-center">
+                    <div className="bg-[#0a2356] text-white py-1 px-2 text-center">
                       <span className="font-bold text-[9px] sm:text-[10px] tracking-wide block">
                         Scan for Verification
                       </span>
@@ -682,49 +690,19 @@ export const ProfileView: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Navy Wave Banner with Campus Building Architectural Blueprint */}
-            <div className="relative bg-[#071D3A] text-white pt-2 pb-2.5 px-4 overflow-hidden mt-1">
-              {/* Golden Wave Trim separating top */}
-              <svg
-                className="absolute top-0 inset-x-0 w-full h-2"
-                viewBox="0 0 500 8"
-                preserveAspectRatio="none"
-              >
-                <path d="M 0 0 C 150 8 350 4 500 0 L 500 4 L 0 4 Z" fill="#F5B945" />
-              </svg>
-
-              <div className="flex items-center justify-between relative z-10 pt-1">
-                {/* Campus Building Architectural Blueprint Graphic */}
-                <div className="w-36 sm:w-48 h-8 opacity-40">
-                  <svg viewBox="0 0 200 40" className="w-full h-full">
-                    <rect x="10" y="8" width="180" height="30" stroke="white" strokeWidth="0.8" fill="none" />
-                    <rect x="75" y="2" width="50" height="36" stroke="white" strokeWidth="1" fill="none" />
-                    <line x1="75" y1="2" x2="100" y2="0" stroke="white" strokeWidth="1" />
-                    <line x1="125" y1="2" x2="100" y2="0" stroke="white" strokeWidth="1" />
-                    <rect x="15" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="32" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="49" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="15" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="32" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="49" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="83" y="10" width="14" height="8" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="103" y="10" width="14" height="8" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="88" y="22" width="24" height="16" stroke="white" strokeWidth="0.8" fill="none" />
-                    <rect x="139" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="156" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="173" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="139" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="156" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    <rect x="173" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                  </svg>
+            {/* Bottom Navy Wave Banner */}
+            <div className="relative bg-[#0a2356] text-white pt-2.5 pb-2.5 px-4 overflow-hidden mt-1">
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center space-x-2">
+                  <CollegeLogo size={24} className="brightness-200" />
+                  <span className="text-[10px] font-bold text-blue-200">Official Smart Campus Pass</span>
                 </div>
 
-                {/* Bottom Right: MODERN COLLEGE */}
                 <div className="text-right">
-                  <h5 className="font-black text-xs sm:text-[13px] tracking-wider uppercase text-white leading-tight font-sans">
+                  <h5 className="font-black text-xs tracking-wider uppercase text-white leading-tight font-sans">
                     MODERN COLLEGE
                   </h5>
-                  <p className="text-[9px] text-amber-300 font-semibold leading-tight">
+                  <p className="text-[9px] text-cyan-200 font-semibold leading-tight">
                     Computer Science &amp; IT, Nanded
                   </p>
                 </div>
@@ -734,13 +712,13 @@ export const ProfileView: React.FC = () => {
         )}
       </div>
 
-      {/* Action Controls (Flip & Download) */}
-      <div className="flex items-center justify-between gap-2 pt-1 max-w-[500px] mx-auto text-xs font-bold">
+      {/* Action Controls (Flip to Back Side & Save QR) matching reference mockup */}
+      <div className="flex items-center justify-between gap-3 max-w-[500px] mx-auto text-xs font-bold w-full">
         <button
           onClick={() => setActiveSide((prev) => (prev === 'front' ? 'back' : 'front'))}
-          className="flex-1 py-2 px-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl flex items-center justify-center space-x-1.5 shadow-sm transition-all active:scale-95"
+          className="flex-1 py-3 px-4 bg-white border border-blue-200 text-[#1d4ed8] hover:bg-blue-50/50 rounded-2xl flex items-center justify-center space-x-2 shadow-xs transition-all active:scale-95"
         >
-          <RotateCw className="w-3.5 h-3.5 text-blue-600" />
+          <RotateCw className="w-4 h-4 text-[#1d4ed8]" />
           <span>{activeSide === 'front' ? 'Flip to Back Side' : 'Flip to Front Side'}</span>
         </button>
 
@@ -748,63 +726,73 @@ export const ProfileView: React.FC = () => {
           <a
             href={qrDataUrl}
             download={isFaculty ? `ModernCollege_FacultyID_${facultyEmpId}.png` : `ModernCollege_AttendanceQR_${studentRoll}.png`}
-            className="py-2 px-3 bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 rounded-xl flex items-center justify-center space-x-1 transition-all"
+            className="py-3 px-6 bg-[#ebfbf3] border border-emerald-200 text-[#0f766e] hover:bg-emerald-100/70 rounded-2xl flex items-center justify-center space-x-2 shadow-xs transition-all active:scale-95 shrink-0"
             title="Download QR Image"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4 text-[#0f766e]" />
             <span>Save QR</span>
           </a>
         )}
       </div>
 
-      {/* Verified Academic / Faculty Documents */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3 max-w-[500px] mx-auto">
+      {/* Campus Enrollment & Records Card matching reference mockup */}
+      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3 max-w-[500px] mx-auto w-full">
         <div className="flex justify-between items-center">
           <h4 className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{isFaculty ? 'Campus Employment & Staff Records' : 'Campus Enrollment & Records'}</span>
           </h4>
-          <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-            {isFaculty ? `EMP ID: ${facultyEmpId}` : `PRN: ${studentPrn}`}
+          <span className="text-[11px] font-mono font-bold text-[#15803d] bg-[#dcfce7] px-3 py-1 rounded-full border border-emerald-200/60">
+            {isFaculty ? `EMP ID : ${facultyEmpId}` : `PRN : ${studentPrn}`}
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-[11px]">
-          <div className="p-2.5 bg-slate-50 rounded-xl">
-            <span className="text-slate-400 block text-[9px] uppercase font-semibold">
-              {isFaculty ? 'Staff Email' : 'Institutional Email'}
-            </span>
-            <span className="font-semibold text-slate-800 truncate block">
-              {currentUser.email || (isFaculty ? 'faculty@modernclg.edu.in' : currentStudent?.email || 'rahul.shinde@modernclg.edu.in')}
-            </span>
+          <div className="p-3 bg-[#f0f6ff] rounded-2xl border border-blue-100/60 flex items-start space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#1d4ed8] flex items-center justify-center shrink-0">
+              <Mail className="w-4 h-4 text-[#1d4ed8]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider block">
+                {isFaculty ? 'STAFF EMAIL' : 'INSTITUTIONAL EMAIL'}
+              </span>
+              <span className="text-xs font-bold text-slate-900 truncate block mt-0.5">
+                {studentEmail}
+              </span>
+            </div>
           </div>
 
-          <div className="p-2.5 bg-slate-50 rounded-xl">
-            <span className="text-slate-400 block text-[9px] uppercase font-semibold">
-              {isFaculty ? 'Department & Cabin' : 'Affiliated University'}
-            </span>
-            <span className="font-semibold text-slate-800 truncate block">
-              {isFaculty ? `${facultyDepartment} Dept • ${currentUser.cabin || 'Staff Room Block A'}` : 'SRTMUN, Nanded'}
-            </span>
+          <div className="p-3 bg-[#f0f6ff] rounded-2xl border border-blue-100/60 flex items-start space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#1d4ed8] flex items-center justify-center shrink-0">
+              <Building2 className="w-4 h-4 text-[#1d4ed8]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider block">
+                {isFaculty ? 'AFFILIATED DEPT' : 'AFFILIATED UNIVERSITY'}
+              </span>
+              <span className="text-xs font-bold text-slate-900 truncate block mt-0.5">
+                {isFaculty ? `${facultyDepartment} Dept` : 'SRTMUN, Nanded'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Switch to Desktop ERP Portal & Logout */}
-      <div className="space-y-2 pt-2 max-w-[500px] mx-auto">
+      {/* Bottom Actions matching reference mockup */}
+      <div className="space-y-2.5 pt-1 max-w-[500px] mx-auto w-full">
         <button
           onClick={() => setViewMode('desktop')}
-          className="w-full py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs shadow-sm flex items-center justify-center space-x-2 hover:bg-slate-800 transition-all active:scale-95"
+          className="w-full py-3.5 bg-[#0a2356] hover:bg-[#071a42] text-white rounded-2xl font-bold text-xs shadow-md flex items-center justify-center space-x-2 active:scale-95 transition-all"
         >
-          <Laptop className="w-4 h-4 text-blue-400" />
+          <Laptop className="w-4 h-4 text-white" />
           <span>Open Full Desktop ERP Portal</span>
         </button>
 
         <button
           onClick={logout}
-          className="w-full py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-2xl font-semibold text-xs flex items-center justify-center space-x-1 transition-all active:scale-95"
+          className="w-full py-3 bg-[#fee2e2]/70 hover:bg-[#fecaca] text-[#b91c1c] rounded-2xl font-bold text-xs border border-rose-200/80 flex items-center justify-center space-x-2 active:scale-95 transition-all"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4 text-[#b91c1c]" />
           <span>Logout Session</span>
         </button>
       </div>
@@ -853,8 +841,8 @@ export const ProfileView: React.FC = () => {
                       type="button"
                       onClick={() => setEditAvatar(url)}
                       className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${editAvatar === url
-                          ? 'border-blue-600 ring-2 ring-blue-500/30 scale-105'
-                          : 'border-slate-200 hover:border-slate-400'
+                        ? 'border-blue-600 ring-2 ring-blue-500/30 scale-105'
+                        : 'border-slate-200 hover:border-slate-400'
                         }`}
                     >
                       <img src={url} alt="preset" className="w-full h-full object-cover object-top" />

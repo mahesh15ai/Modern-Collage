@@ -28,6 +28,7 @@ import {
   Trophy,
   CreditCard,
   LayoutGrid,
+  GraduationCap,
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
@@ -121,25 +122,25 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
       items: [
         ...(isFaculty
           ? [
-              {
-                id: 'department',
-                label: 'Department & Syllabus',
-                icon: BookOpen,
-                screen: 'materials' as const,
-                badge: 'Syllabus',
-                color: 'text-teal-600 bg-teal-50',
-              },
-            ]
+            {
+              id: 'department',
+              label: 'Department & Syllabus',
+              icon: BookOpen,
+              screen: 'materials' as const,
+              badge: 'Syllabus',
+              color: 'text-teal-600 bg-teal-50',
+            },
+          ]
           : [
-              {
-                id: 'fees',
-                label: 'College Fees & Dues',
-                icon: CreditCard,
-                screen: 'fees' as const,
-                badge: fees.pendingAmount > 0 ? `₹${fees.pendingAmount.toLocaleString('en-IN')}` : 'Paid',
-                color: 'text-amber-600 bg-amber-50',
-              },
-            ]),
+            {
+              id: 'fees',
+              label: 'College Fees & Dues',
+              icon: CreditCard,
+              screen: 'fees' as const,
+              badge: fees.pendingAmount > 0 ? `₹${fees.pendingAmount.toLocaleString('en-IN')}` : 'Paid',
+              color: 'text-amber-600 bg-amber-50',
+            },
+          ]),
         { id: 'notices', label: 'Notice Board & Circulars', icon: Bell, screen: 'notices' as const, badge: notices.length > 0 ? `${notices.length} New` : null, color: 'text-rose-600 bg-rose-50' },
         { id: 'events', label: 'Events, Sports & Fests', icon: Trophy, screen: 'events' as const, badge: events.length > 0 ? `${events.length}` : null, color: 'text-violet-600 bg-violet-50' },
         { id: 'complaints', label: isFaculty ? 'Staff Grievance & Helpdesk' : 'Grievance & Student Support', icon: AlertCircle, screen: 'complaints' as const, badge: null, color: 'text-slate-600 bg-slate-100' },
@@ -255,6 +256,9 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 <ChevronLeft className="w-5 h-5 text-slate-800" />
               </button>
             )}
+            {activeScreen === 'profile' && (
+              <GraduationCap className="w-5 h-5 text-slate-800 shrink-0" />
+            )}
             <h1 className="font-extrabold text-slate-900 text-base">{title}</h1>
           </div>
           <button
@@ -278,30 +282,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
          ========================================================================= */}
       {showNav && !isFullScreenMode && (
         <div className="fixed bottom-3 inset-x-3 max-w-lg mx-auto z-40 pointer-events-none">
-          <nav className="relative h-[72px] bg-white rounded-full shadow-[0_12px_45px_rgba(0,0,0,0.12)] border-t-[2.5px] border-blue-600 border-x border-b border-slate-100/90 px-3 flex items-center justify-between pointer-events-auto">
-            {/* Center Curved Cradle SVG (Smoothly elevates top border around center button) */}
-            <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 w-[110px] h-[16px] pointer-events-none overflow-visible">
-              <svg
-                viewBox="0 0 110 16"
-                className="w-full h-full"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* White filled body that covers the straight border directly under the cradle */}
-                <path
-                  d="M 0 14 C 22 14, 35 1, 55 1 C 75 1, 88 14, 110 14 L 110 20 L 0 20 Z"
-                  fill="#ffffff"
-                />
-                {/* Continuous blue arch stroke matching the top border */}
-                <path
-                  d="M 0 14 C 22 14, 35 1, 55 1 C 75 1, 88 14, 110 14"
-                  stroke="#2563eb"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-
+          <nav className="relative h-[70px] bg-white rounded-full shadow-[0_12px_45px_rgba(0,0,0,0.1)] border border-slate-200/90 px-3 flex items-center justify-between pointer-events-auto">
             {/* 1. Home */}
             <button
               type="button"
@@ -361,13 +342,13 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             </button>
 
             {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button with white halo & starburst) */}
-            <div className="flex-1 flex flex-col items-center justify-center -mt-9 shrink-0 z-10">
+            <div className="flex-1 flex flex-col items-center justify-center -mt-8 shrink-0 z-10">
               {/* Outer halo / cradle ring */}
-              <div className="p-1 bg-white rounded-full shadow-[0_8px_25px_rgba(37,99,235,0.38)] ring-4 ring-white transition-transform hover:scale-105 active:scale-95">
+              <div className="p-1 bg-white rounded-full shadow-[0_8px_25px_rgba(37,99,235,0.35)] ring-4 ring-white transition-transform hover:scale-105 active:scale-95">
                 <button
                   type="button"
                   onClick={() => setShowQrModal(true)}
-                  className="w-[58px] h-[58px] rounded-full bg-gradient-to-tr from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] text-white flex items-center justify-center shadow-inner border-2 border-white/80 group"
+                  className="w-[56px] h-[56px] rounded-full bg-gradient-to-tr from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] text-white flex items-center justify-center shadow-inner border-2 border-white/80 group"
                   title="Attendance QR Pass & Scanner"
                   aria-label="Attendance QR Pass"
                 >
@@ -705,8 +686,9 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                           : `${currentUser.course || 'B.Sc Computer Science'} ${currentUser.semester ? `• ${currentUser.semester}` : ''}`}
                       </p>
                       {isFaculty && currentUser.classTeacherOf && (
-                        <p className="text-[9px] text-amber-300 font-bold truncate mt-0.5">
-                          ⭐ Class Teacher: {currentUser.classTeacherOf}
+                        <p className="text-[9px] text-amber-300 font-bold truncate mt-0.5 flex items-center">
+                          <Award className="w-3 h-3 mr-1 shrink-0 text-amber-300" />
+                          <span>Class Teacher: {currentUser.classTeacherOf}</span>
                         </p>
                       )}
                       {!isFaculty && currentUser.rollNo && (
@@ -717,11 +699,10 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                     </div>
                   </div>
                   <span
-                    className={`text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full border shrink-0 ${
-                      isFaculty
+                    className={`text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full border shrink-0 ${isFaculty
                         ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
                         : 'bg-blue-400/20 text-blue-200 border-blue-400/40'
-                    }`}
+                      }`}
                   >
                     {isFaculty ? 'FACULTY' : 'STUDENT'}
                   </span>
