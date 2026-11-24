@@ -403,8 +403,8 @@ export const ProfileView: React.FC = () => {
         <button
           onClick={() => setActiveSide('front')}
           className={`flex-1 py-2 rounded-full transition-all flex items-center justify-center space-x-1.5 ${activeSide === 'front'
-              ? 'bg-[#1d4ed8] text-white shadow-md'
-              : 'text-slate-700 hover:text-slate-950 font-semibold'
+            ? 'bg-[#1d4ed8] text-white shadow-md'
+            : 'text-slate-700 hover:text-slate-950 font-semibold'
             }`}
         >
           <CreditCard className="w-3.5 h-3.5" />
@@ -414,8 +414,8 @@ export const ProfileView: React.FC = () => {
         <button
           onClick={() => setActiveSide('back')}
           className={`flex-1 py-2 rounded-full transition-all flex items-center justify-center space-x-1.5 ${activeSide === 'back'
-              ? 'bg-[#1d4ed8] text-white shadow-md'
-              : 'text-slate-700 hover:text-slate-950 font-semibold'
+            ? 'bg-[#1d4ed8] text-white shadow-md'
+            : 'text-slate-700 hover:text-slate-950 font-semibold'
             }`}
         >
           <RotateCw className="w-3.5 h-3.5" />
@@ -425,8 +425,8 @@ export const ProfileView: React.FC = () => {
         <button
           onClick={() => setActiveSide('both')}
           className={`flex-1 py-2 rounded-full transition-all flex items-center justify-center space-x-1.5 ${activeSide === 'both'
-              ? 'bg-[#1d4ed8] text-white shadow-md'
-              : 'text-slate-700 hover:text-slate-950 font-semibold'
+            ? 'bg-[#1d4ed8] text-white shadow-md'
+            : 'text-slate-700 hover:text-slate-950 font-semibold'
             }`}
         >
           <IdCard className="w-3.5 h-3.5" />

@@ -57,6 +57,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
     result,
     fees,
     notices,
+    unreadNoticesCount,
     events,
     recordAttendance,
     isDrawerOpen,
@@ -141,7 +142,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               color: 'text-amber-600 bg-amber-50',
             },
           ]),
-        { id: 'notices', label: 'Notice Board & Circulars', icon: Bell, screen: 'notices' as const, badge: notices.length > 0 ? `${notices.length} New` : null, color: 'text-rose-600 bg-rose-50' },
+        { id: 'notices', label: 'Notice Board & Circulars', icon: Bell, screen: 'notices' as const, badge: unreadNoticesCount > 0 ? `${unreadNoticesCount} New` : null, color: 'text-rose-600 bg-rose-50' },
         { id: 'events', label: 'Events, Sports & Fests', icon: Trophy, screen: 'events' as const, badge: events.length > 0 ? `${events.length}` : null, color: 'text-violet-600 bg-violet-50' },
         { id: 'complaints', label: isFaculty ? 'Staff Grievance & Helpdesk' : 'Grievance & Student Support', icon: AlertCircle, screen: 'complaints' as const, badge: null, color: 'text-slate-600 bg-slate-100' },
       ],
@@ -379,8 +380,10 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                     : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
                     }`}
                 />
-                {/* Red notification dot */}
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#ef4444] border-2 border-white rounded-full shadow-sm" />
+                {/* Red notification dot (only shown when unread notices exist) */}
+                {unreadNoticesCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#ef4444] border-2 border-white rounded-full shadow-sm animate-pulse" />
+                )}
               </div>
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'notices'

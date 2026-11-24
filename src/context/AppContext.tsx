@@ -175,6 +175,11 @@ interface AppContextType {
   materials: StudyMaterial[];
   fees: FeeSummary;
   notices: NoticeItem[];
+  readNoticeIds: string[];
+  unreadNoticesCount: number;
+  markNoticeAsRead: (noticeId: string) => void;
+  markAllNoticesAsRead: () => void;
+  toggleNoticeRead: (noticeId: string) => void;
   events: EventItem[];
   complaints: ComplaintItem[];
   // Realtime Actions
@@ -341,6 +346,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [materials, setMaterials] = useState<StudyMaterial[]>(MOCK_STUDY_MATERIALS);
   const [fees, setFees] = useState<FeeSummary>(MOCK_FEES);
   const [notices, setNotices] = useState<NoticeItem[]>(MOCK_NOTICES);
+  const [readNoticeIds, setReadNoticeIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smart_campus_read_notices');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const markNoticeAsRead = (noticeId: string) => {
+    setReadNoticeIds((prev) => {
+      if (prev.includes(noticeId)) return prev;
+      const next = [...prev, noticeId];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('smart_campus_read_notices', JSON.stringify(next));
+        } catch (e) {}
+      }
+      return next;
+    });
+  };
+
+  const markAllNoticesAsRead = () => {
+    const allIds = notices.map((n) => n.id);
+    setReadNoticeIds(allIds);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('smart_campus_read_notices', JSON.stringify(allIds));
+      } catch (e) {}
+    }
+  };
+
+  const toggleNoticeRead = (noticeId: string) => {
+    setReadNoticeIds((prev) => {
+      const next = prev.includes(noticeId)
+        ? prev.filter((id) => id !== noticeId)
+        : [...prev, noticeId];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('smart_campus_read_notices', JSON.stringify(next));
+        } catch (e) {}
+      }
+      return next;
+    });
+  };
+
+  const unreadNoticesCount = notices.filter((n) => !readNoticeIds.includes(n.id)).length;
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
   const [complaints, setComplaints] = useState<ComplaintItem[]>(MOCK_COMPLAINTS);
   const [dispatchedEmails, setDispatchedEmails] = useState<DispatchedEmail[]>([]);
@@ -1246,6 +1299,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         materials,
         fees,
         notices,
+        readNoticeIds,
+        unreadNoticesCount,
+        markNoticeAsRead,
+        markAllNoticesAsRead,
+        toggleNoticeRead,
         events,
         complaints,
         publishNotice,

@@ -27,6 +27,7 @@ export const StudentDashboard: React.FC = () => {
     result,
     fees,
     notices,
+    unreadNoticesCount,
     events,
     timetable,
     materials,
@@ -99,7 +100,9 @@ export const StudentDashboard: React.FC = () => {
             aria-label="View Notices"
           >
             <Bell className="w-4 h-4 text-slate-800" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full ring-2 ring-white" />
+            {unreadNoticesCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-600 rounded-full ring-2 ring-white animate-pulse" />
+            )}
           </button>
           <div
             onClick={() => setActiveScreen('profile')}
@@ -280,9 +283,11 @@ export const StudentDashboard: React.FC = () => {
               <Bell className="w-5 h-5 text-rose-600" />
             </div>
             <div className="text-xl font-extrabold text-slate-900">
-              {notices.length}
+              {unreadNoticesCount}
             </div>
-            <div className="text-[11px] text-slate-500 font-medium">Circulars &amp; Notices</div>
+            <div className="text-[11px] text-slate-500 font-medium">
+              {unreadNoticesCount === 0 ? 'Notices (All Read)' : 'Unread Circulars'}
+            </div>
           </div>
         </div>
       ) : (
@@ -338,9 +343,11 @@ export const StudentDashboard: React.FC = () => {
               <Bell className="w-5 h-5" />
             </div>
             <div className="text-xl font-extrabold text-slate-900">
-              {notices.length}
+              {unreadNoticesCount}
             </div>
-            <div className="text-[11px] text-slate-500 font-medium">Notices</div>
+            <div className="text-[11px] text-slate-500 font-medium">
+              {unreadNoticesCount === 0 ? 'Notices (All Read)' : 'Unread Notices'}
+            </div>
           </div>
         </div>
       )}

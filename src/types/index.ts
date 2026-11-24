@@ -249,6 +249,7 @@ export interface NoticeItem {
   category: 'Academic' | 'Exam' | 'General' | 'Urgent';
   targetRole: 'all' | 'students' | 'faculty';
   pinned?: boolean;
+  isRead?: boolean;
 }
 
 // 13. Events & Activities
