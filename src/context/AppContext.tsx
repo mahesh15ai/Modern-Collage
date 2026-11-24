@@ -478,7 +478,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const saved = localStorage.getItem('smart_campus_read_notices');
         if (saved) return JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -490,7 +490,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('smart_campus_read_notices', JSON.stringify(next));
-        } catch (e) {}
+        } catch (e) { }
       }
       return next;
     });
@@ -502,7 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('smart_campus_read_notices', JSON.stringify(allIds));
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
@@ -514,7 +514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('smart_campus_read_notices', JSON.stringify(next));
-        } catch (e) {}
+        } catch (e) { }
       }
       return next;
     });
@@ -618,7 +618,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     });
 
@@ -656,7 +656,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     });
 

@@ -686,17 +686,17 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 <CollegeLogo size={44} className="shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center space-x-1.5">
-                    <h3 className="font-extrabold text-sm text-white tracking-wide truncate">
+                    <h3 className="font-extrabold text-xs sm:text-sm text-white tracking-wide leading-tight">
                       MODERN COLLEGE
                     </h3>
                   </div>
-                  <p className="text-[10px] text-blue-200 font-medium leading-tight">
-                    Ganeshkhind, Pune • Autonomous
+                  <p className="text-[10px] text-blue-200 font-medium leading-tight mt-0.5">
+                    Computer Science &amp; IT, Nanded
                   </p>
                   <div className="mt-1 flex items-center space-x-1.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-[9px] font-bold text-emerald-300 tracking-wider uppercase">
-                      NAAC &apos;A+&apos; Grade • SPPU
+                      Affiliated by SRTMUN
                     </span>
                   </div>
                 </div>
@@ -831,7 +831,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
 
               <div className="pt-0.5 text-center">
                 <span className="text-[9px] text-slate-400 font-medium">
-                  Modern College Autonomous Pune • v2.4
+                  Modern College of CS &amp; IT, Nanded • SRTMUN Affiliated
                 </span>
               </div>
             </div>

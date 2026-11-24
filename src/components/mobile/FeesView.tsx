@@ -89,11 +89,10 @@ export const FeesView: React.FC = () => {
 
                 <div className="flex items-center space-x-2">
                   <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                      item.status === 'Paid'
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${item.status === 'Paid'
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-amber-100 text-amber-700'
-                    }`}
+                      }`}
                   >
                     {item.status}
                   </span>

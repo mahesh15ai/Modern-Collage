@@ -504,7 +504,7 @@ export const ProfileView: React.FC = () => {
                   <div className="flex items-center space-x-1.5 mt-0.5">
                     <span className="w-6 h-[1px] bg-white/50 inline-block" />
                     <span className="text-[8.5px] sm:text-[9.5px] font-bold text-cyan-200 uppercase tracking-widest">
-                      {isFaculty ? 'Autonomous • Staff Pass' : 'SRTMUN AFFILIATED'}
+                      {isFaculty ? 'SRTMUN AFFILIATED • FACULTY' : 'SRTMUN AFFILIATED'}
                     </span>
                     <span className="w-6 h-[1px] bg-white/50 inline-block" />
                   </div>
