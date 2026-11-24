@@ -25,6 +25,8 @@ export interface UserProfile {
   cabin?: string;
   employeeId?: string;
   qualification?: string;
+  classTeacherOf?: string;
+  subjectsAssigned?: string[];
 }
 
 // 1. Admin & College Overview
@@ -77,6 +79,8 @@ export interface FacultyRecord {
   workloadHours: number;
   subjectsAssigned: string[];
   status: 'Active' | 'On Leave';
+  classTeacherOf?: string;
+  cabin?: string;
 }
 
 // 4. Department & Course
@@ -176,6 +180,9 @@ export interface TimetableSlot {
   subjectName: string;
   subjectCode: string;
   facultyName: string;
+  facultyId?: string;
+  course?: string;
+  semester?: string;
   startTime: string;
   endTime: string;
   room: string;

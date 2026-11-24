@@ -70,6 +70,10 @@ import {
   saveStudentResultToFirestore,
   saveStudyMaterialToFirestore,
   saveAttendanceToFirestore,
+  updateFacultyInFirestore,
+  subscribeToTimetable,
+  saveTimetableSlotToFirestore,
+  deleteTimetableSlotFromFirestore,
 } from '@/services/firestoreService';
 
 export type MobileScreen =
@@ -176,6 +180,10 @@ interface AppContextType {
   // Realtime Actions
   updateStudent: (student: StudentRecord) => Promise<void>;
   deleteStudent: (studentId: string) => Promise<void>;
+  updateFaculty: (faculty: FacultyRecord) => Promise<void>;
+  addTimetableSlot: (slot: Omit<TimetableSlot, 'id'>) => Promise<void>;
+  updateTimetableSlot: (slot: TimetableSlot) => Promise<void>;
+  deleteTimetableSlot: (slotId: string) => Promise<void>;
   publishNotice: (
     title: string,
     category: NoticeItem['category'],
@@ -235,7 +243,100 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [attendance, setAttendance] = useState<AttendanceSummary>(MOCK_ATTENDANCE);
   const [result, setResult] = useState<StudentResult>(MOCK_RESULT);
   const [resultsList, setResultsList] = useState<StudentResult[]>([]);
-  const [timetable] = useState<TimetableSlot[]>(MOCK_TIMETABLE);
+  const [timetable, setTimetable] = useState<TimetableSlot[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smart_campus_timetable');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'SLOT-001',
+        day: 'Mon',
+        subjectName: 'Data Structures & Algorithms',
+        subjectCode: 'CS-301',
+        facultyName: 'NITISH',
+        course: 'B.Sc Computer Science',
+        semester: 'Semester V (TY)',
+        startTime: '09:00 AM',
+        endTime: '10:00 AM',
+        room: 'Hall 104',
+        type: 'Lecture',
+        category: 'CS',
+      },
+      {
+        id: 'SLOT-002',
+        day: 'Mon',
+        subjectName: 'Database Management Lab',
+        subjectCode: 'CS-302P',
+        facultyName: 'NITISH',
+        course: 'B.Sc Computer Science',
+        semester: 'Semester V (TY)',
+        startTime: '11:15 AM',
+        endTime: '01:15 PM',
+        room: 'Computer Lab 2',
+        type: 'Lab',
+        category: 'CS',
+      },
+      {
+        id: 'SLOT-003',
+        day: 'Tue',
+        subjectName: 'Data Structures & Algorithms',
+        subjectCode: 'CS-301',
+        facultyName: 'NITISH',
+        course: 'B.Sc Computer Science',
+        semester: 'Semester V (TY)',
+        startTime: '10:00 AM',
+        endTime: '11:00 AM',
+        room: 'Hall 104',
+        type: 'Lecture',
+        category: 'CS',
+      },
+      {
+        id: 'SLOT-004',
+        day: 'Wed',
+        subjectName: 'Database Management Systems',
+        subjectCode: 'CS-302',
+        facultyName: 'NITISH',
+        course: 'B.Sc Computer Science',
+        semester: 'Semester V (TY)',
+        startTime: '09:00 AM',
+        endTime: '10:00 AM',
+        room: 'Hall 105',
+        type: 'Lecture',
+        category: 'CS',
+      },
+      {
+        id: 'SLOT-005',
+        day: 'Thu',
+        subjectName: 'Software Engineering & Project',
+        subjectCode: 'CS-304',
+        facultyName: 'NITISH',
+        course: 'B.Sc Computer Science',
+        semester: 'Semester V (TY)',
+        startTime: '11:15 AM',
+        endTime: '12:15 PM',
+        room: 'Seminar Hall',
+        type: 'Tutorial',
+        category: 'CS',
+      },
+      {
+        id: 'SLOT-006',
+        day: 'Fri',
+        subjectName: 'Web Technology & Frameworks',
+        subjectCode: 'CS-303',
+        facultyName: 'Dr. Snehal Joshi',
+        course: 'B.Sc Computer Science',
+        semester: 'Semester V (TY)',
+        startTime: '10:00 AM',
+        endTime: '11:00 AM',
+        room: 'Hall 102',
+        type: 'Lecture',
+        category: 'IT',
+      },
+    ];
+  });
   const [assignments] = useState<Assignment[]>(MOCK_ASSIGNMENTS);
   const [materials, setMaterials] = useState<StudyMaterial[]>(MOCK_STUDY_MATERIALS);
   const [fees, setFees] = useState<FeeSummary>(MOCK_FEES);
@@ -257,6 +358,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (!user.designation) user.designation = 'Assistant Professor';
             if (!user.department) user.department = 'Computer Science';
             if (!user.employeeId) user.employeeId = user.id?.startsWith('FAC') ? user.id : 'FAC-2024-009';
+            if (!user.subjectsAssigned || user.subjectsAssigned.length === 0) {
+              user.subjectsAssigned = ['Data Structures & Algorithms', 'Database Management Systems'];
+            }
+            if (!user.classTeacherOf) user.classTeacherOf = 'TY B.Sc Computer Science';
+
+            // Ensure faculty is in facultyList so Admin sees them
+            setFacultyList((prev) => {
+              const exists = prev.some(
+                (f) => f.id === user.id || f.name.toLowerCase() === user.name.toLowerCase()
+              );
+              if (!exists) {
+                const facRec: FacultyRecord = {
+                  id: user.id || 'FAC-2024-009',
+                  name: user.name,
+                  employeeId: user.employeeId || 'FAC-2024-009',
+                  email: user.email || 'faculty@modernclg.edu.in',
+                  phone: user.phone || '+91 94220 12345',
+                  department: user.department || 'Computer Science',
+                  designation: user.designation || 'Assistant Professor',
+                  qualification: user.qualification || 'M.Sc., Ph.D',
+                  workloadHours: user.workloadHours || 16,
+                  subjectsAssigned: user.subjectsAssigned || ['Data Structures & Algorithms'],
+                  classTeacherOf: user.classTeacherOf || 'TY B.Sc Computer Science',
+                  status: 'Active',
+                };
+                return [facRec, ...prev];
+              }
+              return prev;
+            });
           }
           setCurrentUser(user);
           setRoleState(user.role);
@@ -324,6 +454,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
+    const unsubTimetable = subscribeToTimetable((remoteSlots) => {
+      if (remoteSlots && remoteSlots.length > 0) {
+        setTimetable(remoteSlots);
+        localStorage.setItem('smart_campus_timetable', JSON.stringify(remoteSlots));
+      }
+    });
+
     return () => {
       unsubscribeAuth();
       unsubStudents();
@@ -333,6 +470,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubComplaints();
       unsubResults();
       unsubMaterials();
+      unsubTimetable();
     };
   }, []);
 
@@ -353,17 +491,92 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);
-    const updatedUser =
-      newRole === 'student'
-        ? MOCK_STUDENT_USER
-        : newRole === 'faculty'
-          ? MOCK_FACULTY_USER
-          : MOCK_ADMIN_USER;
+    let updatedUser: UserProfile;
 
-    setCurrentUser(updatedUser);
-    if (newRole === 'admin') {
+    if (newRole === 'faculty') {
+      const match = facultyList.find(
+        (f) =>
+          f.id === currentUser.id ||
+          f.name?.toLowerCase() === currentUser.name?.toLowerCase() ||
+          (currentUser.name && f.name?.toLowerCase().includes(currentUser.name?.toLowerCase()))
+      );
+
+      if (match) {
+        updatedUser = {
+          id: match.id,
+          name: match.name,
+          email: match.email || currentUser.email || 'faculty@modernclg.edu.in',
+          role: 'faculty',
+          department: match.department || 'Computer Science',
+          designation: match.designation || 'Assistant Professor',
+          employeeId: match.employeeId || 'FAC-2024-009',
+          phone: match.phone || '+91 94220 12345',
+          qualification: match.qualification || 'M.Sc., Ph.D',
+          classTeacherOf: match.classTeacherOf || 'TY B.Sc Computer Science',
+          subjectsAssigned: match.subjectsAssigned || ['Data Structures & Algorithms', 'Database Systems'],
+          avatar: currentUser.avatar || MOCK_FACULTY_USER.avatar,
+        };
+      } else {
+        const facName =
+          currentUser.name && currentUser.name !== 'Student' && currentUser.name !== 'Rahul Ramesh Shinde'
+            ? currentUser.name
+            : 'NITISH';
+        updatedUser = {
+          ...MOCK_FACULTY_USER,
+          name: facName,
+          role: 'faculty',
+          designation: 'Assistant Professor',
+          department: 'Computer Science',
+          employeeId: 'FAC-2024-009',
+          classTeacherOf: 'TY B.Sc Computer Science',
+          subjectsAssigned: ['Data Structures & Algorithms', 'Database Management Systems'],
+          avatar: currentUser.avatar || MOCK_FACULTY_USER.avatar,
+        };
+      }
+    } else if (newRole === 'student') {
+      const match = students.find(
+        (s) =>
+          s.id === currentUser.id ||
+          s.name?.toLowerCase() === currentUser.name?.toLowerCase()
+      );
+
+      if (match) {
+        updatedUser = {
+          id: match.id,
+          name: match.name,
+          email: match.email || currentUser.email || 'student@modernclg.edu.in',
+          role: 'student',
+          rollNo: match.rollNo,
+          prn: match.prn,
+          department: match.department,
+          course: match.course,
+          semester: match.semester,
+          phone: match.phone,
+          avatar: currentUser.avatar || MOCK_STUDENT_USER.avatar,
+        };
+      } else {
+        const stuName =
+          currentUser.name && currentUser.name !== 'Faculty Member' && currentUser.name !== 'NITISH'
+            ? currentUser.name
+            : 'Rahul Ramesh Shinde';
+        updatedUser = {
+          ...MOCK_STUDENT_USER,
+          name: stuName,
+          role: 'student',
+          course: 'B.Sc Computer Science',
+          semester: 'Semester V (TY)',
+          rollNo: 'CS-329',
+          prn: '2024015200678912',
+          department: 'Computer Science',
+          avatar: currentUser.avatar || MOCK_STUDENT_USER.avatar,
+        };
+      }
+    } else {
+      updatedUser = MOCK_ADMIN_USER;
       setViewMode('desktop');
     }
+
+    setCurrentUser(updatedUser);
     localStorage.setItem(
       'smart_campus_session',
       JSON.stringify({ user: updatedUser, timestamp: Date.now() })
@@ -567,6 +780,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return emailDispatch;
   };
 
+  // CRUD: Update Faculty Member (Class Teacher, Subjects, Designation, Workload)
+  const updateFaculty = async (updatedFaculty: FacultyRecord): Promise<void> => {
+    setFacultyList((prev) => {
+      const updated = prev.map((f) => (f.id === updatedFaculty.id ? updatedFaculty : f));
+      localStorage.setItem('smart_campus_faculty', JSON.stringify(updated));
+      return updated;
+    });
+
+    // If currently logged-in user is this faculty, update currentUser live
+    if (
+      currentUser.id === updatedFaculty.id ||
+      currentUser.email?.toLowerCase() === updatedFaculty.email?.toLowerCase() ||
+      currentUser.name.toLowerCase() === updatedFaculty.name.toLowerCase()
+    ) {
+      const updatedUser: UserProfile = {
+        ...currentUser,
+        name: updatedFaculty.name,
+        department: updatedFaculty.department,
+        designation: updatedFaculty.designation,
+        employeeId: updatedFaculty.employeeId,
+        phone: updatedFaculty.phone,
+        qualification: updatedFaculty.qualification,
+        classTeacherOf: updatedFaculty.classTeacherOf,
+        subjectsAssigned: updatedFaculty.subjectsAssigned,
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem(
+        'smart_campus_session',
+        JSON.stringify({ user: updatedUser, timestamp: Date.now() })
+      );
+    }
+
+    await updateFacultyInFirestore(updatedFaculty).catch((err) =>
+      console.warn('Firestore updateFaculty note:', err)
+    );
+  };
+
+  // CRUD: Add New Timetable Slot
+  const addTimetableSlot = async (slotData: Omit<TimetableSlot, 'id'>): Promise<void> => {
+    const newSlot: TimetableSlot = {
+      ...slotData,
+      id: `SLOT-${Date.now().toString().slice(-4)}`,
+    };
+
+    setTimetable((prev) => {
+      const updated = [...prev, newSlot];
+      localStorage.setItem('smart_campus_timetable', JSON.stringify(updated));
+      return updated;
+    });
+
+    await saveTimetableSlotToFirestore(newSlot).catch((err) =>
+      console.warn('Firestore addTimetableSlot note:', err)
+    );
+  };
+
+  // CRUD: Update Timetable Slot
+  const updateTimetableSlot = async (updatedSlot: TimetableSlot): Promise<void> => {
+    setTimetable((prev) => {
+      const updated = prev.map((s) => (s.id === updatedSlot.id ? updatedSlot : s));
+      localStorage.setItem('smart_campus_timetable', JSON.stringify(updated));
+      return updated;
+    });
+
+    await saveTimetableSlotToFirestore(updatedSlot).catch((err) =>
+      console.warn('Firestore updateTimetableSlot note:', err)
+    );
+  };
+
+  // CRUD: Delete Timetable Slot
+  const deleteTimetableSlot = async (slotId: string): Promise<void> => {
+    setTimetable((prev) => {
+      const updated = prev.filter((s) => s.id !== slotId);
+      localStorage.setItem('smart_campus_timetable', JSON.stringify(updated));
+      return updated;
+    });
+
+    await deleteTimetableSlotFromFirestore(slotId).catch((err) =>
+      console.warn('Firestore deleteTimetableSlot note:', err)
+    );
+  };
+
   // CRUD: Update Student Record
   const updateStudent = async (updatedStudent: StudentRecord) => {
     setStudents((prev) =>
@@ -612,7 +906,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       department: newFaculty.department,
       designation: newFaculty.designation,
       workloadHours: newFaculty.workloadHours,
-      cabin: 'Staff Quarters Block A',
+      qualification: newFaculty.qualification,
+      classTeacherOf: newFaculty.classTeacherOf,
+      subjectsAssigned: newFaculty.subjectsAssigned,
+      cabin: newFaculty.cabin || 'Staff Quarters Block A',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
     };
 
@@ -867,6 +1164,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateStudent,
         deleteStudent,
         registerFaculty,
+        updateFaculty,
+        addTimetableSlot,
+        updateTimetableSlot,
+        deleteTimetableSlot,
         dispatchedEmails,
         syncToFirebase,
         isSyncing,

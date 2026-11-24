@@ -62,6 +62,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
     setIsDrawerOpen,
     setViewMode,
     logout,
+    setRole,
   } = useApp();
 
   const isFullScreenMode = activeScreen === 'splash' || activeScreen === 'login';
@@ -686,6 +687,59 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                       NAAC &apos;A+&apos; Grade • SPPU
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* User Profile Card & 1-Tap Role Switcher */}
+              <div className="mt-3.5 pt-3 border-t border-white/15">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-7 h-7 rounded-lg overflow-hidden border border-white/30 shrink-0">
+                      <img src={currentUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                      <p className="text-[9px] text-blue-200 truncate">
+                        {isFaculty ? (currentUser.designation || 'Faculty Member') : (currentUser.course || 'Student')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                    isFaculty ? 'bg-amber-400/20 text-amber-300 border-amber-400/30' : 'bg-blue-400/20 text-blue-200 border-blue-400/30'
+                  }`}>
+                    {isFaculty ? 'FACULTY' : 'STUDENT'}
+                  </span>
+                </div>
+
+                {/* 1-Tap Mode Switcher */}
+                <div className="bg-black/25 p-1 rounded-xl flex items-center justify-between text-xs font-bold border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('student');
+                      setActiveScreen('dashboard');
+                      setIsDrawerOpen(false);
+                    }}
+                    className={`flex-1 py-1.5 rounded-lg text-[11px] transition-all flex items-center justify-center space-x-1 ${
+                      !isFaculty ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-200 hover:text-white'
+                    }`}
+                  >
+                    <span>🎓 Student</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('faculty');
+                      setActiveScreen('dashboard');
+                      setIsDrawerOpen(false);
+                    }}
+                    className={`flex-1 py-1.5 rounded-lg text-[11px] transition-all flex items-center justify-center space-x-1 ${
+                      isFaculty ? 'bg-amber-400 text-slate-900 shadow-sm' : 'text-blue-200 hover:text-white'
+                    }`}
+                  >
+                    <span>👨‍🏫 Faculty</span>
+                  </button>
                 </div>
               </div>
             </div>

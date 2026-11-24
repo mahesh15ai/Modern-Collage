@@ -25,10 +25,47 @@ export const StudentDashboard: React.FC = () => {
     fees,
     notices,
     events,
+    timetable,
+    materials,
+    facultyList,
     setActiveScreen,
     setViewMode,
     setIsDrawerOpen,
   } = useApp();
+
+  // Find linked faculty record for real academic duties
+  const linkedFaculty = facultyList.find(
+    (f) =>
+      f.id === currentUser.id ||
+      f.name?.toLowerCase() === currentUser.name?.toLowerCase() ||
+      (currentUser.email && f.email?.toLowerCase() === currentUser.email?.toLowerCase())
+  );
+
+  const myClassTeacherOf = currentUser.classTeacherOf || linkedFaculty?.classTeacherOf;
+  const mySubjectsAssigned =
+    currentUser.subjectsAssigned && currentUser.subjectsAssigned.length > 0
+      ? currentUser.subjectsAssigned
+      : linkedFaculty?.subjectsAssigned || ['Data Structures & Algorithms', 'Database Systems'];
+
+  // Real timetable calculations for this faculty
+  const myWeeklySlots = timetable.filter((slot) => {
+    const facNameMatch =
+      slot.facultyName?.toLowerCase().includes(currentUser.name?.toLowerCase()) ||
+      (slot.facultyId && slot.facultyId === currentUser.id);
+    const subMatch = mySubjectsAssigned.some(
+      (sub) =>
+        sub.toLowerCase().includes(slot.subjectName?.toLowerCase()) ||
+        slot.subjectName?.toLowerCase().includes(sub.toLowerCase())
+    );
+    return facNameMatch || subMatch;
+  });
+
+  const dayMap: ('Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat')[] = [
+    'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+  ];
+  const currentDayName = dayMap[new Date().getDay()] || 'Mon';
+  const effectiveDay = currentDayName === 'Sun' ? 'Mon' : currentDayName;
+  const myTodaySlots = myWeeklySlots.filter((slot) => slot.day === effectiveDay);
 
   return (
     <div className="w-full min-h-full p-4 space-y-4 font-sans relative">
@@ -101,32 +138,66 @@ export const StudentDashboard: React.FC = () => {
           </div>
         </div>
       ) : currentUser.role === 'faculty' ? (
-        <div
-          onClick={() => setActiveScreen('profile')}
-          className="bg-gradient-to-r from-[#071D3A] via-[#0E2D58] to-[#1E3A8A] rounded-2xl p-4 text-white shadow-md flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all active:scale-[0.98]"
-          title="Click to view Faculty ID Card"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20 shrink-0">
-              <BookOpen className="w-6 h-6 text-amber-300" />
+        <div className="space-y-2.5">
+          <div
+            onClick={() => setActiveScreen('profile')}
+            className="bg-gradient-to-r from-[#071D3A] via-[#0E2D58] to-[#1E3A8A] rounded-2xl p-4 text-white shadow-md flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all active:scale-[0.98]"
+            title="Click to view Faculty ID Card"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20 shrink-0">
+                <BookOpen className="w-6 h-6 text-amber-300" />
+              </div>
+              <div>
+                <h3 className="font-bold text-xs tracking-wide">
+                  {currentUser.designation || linkedFaculty?.designation || 'Assistant Professor'}
+                </h3>
+                <p className="text-[11px] text-blue-200 font-medium">
+                  {currentUser.department || linkedFaculty?.department || 'Computer Science'} Dept • Faculty Staff
+                </p>
+                {myClassTeacherOf && (
+                  <div className="mt-1 flex items-center space-x-1">
+                    <span className="text-[10px] bg-amber-400 text-slate-900 font-black px-2 py-0.5 rounded-full inline-flex items-center">
+                      ⭐ Class Teacher: {myClassTeacherOf}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-xs tracking-wide">
-                {currentUser.designation || 'Assistant Professor / Faculty'}
-              </h3>
-              <p className="text-[11px] text-blue-200 font-medium">
-                {currentUser.department ? `${currentUser.department} Dept` : 'Computer Science Department'} • Staff
-              </p>
+            <div className="text-right shrink-0 flex flex-col items-end">
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full font-mono font-bold border border-amber-400/30">
+                {currentUser.employeeId || linkedFaculty?.employeeId || currentUser.id || 'FACULTY'}
+              </span>
+              <span className="text-[9px] text-blue-200 font-semibold mt-0.5">
+                Faculty ID 🪪
+              </span>
             </div>
           </div>
-          <div className="text-right shrink-0 flex flex-col items-end">
-            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full font-mono font-bold border border-amber-400/30">
-              {currentUser.employeeId || currentUser.id || 'FACULTY'}
-            </span>
-            <span className="text-[9px] text-blue-200 font-semibold mt-0.5">
-              Faculty ID 🪪
-            </span>
-          </div>
+
+          {/* Real Assigned Subjects Chips */}
+          {mySubjectsAssigned && mySubjectsAssigned.length > 0 && (
+            <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  My Assigned Teaching Subjects (विषय वाटप)
+                </span>
+                <span className="text-[10px] font-bold text-blue-600">
+                  {mySubjectsAssigned.length} Subjects
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {mySubjectsAssigned.map((sub, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-[11px] font-semibold flex items-center space-x-1"
+                  >
+                    <span>📘</span>
+                    <span>{sub}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
@@ -154,7 +225,7 @@ export const StudentDashboard: React.FC = () => {
       {/* 4 Stat Cards Grid */}
       {currentUser.role === 'faculty' ? (
         <div className="grid grid-cols-2 gap-3">
-          {/* 1. Today's Assigned Lectures */}
+          {/* 1. Today's Assigned Lectures (REAL-TIME FROM TIMETABLE) */}
           <div
             onClick={() => setActiveScreen('timetable')}
             className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-98"
@@ -163,26 +234,30 @@ export const StudentDashboard: React.FC = () => {
               <Calendar className="w-5 h-5" />
             </div>
             <div className="text-xl font-extrabold text-slate-900">
-              4 Lectures
+              {myTodaySlots.length} Lectures
             </div>
-            <div className="text-[11px] text-slate-500 font-medium">Today&apos;s Schedule</div>
+            <div className="text-[11px] text-slate-500 font-medium">
+              Today ({effectiveDay}) • {myWeeklySlots.length} Weekly
+            </div>
           </div>
 
-          {/* 2. Class Attendance Average */}
+          {/* 2. Class Teacher Duty or Department Allocation (REAL-TIME) */}
           <div
-            onClick={() => setActiveScreen('attendance')}
+            onClick={() => setActiveScreen('timetable')}
             className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-98"
           >
-            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2">
-              <CheckCircle2 className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
             </div>
-            <div className="text-xl font-extrabold text-slate-900">
-              88% Avg
+            <div className="text-sm font-black text-slate-900 truncate" title={myClassTeacherOf || 'Faculty Staff'}>
+              {myClassTeacherOf || 'CS & IT Dept'}
             </div>
-            <div className="text-[11px] text-slate-500 font-medium">Class Attendance</div>
+            <div className="text-[11px] text-slate-500 font-medium">
+              {myClassTeacherOf ? '⭐ Class Teacher' : 'Faculty Member'}
+            </div>
           </div>
 
-          {/* 3. Study Materials Uploaded */}
+          {/* 3. Study Materials Uploaded (REAL-TIME FROM REPO) */}
           <div
             onClick={() => setActiveScreen('materials')}
             className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-98"
@@ -191,18 +266,18 @@ export const StudentDashboard: React.FC = () => {
               <BookOpen className="w-5 h-5" />
             </div>
             <div className="text-xl font-extrabold text-slate-900">
-              12 Files
+              {materials.length} Files
             </div>
-            <div className="text-[11px] text-slate-500 font-medium">Study Materials</div>
+            <div className="text-[11px] text-slate-500 font-medium">Study Materials Repo</div>
           </div>
 
-          {/* 4. Circulars & Notices */}
+          {/* 4. Circulars & Notices (REAL-TIME FROM CLOUD) */}
           <div
             onClick={() => setActiveScreen('notices')}
             className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-98"
           >
-            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2">
-              <Bell className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-2">
+              <Bell className="w-5 h-5 text-rose-600" />
             </div>
             <div className="text-xl font-extrabold text-slate-900">
               {notices.length}

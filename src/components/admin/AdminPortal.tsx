@@ -44,10 +44,11 @@ import {
   QrCode,
   Printer,
   Menu,
+  BookOpen,
 } from 'lucide-react';
 import { DispatchedEmail } from '@/context/AppContext';
 import { clearAllLocalCaches } from '@/services/authService';
-import { StudentRecord } from '@/types';
+import { StudentRecord, FacultyRecord, TimetableSlot } from '@/types';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -77,6 +78,10 @@ export const AdminPortal: React.FC = () => {
     updateStudent,
     deleteStudent,
     registerFaculty,
+    updateFaculty,
+    addTimetableSlot,
+    updateTimetableSlot,
+    deleteTimetableSlot,
     dispatchedEmails,
     login,
     syncToFirebase,
@@ -177,8 +182,39 @@ export const AdminPortal: React.FC = () => {
   const [facQual, setFacQual] = useState('M.Tech / M.Sc (CS)');
   const [facWorkload, setFacWorkload] = useState(16);
   const [facSubjects, setFacSubjects] = useState('Data Structures, Web Tech');
+  const [facClassTeacher, setFacClassTeacher] = useState('None');
   const [facPassword, setFacPassword] = useState('');
   const [isSubmittingFac, setIsSubmittingFac] = useState(false);
+
+  // Edit Faculty & Assign Duties Modal State
+  const [showEditFacultyModal, setShowEditFacultyModal] = useState(false);
+  const [editingFaculty, setEditingFaculty] = useState<FacultyRecord | null>(null);
+  const [editFacName, setEditFacName] = useState('');
+  const [editFacDept, setEditFacDept] = useState('');
+  const [editFacDesignation, setEditFacDesignation] = useState('');
+  const [editFacEmpId, setEditFacEmpId] = useState('');
+  const [editFacPhone, setEditFacPhone] = useState('');
+  const [editFacQual, setEditFacQual] = useState('');
+  const [editFacWorkload, setEditFacWorkload] = useState(16);
+  const [editFacSubjects, setEditFacSubjects] = useState('');
+  const [editFacClassTeacher, setEditFacClassTeacher] = useState('None');
+  const [isSavingEditFaculty, setIsSavingEditFaculty] = useState(false);
+
+  // Timetable Slot Allocation Modal State
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
+  const [slotDay, setSlotDay] = useState<'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat'>('Mon');
+  const [slotSubject, setSlotSubject] = useState('');
+  const [slotCode, setSlotCode] = useState('');
+  const [slotFaculty, setSlotFaculty] = useState('');
+  const [slotCourse, setSlotCourse] = useState('B.Sc Computer Science');
+  const [slotSemester, setSlotSemester] = useState('Semester V (TY)');
+  const [slotStartTime, setSlotStartTime] = useState('09:00 AM');
+  const [slotEndTime, setSlotEndTime] = useState('10:00 AM');
+  const [slotRoom, setSlotRoom] = useState('Hall 104');
+  const [slotType, setSlotType] = useState<'Lecture' | 'Lab' | 'Tutorial'>('Lecture');
+  const [slotCategory, setSlotCategory] = useState<'CS' | 'IT' | 'MATH' | 'ELEC'>('CS');
+  const [isSubmittingSlot, setIsSubmittingSlot] = useState(false);
+  const [timetableFacultyFilter, setTimetableFacultyFilter] = useState('all');
 
   // Notice Modal
   const [showNoticeModal, setShowNoticeModal] = useState(false);
@@ -511,7 +547,8 @@ export const AdminPortal: React.FC = () => {
           employeeId: facEmpId,
           qualification: facQual,
           workloadHours: Number(facWorkload) || 16,
-          subjectsAssigned: facSubjects.split(',').map((s) => s.trim()),
+          subjectsAssigned: facSubjects.split(',').map((s) => s.trim()).filter(Boolean),
+          classTeacherOf: facClassTeacher !== 'None' ? facClassTeacher : undefined,
           status: 'Active',
         },
         facPassword
@@ -527,8 +564,88 @@ export const AdminPortal: React.FC = () => {
       setFacName('');
       setFacEmail('');
       setFacPhone('');
+      setFacClassTeacher('None');
     } finally {
       setIsSubmittingFac(false);
+    }
+  };
+
+  // CRUD: Open Edit Faculty Modal
+  const handleOpenEditFaculty = (fac: FacultyRecord) => {
+    setEditingFaculty(fac);
+    setEditFacName(fac.name);
+    setEditFacDept(fac.department || 'Computer Science');
+    setEditFacDesignation(fac.designation || 'Assistant Professor');
+    setEditFacEmpId(fac.employeeId);
+    setEditFacPhone(fac.phone || '');
+    setEditFacQual(fac.qualification || '');
+    setEditFacWorkload(fac.workloadHours || 16);
+    setEditFacSubjects(fac.subjectsAssigned ? fac.subjectsAssigned.join(', ') : '');
+    setEditFacClassTeacher(fac.classTeacherOf || 'None');
+    setShowEditFacultyModal(true);
+  };
+
+  // CRUD: Save Edited Faculty Member
+  const handleSaveEditFaculty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingFaculty) return;
+    setIsSavingEditFaculty(true);
+    try {
+      const updated: FacultyRecord = {
+        ...editingFaculty,
+        name: editFacName.trim(),
+        department: editFacDept,
+        designation: editFacDesignation,
+        employeeId: editFacEmpId.trim(),
+        phone: editFacPhone.trim(),
+        qualification: editFacQual.trim(),
+        workloadHours: Number(editFacWorkload) || 16,
+        subjectsAssigned: editFacSubjects.split(',').map((s) => s.trim()).filter(Boolean),
+        classTeacherOf: editFacClassTeacher !== 'None' ? editFacClassTeacher : undefined,
+      };
+      await updateFaculty(updated);
+      setShowEditFacultyModal(false);
+      setToastNotification({
+        show: true,
+        title: 'Faculty Academic Assignments Saved!',
+        message: `${updated.name}'s Class Teacher & Subjects updated in realtime across mobile & web.`,
+      });
+    } finally {
+      setIsSavingEditFaculty(false);
+    }
+  };
+
+  // CRUD: Save Timetable Slot
+  const handleSaveSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!slotSubject.trim()) return;
+    setIsSubmittingSlot(true);
+    try {
+      const chosenFaculty = facultyList.find((f) => f.name === slotFaculty);
+      await addTimetableSlot({
+        day: slotDay,
+        subjectName: slotSubject.trim(),
+        subjectCode: slotCode.trim() || 'CS-301',
+        facultyName: slotFaculty || (facultyList[0]?.name || 'Dr. Nitish Sharma'),
+        facultyId: chosenFaculty?.id,
+        course: slotCourse,
+        semester: slotSemester,
+        startTime: slotStartTime,
+        endTime: slotEndTime,
+        room: slotRoom,
+        type: slotType,
+        category: slotCategory,
+      });
+      setShowTimetableModal(false);
+      setSlotSubject('');
+      setSlotCode('');
+      setToastNotification({
+        show: true,
+        title: 'Timetable Slot Allocated in Realtime!',
+        message: `${slotSubject} on ${slotDay} allocated to ${slotFaculty || 'Faculty'}.`,
+      });
+    } finally {
+      setIsSubmittingSlot(false);
     }
   };
 
@@ -1063,12 +1180,24 @@ export const AdminPortal: React.FC = () => {
                         <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
                           {fac.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-slate-900">{fac.name}</h4>
-                          <p className="text-[11px] text-blue-700 font-semibold">{fac.designation}</p>
-                          <p className="text-[10px] text-slate-400">{fac.department}</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-sm text-slate-900 truncate">{fac.name}</h4>
+                          <p className="text-[11px] text-blue-700 font-semibold truncate">{fac.designation}</p>
+                          <p className="text-[10px] text-slate-400 truncate">{fac.department}</p>
                         </div>
                       </div>
+
+                      {/* Class Teacher Badge */}
+                      {fac.classTeacherOf ? (
+                        <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-xl text-[10px] font-bold">
+                          <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                          <span className="truncate">Class Teacher: {fac.classTeacherOf}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 font-medium italic">
+                          Not assigned as Class Teacher
+                        </div>
+                      )}
 
                       <div className="pt-2 border-t border-slate-100 text-xs space-y-1">
                         <div className="flex justify-between">
@@ -1085,12 +1214,42 @@ export const AdminPortal: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="pt-2 flex flex-wrap gap-1">
-                        {fac.subjectsAssigned.map((sub, i) => (
-                          <span key={i} className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">
-                            {sub}
-                          </span>
-                        ))}
+                      <div>
+                        <span className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Assigned Subjects</span>
+                        <div className="flex flex-wrap gap-1">
+                          {fac.subjectsAssigned && fac.subjectsAssigned.length > 0 ? (
+                            fac.subjectsAssigned.map((sub, i) => (
+                              <span key={i} className="text-[10px] bg-blue-50 text-blue-800 border border-blue-100 px-2 py-0.5 rounded-md font-medium">
+                                {sub}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">No subjects assigned yet</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action buttons to assign Class Teacher, Subjects, or Timetable */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => handleOpenEditFaculty(fac)}
+                          className="flex-1 px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-all active:scale-95"
+                          title="Assign Class Teacher role and subjects"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Assign Class &amp; Subjects</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSlotFaculty(fac.name);
+                            setShowTimetableModal(true);
+                          }}
+                          className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all active:scale-95"
+                          title="Allocate Lecture for this Teacher"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>+ Lecture</span>
+                        </button>
                       </div>
                     </div>
                   ))
@@ -1339,31 +1498,107 @@ export const AdminPortal: React.FC = () => {
           {adminSection === 'timetable' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h3 className="font-bold text-sm text-slate-900">Weekly Master Timetable</h3>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm flex items-center space-x-1.5 self-start sm:self-auto">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Weekly Master Timetable</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Allocate lectures and classroom slots to faculty. Synced in real-time with teacher mobile schedules.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTimetableModal(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm flex items-center space-x-1.5 transition-all active:scale-95 self-start sm:self-auto"
+                >
                   <Plus className="w-4 h-4" />
                   <span>Allocate New Slot</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
-                  <div key={day} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-2">
-                    <h4 className="font-bold text-xs text-slate-900 pb-2 border-b border-slate-100 flex justify-between items-center">
-                      <span>{day}</span>
-                      <span className="text-[10px] text-blue-600 font-mono">Sem V</span>
-                    </h4>
-                    {timetable
-                      .filter((s) => s.day === day)
-                      .map((slot) => (
-                        <div key={slot.id} className="p-2.5 bg-slate-50 rounded-xl text-xs space-y-1">
-                          <span className="font-bold text-slate-900 block truncate">{slot.subjectName}</span>
-                          <span className="text-[10px] text-slate-500 block">{slot.startTime} - {slot.endTime}</span>
-                          <span className="text-[10px] font-mono text-blue-700 font-semibold">{slot.room}</span>
+              {/* Filter by Faculty */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center space-x-2 text-xs">
+                  <span className="font-bold text-slate-700">Filter by Faculty:</span>
+                  <select
+                    value={timetableFacultyFilter}
+                    onChange={(e) => setTimetableFacultyFilter(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="all">All Faculty Schedule</option>
+                    {facultyList.map((f) => (
+                      <option key={f.id} value={f.name}>
+                        {f.name} ({f.department})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Total Allocated Slots: <strong>{timetable.length}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => {
+                  const daySlots = timetable
+                    .filter((s) => s.day === day)
+                    .filter(
+                      (s) =>
+                        timetableFacultyFilter === 'all' ||
+                        s.facultyName?.toLowerCase() === timetableFacultyFilter.toLowerCase()
+                    );
+                  return (
+                    <div key={day} className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm space-y-2">
+                      <h4 className="font-bold text-xs text-slate-900 pb-2 border-b border-slate-100 flex justify-between items-center">
+                        <span>{day}</span>
+                        <span className="text-[10px] text-blue-600 font-mono font-bold bg-blue-50 px-1.5 py-0.5 rounded">
+                          {daySlots.length} Slots
+                        </span>
+                      </h4>
+                      {daySlots.length > 0 ? (
+                        daySlots.map((slot) => (
+                          <div
+                            key={slot.id}
+                            className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-1 relative group hover:border-blue-300 transition-all"
+                          >
+                            <div className="flex justify-between items-start gap-1">
+                              <span className="font-bold text-slate-900 block truncate flex-1" title={slot.subjectName}>
+                                {slot.subjectName}
+                              </span>
+                              <button
+                                onClick={() => deleteTimetableSlot(slot.id)}
+                                className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition-colors shrink-0"
+                                title="Remove Slot"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <span className="text-[10px] text-slate-500 block font-mono">
+                              {slot.startTime} - {slot.endTime}
+                            </span>
+                            <div className="flex items-center justify-between text-[10px] pt-0.5">
+                              <span className="font-mono text-blue-700 font-semibold">{slot.room}</span>
+                              <span className="text-[9px] bg-slate-200 text-slate-700 font-semibold px-1.5 py-0.5 rounded">
+                                {slot.type}
+                              </span>
+                            </div>
+                            <div className="pt-0.5 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                              <span className="text-slate-600 font-medium truncate max-w-[120px]">
+                                👤 {slot.facultyName}
+                              </span>
+                            </div>
+                            {slot.course && (
+                              <span className="text-[9px] text-blue-800 font-semibold block truncate">
+                                {slot.course}
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-4 text-center text-[10px] text-slate-400 italic">
+                          No lectures scheduled
                         </div>
-                      ))}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2175,6 +2410,27 @@ export const AdminPortal: React.FC = () => {
                   placeholder="Data Structures, Operating Systems"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Class Teacher Assignment</label>
+                <select
+                  value={facClassTeacher}
+                  onChange={(e) => setFacClassTeacher(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium"
+                >
+                  <option value="None">None / General Faculty</option>
+                  <option value="TY B.Sc Computer Science">⭐ TY B.Sc Computer Science</option>
+                  <option value="SY B.Sc Computer Science">⭐ SY B.Sc Computer Science</option>
+                  <option value="FY B.Sc Computer Science">⭐ FY B.Sc Computer Science</option>
+                  <option value="TY B.Sc IT">⭐ TY B.Sc IT</option>
+                  <option value="SY B.Sc IT">⭐ SY B.Sc IT</option>
+                  <option value="FY B.Sc IT">⭐ FY B.Sc IT</option>
+                  <option value="BCA - TY">⭐ BCA - TY</option>
+                  <option value="BCA - SY">⭐ BCA - SY</option>
+                  <option value="M.Sc Computer Science - Part I">⭐ M.Sc Computer Science - Part I</option>
+                  <option value="M.Sc Computer Science - Part II">⭐ M.Sc Computer Science - Part II</option>
+                </select>
               </div>
 
               <div>
@@ -3117,6 +3373,409 @@ export const AdminPortal: React.FC = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT FACULTY & ASSIGN ACADEMIC DUTIES (CLASS TEACHER & SUBJECTS) */}
+      {showEditFacultyModal && editingFaculty && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20 font-bold">
+                  <BookOpen className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    Assign Academic Duties &amp; Edit Faculty
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Assign Class Teacher role and subjects for {editingFaculty.name} (Realtime Cloud Sync)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditFacultyModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditFaculty} className="mt-4 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Faculty Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFacName}
+                    onChange={(e) => setEditFacName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Employee ID</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFacEmpId}
+                    onChange={(e) => setEditFacEmpId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Department</label>
+                  <select
+                    value={editFacDept}
+                    onChange={(e) => setEditFacDept(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Computer Applications">Computer Applications</option>
+                    <option value="Data Science & AI">Data Science &amp; AI</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Designation</label>
+                  <select
+                    value={editFacDesignation}
+                    onChange={(e) => setEditFacDesignation(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    <option value="Assistant Professor">Assistant Professor</option>
+                    <option value="Associate Professor">Associate Professor</option>
+                    <option value="Professor">Professor</option>
+                    <option value="Associate Professor & HOD">HOD / Department Head</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* CLASS TEACHER ASSIGNMENT */}
+              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1.5">
+                <label className="font-bold text-amber-900 block flex items-center space-x-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>Class Teacher Appointment (वर्गशिक्षक जबाबदारी)</span>
+                </label>
+                <select
+                  value={editFacClassTeacher}
+                  onChange={(e) => setEditFacClassTeacher(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-amber-300 rounded-xl font-bold text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                >
+                  <option value="None">None (No Class Teacher duty assigned)</option>
+                  <option value="TY B.Sc Computer Science">⭐ TY B.Sc Computer Science</option>
+                  <option value="SY B.Sc Computer Science">⭐ SY B.Sc Computer Science</option>
+                  <option value="FY B.Sc Computer Science">⭐ FY B.Sc Computer Science</option>
+                  <option value="TY B.Sc IT">⭐ TY B.Sc IT</option>
+                  <option value="SY B.Sc IT">⭐ SY B.Sc IT</option>
+                  <option value="FY B.Sc IT">⭐ FY B.Sc IT</option>
+                  <option value="BCA - TY">⭐ BCA - TY</option>
+                  <option value="BCA - SY">⭐ BCA - SY</option>
+                  <option value="BCA - FY">⭐ BCA - FY</option>
+                  <option value="M.Sc Computer Science - Part I">⭐ M.Sc Computer Science - Part I</option>
+                  <option value="M.Sc Computer Science - Part II">⭐ M.Sc Computer Science - Part II</option>
+                </select>
+                <p className="text-[10px] text-amber-700">
+                  Appointing this teacher will display their Class Teacher badge across their mobile app and campus portal.
+                </p>
+              </div>
+
+              {/* ASSIGNED SUBJECTS */}
+              <div className="space-y-2">
+                <label className="font-bold text-slate-700 block">
+                  Assigned Teaching Subjects (विषय वाटप)
+                </label>
+                <input
+                  type="text"
+                  value={editFacSubjects}
+                  onChange={(e) => setEditFacSubjects(e.target.value)}
+                  placeholder="e.g. Data Structures, Web Technology, Python"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-400 font-semibold self-center mr-1">Quick Add:</span>
+                  {[
+                    'Data Structures & Algorithms',
+                    'Database Management Systems',
+                    'Web Technology & Frameworks',
+                    'Python Programming',
+                    'Operating Systems',
+                    'Software Engineering',
+                    'Computer Networks',
+                    'Cloud Computing',
+                  ].map((sub) => (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => {
+                        const current = editFacSubjects.trim();
+                        if (!current) {
+                          setEditFacSubjects(sub);
+                        } else if (!current.toLowerCase().includes(sub.toLowerCase())) {
+                          setEditFacSubjects(`${current}, ${sub}`);
+                        }
+                      }}
+                      className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 text-[10px] font-medium transition-colors"
+                    >
+                      + {sub}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    value={editFacPhone}
+                    onChange={(e) => setEditFacPhone(e.target.value)}
+                    placeholder="+91 94220 12345"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Weekly Workload (Hours)</label>
+                  <input
+                    type="number"
+                    value={editFacWorkload}
+                    onChange={(e) => setEditFacWorkload(Number(e.target.value))}
+                    min={4}
+                    max={36}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditFacultyModal(false)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEditFaculty}
+                  className="w-full sm:w-auto px-5 py-2 rounded-xl text-white bg-blue-600 hover:bg-blue-700 font-bold shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isSavingEditFaculty ? 'Saving Realtime...' : 'Save Academic Assignments'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ALLOCATE NEW TIMETABLE SLOT */}
+      {showTimetableModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center border border-blue-500/20 font-bold">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    Allocate Master Timetable Slot
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Assign day, subject, faculty, class, and classroom in realtime.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTimetableModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSlot} className="mt-4 space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Day of Week *</label>
+                  <select
+                    value={slotDay}
+                    onChange={(e: any) => setSlotDay(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-blue-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    <option value="Mon">Monday (सोमवार)</option>
+                    <option value="Tue">Tuesday (मंगळवार)</option>
+                    <option value="Wed">Wednesday (बुधवार)</option>
+                    <option value="Thu">Thursday (गुरुवार)</option>
+                    <option value="Fri">Friday (शुक्रवार)</option>
+                    <option value="Sat">Saturday (शनिवार)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Assigned Faculty Member *</label>
+                  <select
+                    value={slotFaculty}
+                    onChange={(e) => setSlotFaculty(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    {facultyList.map((f) => (
+                      <option key={f.id} value={f.name}>
+                        {f.name} ({f.department})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Subject Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={slotSubject}
+                    onChange={(e) => setSlotSubject(e.target.value)}
+                    placeholder="e.g. Data Structures & Algorithms"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Subject Code</label>
+                  <input
+                    type="text"
+                    value={slotCode}
+                    onChange={(e) => setSlotCode(e.target.value)}
+                    placeholder="e.g. CS-301"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Course / Program</label>
+                  <select
+                    value={slotCourse}
+                    onChange={(e) => setSlotCourse(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium"
+                  >
+                    <option value="B.Sc Computer Science">B.Sc Computer Science</option>
+                    <option value="B.Sc Information Technology">B.Sc Information Technology</option>
+                    <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                    <option value="M.Sc Computer Science">M.Sc Computer Science</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Semester / Year</label>
+                  <select
+                    value={slotSemester}
+                    onChange={(e) => setSlotSemester(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium"
+                  >
+                    <option value="Semester I (FY)">Semester I (FY)</option>
+                    <option value="Semester II (FY)">Semester II (FY)</option>
+                    <option value="Semester III (SY)">Semester III (SY)</option>
+                    <option value="Semester IV (SY)">Semester IV (SY)</option>
+                    <option value="Semester V (TY)">Semester V (TY)</option>
+                    <option value="Semester VI (TY)">Semester VI (TY)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Start Time</label>
+                  <input
+                    type="text"
+                    value={slotStartTime}
+                    onChange={(e) => setSlotStartTime(e.target.value)}
+                    placeholder="09:00 AM"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">End Time</label>
+                  <input
+                    type="text"
+                    value={slotEndTime}
+                    onChange={(e) => setSlotEndTime(e.target.value)}
+                    placeholder="10:00 AM"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Room / Lab</label>
+                  <input
+                    type="text"
+                    value={slotRoom}
+                    onChange={(e) => setSlotRoom(e.target.value)}
+                    placeholder="Hall 105"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Session Type</label>
+                  <select
+                    value={slotType}
+                    onChange={(e: any) => setSlotType(e.target.value)}
+                    className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    <option value="Lecture">Lecture</option>
+                    <option value="Lab">Lab</option>
+                    <option value="Tutorial">Tutorial</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Category</label>
+                  <select
+                    value={slotCategory}
+                    onChange={(e: any) => setSlotCategory(e.target.value)}
+                    className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    <option value="CS">CS</option>
+                    <option value="IT">IT</option>
+                    <option value="MATH">MATH</option>
+                    <option value="ELEC">ELEC</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowTimetableModal(false)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingSlot}
+                  className="w-full sm:w-auto px-5 py-2 rounded-xl text-white bg-blue-600 hover:bg-blue-700 font-bold shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{isSubmittingSlot ? 'Allocating...' : 'Allocate Slot in Realtime'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

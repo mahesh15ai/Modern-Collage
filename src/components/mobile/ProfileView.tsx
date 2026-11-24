@@ -39,7 +39,7 @@ const PRESET_AVATARS = [
 ];
 
 export const ProfileView: React.FC = () => {
-  const { currentUser, setCurrentUser, students, facultyList, updateStudent, setViewMode, logout } = useApp();
+  const { currentUser, setCurrentUser, students, facultyList, updateStudent, setViewMode, logout, setRole } = useApp();
 
   const isFaculty = currentUser.role === 'faculty';
   const currentStudent = students.find((s) => s.id === currentUser.id) || students[0];
@@ -266,6 +266,37 @@ export const ProfileView: React.FC = () => {
             <span>Print</span>
           </button>
         </div>
+      </div>
+
+      {/* 1-Tap Toggle: Student ID Card vs Faculty / Teacher ID Card */}
+      <div className="bg-slate-100 p-1 rounded-2xl flex items-center justify-between text-xs font-bold border border-slate-200">
+        <button
+          type="button"
+          onClick={() => {
+            if (isFaculty) setRole('student');
+          }}
+          className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
+            !isFaculty
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span>🎓 Student ID Card</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (!isFaculty) setRole('faculty');
+          }}
+          className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
+            isFaculty
+              ? 'bg-blue-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span>👨‍🏫 Faculty / Staff ID</span>
+        </button>
       </div>
 
       {/* Side Switcher Tab Pills */}

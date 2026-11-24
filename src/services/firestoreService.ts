@@ -24,6 +24,7 @@ import {
   StudentResult,
   StudyMaterial,
   AttendanceSummary,
+  TimetableSlot,
 } from '@/types';
 import {
   MOCK_STUDENTS,
@@ -49,6 +50,7 @@ export const COLLECTIONS = {
   EVENTS: 'events',
   COMPLAINTS: 'complaints',
   MATERIALS: 'study_materials',
+  TIMETABLE: 'timetable',
 };
 
 // ---------------------------------------------------------------------------
@@ -318,6 +320,92 @@ export async function saveFacultyToFirestore(
     await setDoc(doc(db, COLLECTIONS.USERS, profile.id), profile);
   } catch (error: any) {
     console.warn('Error saving faculty to Firestore:', error?.message);
+    throw error;
+  }
+}
+
+/**
+ * Update existing faculty in Firestore
+ */
+export async function updateFacultyInFirestore(
+  faculty: FacultyRecord
+): Promise<void> {
+  if (!isFirebaseConfigured) return;
+  try {
+    await setDoc(doc(db, COLLECTIONS.FACULTY, faculty.id), faculty, { merge: true });
+    // Also sync partial fields to users collection if user doc exists
+    await setDoc(
+      doc(db, COLLECTIONS.USERS, faculty.id),
+      {
+        name: faculty.name,
+        designation: faculty.designation,
+        department: faculty.department,
+        employeeId: faculty.employeeId,
+        phone: faculty.phone,
+        qualification: faculty.qualification,
+        classTeacherOf: faculty.classTeacherOf || '',
+        subjectsAssigned: faculty.subjectsAssigned || [],
+      },
+      { merge: true }
+    ).catch(() => {});
+  } catch (error: any) {
+    console.warn('Error updating faculty in Firestore:', error?.message);
+    throw error;
+  }
+}
+
+/**
+ * Subscribe to Realtime Timetable collection
+ */
+export function subscribeToTimetable(
+  callback: (slots: TimetableSlot[]) => void
+): () => void {
+  if (!isFirebaseConfigured) return () => {};
+  try {
+    const q = collection(db, COLLECTIONS.TIMETABLE);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const items = snapshot.docs.map((d) => d.data() as TimetableSlot);
+        callback(items);
+      },
+      (error) => {
+        console.warn('Realtime timetable listener error:', error?.message);
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.warn('Could not attach timetable listener:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Save Timetable Slot to Cloud Firestore
+ */
+export async function saveTimetableSlotToFirestore(
+  slot: TimetableSlot
+): Promise<void> {
+  if (!isFirebaseConfigured) return;
+  try {
+    await setDoc(doc(db, COLLECTIONS.TIMETABLE, slot.id), slot);
+  } catch (error: any) {
+    console.warn('Error saving timetable slot to Firestore:', error?.message);
+    throw error;
+  }
+}
+
+/**
+ * Delete a Timetable Slot from Cloud Firestore
+ */
+export async function deleteTimetableSlotFromFirestore(
+  slotId: string
+): Promise<void> {
+  if (!isFirebaseConfigured) return;
+  try {
+    await deleteDoc(doc(db, COLLECTIONS.TIMETABLE, slotId));
+  } catch (error: any) {
+    console.warn('Error deleting timetable slot from Firestore:', error?.message);
     throw error;
   }
 }
