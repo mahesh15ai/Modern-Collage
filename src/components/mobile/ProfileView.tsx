@@ -39,8 +39,9 @@ const PRESET_AVATARS = [
 ];
 
 export const ProfileView: React.FC = () => {
-  const { currentUser, setCurrentUser, students, updateStudent, setViewMode, logout } = useApp();
+  const { currentUser, setCurrentUser, students, facultyList, updateStudent, setViewMode, logout } = useApp();
 
+  const isFaculty = currentUser.role === 'faculty';
   const currentStudent = students.find((s) => s.id === currentUser.id) || students[0];
 
   // Active side: 'front' | 'back' | 'both'
@@ -49,7 +50,7 @@ export const ProfileView: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Field values with realistic fallbacks matching reference
+  // Field values for Student
   const studentName = currentUser.name || currentStudent?.name || 'Rahul Ramesh Shinde';
   const studentClass = currentUser.course || currentStudent?.course || 'B.Sc Computer Science';
   const studentYear = currentUser.semester
@@ -63,32 +64,62 @@ export const ProfileView: React.FC = () => {
   const studentPrn = currentUser.prn || currentStudent?.prn || '2024015200678912';
   const studentAvatar = currentUser.avatar || PRESET_AVATARS[0];
 
+  // Field values for Faculty
+  const facultyName = currentUser.name || 'Dr. Nitish Sharma';
+  const facultyDesignation = currentUser.designation || 'Assistant Professor';
+  const facultyDepartment = currentUser.department || 'Computer Science';
+  const facultyEmpId = currentUser.employeeId || currentUser.id || 'FAC-2024-009';
+  const facultyMobile = currentUser.phone || '9422012345';
+  const facultyAvatar = currentUser.avatar || PRESET_AVATARS[2];
+  const facultyQualification = currentUser.qualification || 'M.Sc., Ph.D (Comp Sci)';
+
   // Edit form state
-  const [editName, setEditName] = useState(studentName);
+  const [editName, setEditName] = useState(isFaculty ? facultyName : studentName);
   const [editCourse, setEditCourse] = useState(studentClass);
   const [editYear, setEditYear] = useState(studentYear.replace(/[()]/g, ''));
   const [editRoll, setEditRoll] = useState(studentRoll);
   const [editDob, setEditDob] = useState(studentDob);
-  const [editMobile, setEditMobile] = useState(studentMobile);
-  const [editAvatar, setEditAvatar] = useState(studentAvatar);
+  const [editMobile, setEditMobile] = useState(isFaculty ? facultyMobile : studentMobile);
+  const [editAvatar, setEditAvatar] = useState(isFaculty ? facultyAvatar : studentAvatar);
+  const [editDesignation, setEditDesignation] = useState(facultyDesignation);
+  const [editDepartment, setEditDepartment] = useState(facultyDepartment);
+  const [editEmpId, setEditEmpId] = useState(facultyEmpId);
+  const [editQualification, setEditQualification] = useState(facultyQualification);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Generate verified Attendance QR code matching the reference
+  // Generate verified Attendance / Faculty QR code matching the reference
   useEffect(() => {
-    const attendancePayload = JSON.stringify({
-      college: 'MODERN_COLLEGE_NANDED',
-      type: 'CAMPUS_ATTENDANCE_PASS',
-      name: studentName,
-      class: `${studentClass} ${studentYear}`,
-      rollNo: studentRoll,
-      dob: studentDob,
-      mobile: studentMobile,
-      prn: studentPrn,
-      verified: true,
-      timestamp: Date.now(),
-    });
+    let payload: string;
+    if (isFaculty) {
+      payload = JSON.stringify({
+        college: 'MODERN_COLLEGE_NANDED',
+        type: 'FACULTY_IDENTITY_PASS',
+        name: facultyName,
+        designation: facultyDesignation,
+        department: facultyDepartment,
+        employeeId: facultyEmpId,
+        phone: facultyMobile,
+        status: 'Active Faculty Staff',
+        verified: true,
+        authorizedBy: 'Principal, Modern College',
+        timestamp: Date.now(),
+      });
+    } else {
+      payload = JSON.stringify({
+        college: 'MODERN_COLLEGE_NANDED',
+        type: 'CAMPUS_ATTENDANCE_PASS',
+        name: studentName,
+        class: `${studentClass} ${studentYear}`,
+        rollNo: studentRoll,
+        dob: studentDob,
+        mobile: studentMobile,
+        prn: studentPrn,
+        verified: true,
+        timestamp: Date.now(),
+      });
+    }
 
-    QRCode.toDataURL(attendancePayload, {
+    QRCode.toDataURL(payload, {
       width: 340,
       margin: 1,
       color: {
@@ -98,17 +129,41 @@ export const ProfileView: React.FC = () => {
     })
       .then((url) => setQrDataUrl(url))
       .catch((err) => console.error('QR code generation error:', err));
-  }, [studentName, studentClass, studentYear, studentRoll, studentDob, studentMobile, studentPrn]);
+  }, [
+    isFaculty,
+    facultyName,
+    facultyDesignation,
+    facultyDepartment,
+    facultyEmpId,
+    facultyMobile,
+    studentName,
+    studentClass,
+    studentYear,
+    studentRoll,
+    studentDob,
+    studentMobile,
+    studentPrn,
+  ]);
 
   // Handle open edit modal
   const handleOpenEdit = () => {
-    setEditName(studentName);
-    setEditCourse(studentClass);
-    setEditYear(studentYear.replace(/[()]/g, ''));
-    setEditRoll(studentRoll);
-    setEditDob(studentDob);
-    setEditMobile(studentMobile);
-    setEditAvatar(studentAvatar);
+    if (isFaculty) {
+      setEditName(facultyName);
+      setEditDesignation(facultyDesignation);
+      setEditDepartment(facultyDepartment);
+      setEditEmpId(facultyEmpId);
+      setEditMobile(facultyMobile);
+      setEditQualification(facultyQualification);
+      setEditAvatar(facultyAvatar);
+    } else {
+      setEditName(studentName);
+      setEditCourse(studentClass);
+      setEditYear(studentYear.replace(/[()]/g, ''));
+      setEditRoll(studentRoll);
+      setEditDob(studentDob);
+      setEditMobile(studentMobile);
+      setEditAvatar(studentAvatar);
+    }
     setShowEditModal(true);
   };
 
@@ -118,33 +173,49 @@ export const ProfileView: React.FC = () => {
     setIsSaving(true);
 
     try {
-      const updatedUser: UserProfile = {
-        ...currentUser,
-        name: editName.trim(),
-        course: editCourse.trim(),
-        semester: editYear.trim(),
-        rollNo: editRoll.trim(),
-        dob: editDob.trim(),
-        phone: editMobile.trim(),
-        avatar: editAvatar,
-      };
-      setCurrentUser(updatedUser);
-
-      if (currentStudent && updateStudent) {
-        const updatedStudentRecord: StudentRecord = {
-          ...currentStudent,
+      if (isFaculty) {
+        const updatedUser: UserProfile = {
+          ...currentUser,
+          name: editName.trim(),
+          designation: editDesignation.trim(),
+          department: editDepartment.trim(),
+          employeeId: editEmpId.trim(),
+          phone: editMobile.trim(),
+          qualification: editQualification.trim(),
+          avatar: editAvatar,
+        };
+        setCurrentUser(updatedUser);
+        setShowEditModal(false);
+        setToastMessage('Faculty ID Card updated successfully! ✓');
+      } else {
+        const updatedUser: UserProfile = {
+          ...currentUser,
           name: editName.trim(),
           course: editCourse.trim(),
           semester: editYear.trim(),
           rollNo: editRoll.trim(),
           dob: editDob.trim(),
           phone: editMobile.trim(),
+          avatar: editAvatar,
         };
-        await updateStudent(updatedStudentRecord);
-      }
+        setCurrentUser(updatedUser);
 
-      setShowEditModal(false);
-      setToastMessage('Student ID Card updated successfully! ✓');
+        if (currentStudent && updateStudent) {
+          const updatedStudentRecord: StudentRecord = {
+            ...currentStudent,
+            name: editName.trim(),
+            course: editCourse.trim(),
+            semester: editYear.trim(),
+            rollNo: editRoll.trim(),
+            dob: editDob.trim(),
+            phone: editMobile.trim(),
+          };
+          await updateStudent(updatedStudentRecord);
+        }
+
+        setShowEditModal(false);
+        setToastMessage('Student ID Card updated successfully! ✓');
+      }
       setTimeout(() => setToastMessage(null), 3500);
     } catch (err) {
       console.error('Save error:', err);
@@ -167,10 +238,14 @@ export const ProfileView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
         <div>
           <h2 className="font-black text-base sm:text-lg text-slate-900 tracking-tight flex items-center space-x-1.5">
-            <span>Student Identity Card</span>
+            <span>{isFaculty ? 'Faculty Identity Card' : 'Student Identity Card'}</span>
             <Sparkles className="w-4 h-4 text-amber-500" />
           </h2>
-          <p className="text-[11px] text-slate-500">Official Campus ID with Attendance Verification QR</p>
+          <p className="text-[11px] text-slate-500">
+            {isFaculty
+              ? 'Official Campus Faculty & Staff ID with Verification QR'
+              : 'Official Campus ID with Attendance Verification QR'}
+          </p>
         </div>
 
         <div className="flex items-center space-x-2 self-start sm:self-auto">
@@ -276,7 +351,7 @@ export const ProfileView: React.FC = () => {
                   <div className="flex items-center space-x-1.5 mt-0.5">
                     <span className="w-6 h-[1px] bg-white/60 inline-block" />
                     <span className="text-[8px] sm:text-[9px] font-bold text-white/90 uppercase tracking-widest">
-                      SRTMUN Affiliated
+                      {isFaculty ? 'Autonomous • Staff Pass' : 'SRTMUN Affiliated'}
                     </span>
                     <span className="w-6 h-[1px] bg-white/60 inline-block" />
                   </div>
@@ -287,90 +362,152 @@ export const ProfileView: React.FC = () => {
             {/* Front Card Body (Photo on Left, Details on Right) */}
             <div className="p-3 sm:p-4 relative">
               <div className="flex items-start gap-3 sm:gap-4">
-                {/* Left: Student Photo */}
+                {/* Left: Photo */}
                 <div className="shrink-0 flex flex-col items-center">
                   <div className="w-24 sm:w-28 h-32 sm:h-36 rounded-xl border border-slate-900 overflow-hidden shadow-sm bg-slate-100">
                     <img
-                      src={studentAvatar}
-                      alt={studentName}
+                      src={isFaculty ? facultyAvatar : studentAvatar}
+                      alt={isFaculty ? facultyName : studentName}
                       className="w-full h-full object-cover object-top"
                     />
                   </div>
                 </div>
 
-                {/* Right: Student Details with Circular Blue Icons */}
+                {/* Right: Details with Circular Blue Icons */}
                 <div className="flex-1 min-w-0 space-y-2">
-                  {/* Badge: STUDENT ID CARD */}
+                  {/* Badge: FACULTY ID CARD vs STUDENT ID CARD */}
                   <div className="flex items-center justify-center space-x-1.5 pt-0.5">
                     <span className="w-5 sm:w-7 h-[1px] bg-slate-400" />
                     <span className="px-3 py-0.5 bg-[#071D3A] text-white font-black text-[9px] sm:text-[10px] uppercase tracking-wider rounded-full shadow-sm">
-                      STUDENT ID CARD
+                      {isFaculty ? 'FACULTY ID CARD' : 'STUDENT ID CARD'}
                     </span>
                     <span className="w-5 sm:w-7 h-[1px] bg-slate-400" />
                   </div>
 
-                  {/* Student Name */}
+                  {/* Name */}
                   <div className="text-center sm:text-left pb-0.5">
                     <h4 className="font-extrabold text-xs sm:text-sm text-slate-950 truncate">
-                      {studentName}
+                      {isFaculty ? facultyName : studentName}
                     </h4>
                   </div>
 
-                  {/* Field 1: Class */}
-                  <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                      <GraduationCap className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 text-[11px] leading-tight flex items-baseline justify-between min-w-0">
-                      <span className="font-medium text-slate-600 text-[10px] shrink-0">Class</span>
-                      <span className="text-slate-400 mx-1">:</span>
-                      <span className="font-bold text-slate-900 truncate text-[11px] text-right">
-                        {studentClass} <span className="block text-[9px] text-blue-900 font-semibold">{studentYear}</span>
-                      </span>
-                    </div>
-                  </div>
+                  {isFaculty ? (
+                    <>
+                      {/* Faculty Field 1: Designation */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Designation</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-extrabold text-blue-900 truncate text-[11px] text-right">
+                            {facultyDesignation}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Field 2: Roll Number */}
-                  <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                      <CreditCard className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                      <span className="font-medium text-slate-600 text-[10px] shrink-0">Roll Number</span>
-                      <span className="text-slate-400 mx-1">:</span>
-                      <span className="font-extrabold font-mono text-slate-950 text-xs">
-                        {studentRoll}
-                      </span>
-                    </div>
-                  </div>
+                      {/* Faculty Field 2: Department */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <GraduationCap className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Department</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-bold text-slate-900 truncate text-[11px] text-right">
+                            {facultyDepartment}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Field 3: Date of Birth */}
-                  <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                      <Calendar className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                      <span className="font-medium text-slate-600 text-[10px] shrink-0">Date of Birth</span>
-                      <span className="text-slate-400 mx-1">:</span>
-                      <span className="font-bold text-slate-900 text-[11px]">
-                        {studentDob}
-                      </span>
-                    </div>
-                  </div>
+                      {/* Faculty Field 3: Employee ID */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <CreditCard className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Employee ID</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-extrabold font-mono text-slate-950 text-xs">
+                            {facultyEmpId}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Field 4: Mobile Number */}
-                  <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
-                      <Phone className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
-                      <span className="font-medium text-slate-600 text-[10px] shrink-0">Mobile Number</span>
-                      <span className="text-slate-400 mx-1">:</span>
-                      <span className="font-bold font-mono text-slate-900 text-[11px]">
-                        {studentMobile}
-                      </span>
-                    </div>
-                  </div>
+                      {/* Faculty Field 4: Mobile Number */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <Phone className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Mobile Number</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-bold font-mono text-slate-900 text-[11px]">
+                            {facultyMobile}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Field 1: Class */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <GraduationCap className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-baseline justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Class</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-bold text-slate-900 truncate text-[11px] text-right">
+                            {studentClass} <span className="block text-[9px] text-blue-900 font-semibold">{studentYear}</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Field 2: Roll Number */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <CreditCard className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Roll Number</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-extrabold font-mono text-slate-950 text-xs">
+                            {studentRoll}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Field 3: Date of Birth */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <Calendar className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Date of Birth</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-bold text-slate-900 text-[11px]">
+                            {studentDob}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Field 4: Mobile Number */}
+                      <div className="flex items-center space-x-2 bg-slate-50/90 border border-slate-100 rounded-xl px-2 py-1">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0">
+                          <Phone className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
+                          <span className="font-medium text-slate-600 text-[10px] shrink-0">Mobile Number</span>
+                          <span className="text-slate-400 mx-1">:</span>
+                          <span className="font-bold font-mono text-slate-900 text-[11px]">
+                            {studentMobile}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -429,51 +566,97 @@ export const ProfileView: React.FC = () => {
               <div className="flex items-start gap-3 sm:gap-4">
                 {/* Left Column: 4 Rules with Circular Dark Blue Badges */}
                 <div className="flex-1 space-y-2.5 text-slate-800 text-[10px] sm:text-[11px]">
-                  {/* Rule 1: Exclamation */}
-                  <div className="flex items-start space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <AlertCircle className="w-3.5 h-3.5 font-bold" />
-                    </div>
-                    <p className="font-semibold text-slate-800 leading-snug">
-                      This ID Card is the property of Modern College, Nanded.
-                    </p>
-                  </div>
+                  {isFaculty ? (
+                    <>
+                      {/* Faculty Rule 1 */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertCircle className="w-3.5 h-3.5 font-bold" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          This ID Card is the official property of Modern College, Nanded.
+                        </p>
+                      </div>
 
-                  {/* Rule 2: Show when required */}
-                  <div className="flex items-start space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <FileText className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="font-semibold text-slate-800 leading-snug">
-                      It must be shown when required by the college authorities.
-                    </p>
-                  </div>
+                      {/* Faculty Rule 2 */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <FileText className="w-3.5 h-3.5" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          Entitled to faculty library, labs &amp; administrative privileges.
+                        </p>
+                      </div>
 
-                  {/* Rule 3: Do not share */}
-                  <div className="flex items-start space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <Users className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="font-semibold text-slate-800 leading-snug">
-                      Do not share this card with anyone.
-                    </p>
-                  </div>
+                      {/* Faculty Rule 3 */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <Users className="w-3.5 h-3.5" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          Must be carried on campus and shown upon official request.
+                        </p>
+                      </div>
 
-                  {/* Rule 4: Return if found */}
-                  <div className="flex items-start space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <CornerDownLeft className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="font-semibold text-slate-800 leading-snug">
-                      If found, please return to the college office.
-                    </p>
-                  </div>
+                      {/* Faculty Rule 4 */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <CornerDownLeft className="w-3.5 h-3.5" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          If found, please return to Principal Office, Modern College.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Rule 1: Exclamation */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertCircle className="w-3.5 h-3.5 font-bold" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          This ID Card is the property of Modern College, Nanded.
+                        </p>
+                      </div>
+
+                      {/* Rule 2: Show when required */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <FileText className="w-3.5 h-3.5" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          It must be shown when required by the college authorities.
+                        </p>
+                      </div>
+
+                      {/* Rule 3: Do not share */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <Users className="w-3.5 h-3.5" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          Do not share this card with anyone.
+                        </p>
+                      </div>
+
+                      {/* Rule 4: Return if found */}
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-[#071D3A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <CornerDownLeft className="w-3.5 h-3.5" />
+                        </div>
+                        <p className="font-semibold text-slate-800 leading-snug">
+                          If found, please return to the college office.
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Vertical Divider */}
                 <div className="w-[1.5px] h-32 bg-slate-300 shrink-0 self-center" />
 
-                {/* Right Column: Attendance Verification QR Box */}
+                {/* Right Column: Attendance / Faculty Verification QR Box */}
                 <div className="shrink-0 flex flex-col items-center">
                   <div className="w-28 sm:w-32 rounded-2xl border-2 border-[#071D3A] overflow-hidden bg-white shadow-md">
                     {/* QR Code */}
@@ -481,7 +664,7 @@ export const ProfileView: React.FC = () => {
                       {qrDataUrl ? (
                         <img
                           src={qrDataUrl}
-                          alt="Attendance QR Code"
+                          alt={isFaculty ? 'Faculty Verification QR' : 'Attendance QR Code'}
                           className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
                         />
                       ) : (
@@ -517,24 +700,19 @@ export const ProfileView: React.FC = () => {
                 {/* Campus Building Architectural Blueprint Graphic */}
                 <div className="w-36 sm:w-48 h-8 opacity-40">
                   <svg viewBox="0 0 200 40" className="w-full h-full">
-                    {/* Architectural Building Facade Lines */}
                     <rect x="10" y="8" width="180" height="30" stroke="white" strokeWidth="0.8" fill="none" />
-                    {/* Center Column Structure */}
                     <rect x="75" y="2" width="50" height="36" stroke="white" strokeWidth="1" fill="none" />
                     <line x1="75" y1="2" x2="100" y2="0" stroke="white" strokeWidth="1" />
                     <line x1="125" y1="2" x2="100" y2="0" stroke="white" strokeWidth="1" />
-                    {/* Windows grid left */}
                     <rect x="15" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="32" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="49" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="15" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="32" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="49" y="22" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
-                    {/* Windows grid center */}
                     <rect x="83" y="10" width="14" height="8" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="103" y="10" width="14" height="8" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="88" y="22" width="24" height="16" stroke="white" strokeWidth="0.8" fill="none" />
-                    {/* Windows grid right */}
                     <rect x="139" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="156" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
                     <rect x="173" y="12" width="12" height="6" stroke="white" strokeWidth="0.6" fill="none" />
@@ -572,7 +750,7 @@ export const ProfileView: React.FC = () => {
         {qrDataUrl && (
           <a
             href={qrDataUrl}
-            download={`ModernCollege_AttendanceQR_${studentRoll}.png`}
+            download={isFaculty ? `ModernCollege_FacultyID_${facultyEmpId}.png` : `ModernCollege_AttendanceQR_${studentRoll}.png`}
             className="py-2 px-3 bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 rounded-xl flex items-center justify-center space-x-1 transition-all"
             title="Download QR Image"
           >
@@ -582,30 +760,34 @@ export const ProfileView: React.FC = () => {
         )}
       </div>
 
-      {/* Verified Academic Documents */}
+      {/* Verified Academic / Faculty Documents */}
       <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3 max-w-[500px] mx-auto">
         <div className="flex justify-between items-center">
           <h4 className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Campus Enrollment &amp; Records</span>
+            <span>{isFaculty ? 'Campus Employment & Staff Records' : 'Campus Enrollment & Records'}</span>
           </h4>
           <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-            PRN: {studentPrn}
+            {isFaculty ? `EMP ID: ${facultyEmpId}` : `PRN: ${studentPrn}`}
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-[11px]">
           <div className="p-2.5 bg-slate-50 rounded-xl">
-            <span className="text-slate-400 block text-[9px] uppercase font-semibold">Institutional Email</span>
+            <span className="text-slate-400 block text-[9px] uppercase font-semibold">
+              {isFaculty ? 'Staff Email' : 'Institutional Email'}
+            </span>
             <span className="font-semibold text-slate-800 truncate block">
-              {currentUser.email || currentStudent?.email || 'rahul.shinde@modernclg.edu.in'}
+              {currentUser.email || (isFaculty ? 'faculty@modernclg.edu.in' : currentStudent?.email || 'rahul.shinde@modernclg.edu.in')}
             </span>
           </div>
 
           <div className="p-2.5 bg-slate-50 rounded-xl">
-            <span className="text-slate-400 block text-[9px] uppercase font-semibold">Affiliated University</span>
+            <span className="text-slate-400 block text-[9px] uppercase font-semibold">
+              {isFaculty ? 'Department & Cabin' : 'Affiliated University'}
+            </span>
             <span className="font-semibold text-slate-800 truncate block">
-              SRTMUN, Nanded
+              {isFaculty ? `${facultyDepartment} Dept • ${currentUser.cabin || 'Staff Room Block A'}` : 'SRTMUN, Nanded'}
             </span>
           </div>
         </div>
@@ -643,8 +825,12 @@ export const ProfileView: React.FC = () => {
                   <Pencil className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">Edit Student ID Profile</h3>
-                  <p className="text-[11px] text-slate-500">Update ID Card details &amp; Attendance QR</p>
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    {isFaculty ? 'Edit Faculty ID Profile' : 'Edit Student ID Profile'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {isFaculty ? 'Update Faculty ID details & Verification QR' : 'Update ID Card details & Attendance QR'}
+                  </p>
                 </div>
               </div>
               <button
@@ -686,79 +872,144 @@ export const ProfileView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Student Name */}
+              {/* Full Name */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {isFaculty ? 'Faculty Full Name *' : 'Student Full Name *'}
+                </label>
                 <input
                   type="text"
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  placeholder="e.g. Rahul Ramesh Shinde"
+                  placeholder={isFaculty ? 'e.g. Dr. Nitish Sharma' : 'e.g. Rahul Ramesh Shinde'}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
                 />
               </div>
 
-              {/* Class & Academic Year */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Enrolled Class / Course *</label>
-                  <select
-                    value={editCourse}
-                    onChange={(e) => setEditCourse(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
-                  >
-                    <option value="B.Sc Computer Science">B.Sc Computer Science</option>
-                    <option value="B.Sc Information Technology">B.Sc IT</option>
-                    <option value="Bachelor of Computer Applications (BCA)">BCA</option>
-                    <option value="M.Sc Computer Science">M.Sc Computer Science</option>
-                  </select>
-                </div>
+              {isFaculty ? (
+                <>
+                  {/* Designation & Department */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Designation *</label>
+                      <select
+                        value={editDesignation}
+                        onChange={(e) => setEditDesignation(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
+                      >
+                        <option value="Assistant Professor">Assistant Professor</option>
+                        <option value="Associate Professor">Associate Professor</option>
+                        <option value="Professor">Professor</option>
+                        <option value="Head of Department (HOD)">Head of Department (HOD)</option>
+                        <option value="Lecturer / Faculty">Lecturer / Faculty</option>
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Year / Semester *</label>
-                  <select
-                    value={editYear}
-                    onChange={(e) => setEditYear(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
-                  >
-                    <option value="First Year">First Year</option>
-                    <option value="Second Year">Second Year</option>
-                    <option value="Third Year">Third Year</option>
-                    <option value="Semester I">Semester I</option>
-                    <option value="Semester II">Semester II</option>
-                    <option value="Semester III">Semester III</option>
-                    <option value="Semester IV">Semester IV</option>
-                  </select>
-                </div>
-              </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Department *</label>
+                      <select
+                        value={editDepartment}
+                        onChange={(e) => setEditDepartment(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
+                      >
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Computer Applications">Computer Applications</option>
+                      </select>
+                    </div>
+                  </div>
 
-              {/* Roll Number & Date of Birth */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Roll Number *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editRoll}
-                    onChange={(e) => setEditRoll(e.target.value)}
-                    placeholder="e.g. CS-329"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold text-slate-800"
-                  />
-                </div>
+                  {/* Employee ID & Qualification */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Employee ID *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editEmpId}
+                        onChange={(e) => setEditEmpId(e.target.value)}
+                        placeholder="e.g. FAC-2024-009"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold text-slate-800"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Date of Birth (DOB) *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editDob}
-                    onChange={(e) => setEditDob(e.target.value)}
-                    placeholder="DD/MM/YYYY (e.g. 15/08/2004)"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
-                  />
-                </div>
-              </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Qualification</label>
+                      <input
+                        type="text"
+                        value={editQualification}
+                        onChange={(e) => setEditQualification(e.target.value)}
+                        placeholder="e.g. M.Sc., Ph.D"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Class & Academic Year */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Enrolled Class / Course *</label>
+                      <select
+                        value={editCourse}
+                        onChange={(e) => setEditCourse(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
+                      >
+                        <option value="B.Sc Computer Science">B.Sc Computer Science</option>
+                        <option value="B.Sc Information Technology">B.Sc IT</option>
+                        <option value="Bachelor of Computer Applications (BCA)">BCA</option>
+                        <option value="M.Sc Computer Science">M.Sc Computer Science</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Year / Semester *</label>
+                      <select
+                        value={editYear}
+                        onChange={(e) => setEditYear(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
+                      >
+                        <option value="First Year">First Year</option>
+                        <option value="Second Year">Second Year</option>
+                        <option value="Third Year">Third Year</option>
+                        <option value="Semester I">Semester I</option>
+                        <option value="Semester II">Semester II</option>
+                        <option value="Semester III">Semester III</option>
+                        <option value="Semester IV">Semester IV</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Roll Number & Date of Birth */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Roll Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editRoll}
+                        onChange={(e) => setEditRoll(e.target.value)}
+                        placeholder="e.g. CS-329"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold text-slate-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Date of Birth (DOB) *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editDob}
+                        onChange={(e) => setEditDob(e.target.value)}
+                        placeholder="DD/MM/YYYY (e.g. 15/08/2004)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold text-slate-800"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Mobile Number */}
               <div>

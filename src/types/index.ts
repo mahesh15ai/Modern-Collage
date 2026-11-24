@@ -23,6 +23,8 @@ export interface UserProfile {
   designation?: string;
   workloadHours?: number;
   cabin?: string;
+  employeeId?: string;
+  qualification?: string;
 }
 
 // 1. Admin & College Overview

@@ -43,15 +43,17 @@ export const MOCK_STUDENT_USER: UserProfile = {
 };
 
 export const MOCK_FACULTY_USER: UserProfile = {
-  id: "FAC-EMPTY",
+  id: "FAC-2024-009",
   name: "Faculty Member",
   email: "",
   role: "faculty",
-  department: "",
-  designation: "Faculty",
-  workloadHours: 0,
-  cabin: "",
-  phone: "",
+  department: "Computer Science",
+  designation: "Assistant Professor",
+  employeeId: "FAC-2024-009",
+  qualification: "M.Sc., Ph.D (Computer Science)",
+  workloadHours: 16,
+  cabin: "Staff Room Block A",
+  phone: "+91 94220 12345",
   avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
 };
 

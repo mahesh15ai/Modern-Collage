@@ -65,27 +65,83 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
   } = useApp();
 
   const isFullScreenMode = activeScreen === 'splash' || activeScreen === 'login';
+  const isFaculty = currentUser.role === 'faculty';
 
   // Navigation Drawer Sections configuration
   const drawerNavSections = [
     {
-      title: 'ACADEMICS & LEARNING',
+      title: isFaculty ? 'TEACHING & ACADEMICS' : 'ACADEMICS & LEARNING',
       items: [
         { id: 'dashboard', label: 'Dashboard / Home', icon: Home, screen: 'dashboard' as const, badge: null, color: 'text-blue-600 bg-blue-50' },
-        { id: 'profile', label: 'Digital ID Card & Profile', icon: IdCard, screen: 'profile' as const, badge: 'Verified', color: 'text-indigo-600 bg-indigo-50' },
-        { id: 'attendance', label: 'QR Attendance Pass', icon: QrCode, screen: 'attendance' as const, badge: `${attendance.overallPercentage}%`, color: 'text-emerald-600 bg-emerald-50' },
-        { id: 'results', label: 'Examination Results', icon: TrendingUp, screen: 'results' as const, badge: `${result.overallPercentage}%`, color: 'text-purple-600 bg-purple-50' },
-        { id: 'timetable', label: 'Daily Timetable', icon: Calendar, screen: 'timetable' as const, badge: null, color: 'text-sky-600 bg-sky-50' },
-        { id: 'materials', label: 'Study Materials & Notes', icon: BookOpen, screen: 'materials' as const, badge: null, color: 'text-teal-600 bg-teal-50' },
+        {
+          id: 'profile',
+          label: isFaculty ? 'Faculty ID Card & Profile' : 'Digital ID Card & Profile',
+          icon: IdCard,
+          screen: 'profile' as const,
+          badge: isFaculty ? 'Staff ID' : 'Verified',
+          color: 'text-indigo-600 bg-indigo-50',
+        },
+        {
+          id: 'attendance',
+          label: isFaculty ? 'Lecture & Class Attendance' : 'QR Attendance Pass',
+          icon: QrCode,
+          screen: 'attendance' as const,
+          badge: isFaculty ? '88% Avg' : `${attendance.overallPercentage}%`,
+          color: 'text-emerald-600 bg-emerald-50',
+        },
+        {
+          id: 'results',
+          label: isFaculty ? 'Class Results & Evaluation' : 'Examination Results',
+          icon: TrendingUp,
+          screen: 'results' as const,
+          badge: isFaculty ? 'Grade' : `${result.overallPercentage}%`,
+          color: 'text-purple-600 bg-purple-50',
+        },
+        {
+          id: 'timetable',
+          label: isFaculty ? 'Teaching Schedule' : 'Daily Timetable',
+          icon: Calendar,
+          screen: 'timetable' as const,
+          badge: null,
+          color: 'text-sky-600 bg-sky-50',
+        },
+        {
+          id: 'materials',
+          label: isFaculty ? 'Courseware & Materials' : 'Study Materials & Notes',
+          icon: BookOpen,
+          screen: 'materials' as const,
+          badge: null,
+          color: 'text-teal-600 bg-teal-50',
+        },
       ],
     },
     {
-      title: 'CAMPUS SERVICES & SUPPORT',
+      title: isFaculty ? 'CAMPUS & STAFF SERVICES' : 'CAMPUS SERVICES & SUPPORT',
       items: [
-        { id: 'fees', label: 'College Fees & Dues', icon: CreditCard, screen: 'fees' as const, badge: fees.pendingAmount > 0 ? `₹${fees.pendingAmount.toLocaleString('en-IN')}` : 'Paid', color: 'text-amber-600 bg-amber-50' },
+        ...(isFaculty
+          ? [
+              {
+                id: 'department',
+                label: 'Department & Syllabus',
+                icon: BookOpen,
+                screen: 'materials' as const,
+                badge: 'Syllabus',
+                color: 'text-teal-600 bg-teal-50',
+              },
+            ]
+          : [
+              {
+                id: 'fees',
+                label: 'College Fees & Dues',
+                icon: CreditCard,
+                screen: 'fees' as const,
+                badge: fees.pendingAmount > 0 ? `₹${fees.pendingAmount.toLocaleString('en-IN')}` : 'Paid',
+                color: 'text-amber-600 bg-amber-50',
+              },
+            ]),
         { id: 'notices', label: 'Notice Board & Circulars', icon: Bell, screen: 'notices' as const, badge: notices.length > 0 ? `${notices.length} New` : null, color: 'text-rose-600 bg-rose-50' },
         { id: 'events', label: 'Events, Sports & Fests', icon: Trophy, screen: 'events' as const, badge: events.length > 0 ? `${events.length}` : null, color: 'text-violet-600 bg-violet-50' },
-        { id: 'complaints', label: 'Grievance & Student Support', icon: AlertCircle, screen: 'complaints' as const, badge: null, color: 'text-slate-600 bg-slate-100' },
+        { id: 'complaints', label: isFaculty ? 'Staff Grievance & Helpdesk' : 'Grievance & Student Support', icon: AlertCircle, screen: 'complaints' as const, badge: null, color: 'text-slate-600 bg-slate-100' },
       ],
     },
   ];
@@ -117,17 +173,32 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
 
   // Generate dynamic attendance verification QR Code
   useEffect(() => {
-    const attendancePayload = JSON.stringify({
-      app: 'MODERN_COLLEGE_ATTENDANCE_PASS',
-      studentId: currentUser.id || 'STU-001',
-      name: studentName,
-      rollNo: studentRoll,
-      prn: studentPrn,
-      course: studentClass,
-      session: '2024-2027',
-      verified: true,
-      issuedAt: new Date().toISOString(),
-    });
+    let attendancePayload: string;
+    if (isFaculty) {
+      attendancePayload = JSON.stringify({
+        app: 'MODERN_COLLEGE_FACULTY_PASS',
+        type: 'FACULTY_LECTURE_ATTENDANCE_PASS',
+        facultyId: currentUser.id || 'FAC-001',
+        name: currentUser.name,
+        designation: currentUser.designation || 'Assistant Professor',
+        department: currentUser.department || 'Computer Science',
+        employeeId: currentUser.employeeId || currentUser.id || 'FAC-102',
+        verified: true,
+        issuedAt: new Date().toISOString(),
+      });
+    } else {
+      attendancePayload = JSON.stringify({
+        app: 'MODERN_COLLEGE_ATTENDANCE_PASS',
+        studentId: currentUser.id || 'STU-001',
+        name: studentName,
+        rollNo: studentRoll,
+        prn: studentPrn,
+        course: studentClass,
+        session: '2024-2027',
+        verified: true,
+        issuedAt: new Date().toISOString(),
+      });
+    }
 
     QRCode.toDataURL(attendancePayload, {
       width: 320,
@@ -139,7 +210,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
     })
       .then((url) => setQrDataUrl(url))
       .catch((err) => console.error('Failed to generate Attendance QR:', err));
-  }, [currentUser, currentStudent, studentName, studentRoll, studentPrn, studentClass]);
+  }, [currentUser, currentStudent, studentName, studentRoll, studentPrn, studentClass, isFaculty]);
 
   // Handle simulated lecture scan
   const handleSimulateScan = async () => {
@@ -426,7 +497,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   }`}
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Scan Classroom QR</span>
+                <span>{isFaculty ? 'Scan Student QR' : 'Scan Classroom QR'}</span>
               </button>
             </div>
 
@@ -441,16 +512,35 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             {/* Tab 1: My QR Pass */}
             {qrModalTab === 'pass' && (
               <div className="mt-3 text-center space-y-3">
-                {/* Student Info Pill */}
-                <div className="p-3 bg-gradient-to-r from-[#071D3A] via-blue-950 to-indigo-950 text-white rounded-2xl">
-                  <h4 className="font-extrabold text-sm">{studentName}</h4>
-                  <p className="text-[11px] text-blue-200 mt-0.5">{studentClass}</p>
-                  <div className="flex items-center justify-center space-x-3 mt-1.5 text-[10px] font-mono text-amber-300">
-                    <span>Roll: <strong>{studentRoll}</strong></span>
-                    <span>•</span>
-                    <span>PRN: <strong>{studentPrn}</strong></span>
+                {/* Faculty vs Student Info Pill */}
+                {isFaculty ? (
+                  <div className="p-3 bg-gradient-to-r from-[#071D3A] via-blue-950 to-indigo-950 text-white rounded-2xl">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-sm">{currentUser.name}</h4>
+                      <span className="text-[9px] bg-amber-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">
+                        FACULTY PASS
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-blue-200 mt-0.5">
+                      {currentUser.designation || 'Assistant Professor'} • {currentUser.department || 'Computer Science'} Dept
+                    </p>
+                    <div className="flex items-center justify-center space-x-3 mt-1.5 text-[10px] font-mono text-amber-300">
+                      <span>EMP ID: <strong>{currentUser.employeeId || currentUser.id || 'FAC-102'}</strong></span>
+                      <span>•</span>
+                      <span>Status: <strong>Active Staff</strong></span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-3 bg-gradient-to-r from-[#071D3A] via-blue-950 to-indigo-950 text-white rounded-2xl">
+                    <h4 className="font-extrabold text-sm">{studentName}</h4>
+                    <p className="text-[11px] text-blue-200 mt-0.5">{studentClass}</p>
+                    <div className="flex items-center justify-center space-x-3 mt-1.5 text-[10px] font-mono text-amber-300">
+                      <span>Roll: <strong>{studentRoll}</strong></span>
+                      <span>•</span>
+                      <span>PRN: <strong>{studentPrn}</strong></span>
+                    </div>
+                  </div>
+                )}
 
                 {/* QR Code Container */}
                 <div className="p-3 bg-white border-2 border-dashed border-blue-400 rounded-2xl inline-block shadow-sm">
@@ -468,7 +558,9 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 </div>
 
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  📷 Present this QR code on your phone screen to the professor or classroom terminal for attendance.
+                  {isFaculty
+                    ? '📷 Present this Official Faculty ID & Lecture Pass to security or campus attendance terminals.'
+                    : '📷 Present this QR code on your phone screen to the professor or classroom terminal for attendance.'}
                 </p>
 
                 {/* Simulate Teacher Scanner Action */}

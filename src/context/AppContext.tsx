@@ -252,8 +252,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (savedSession) {
         const sessionData = JSON.parse(savedSession);
         if (sessionData && sessionData.user) {
-          setCurrentUser(sessionData.user);
-          setRoleState(sessionData.user.role);
+          const user = { ...sessionData.user };
+          if (user.role === 'faculty') {
+            if (!user.designation) user.designation = 'Assistant Professor';
+            if (!user.department) user.department = 'Computer Science';
+            if (!user.employeeId) user.employeeId = user.id?.startsWith('FAC') ? user.id : 'FAC-2024-009';
+          }
+          setCurrentUser(user);
+          setRoleState(user.role);
           setIsAuthenticated(true);
         }
       }
