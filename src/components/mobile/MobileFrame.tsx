@@ -700,8 +700,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   </div>
                   <span
                     className={`text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full border shrink-0 ${isFaculty
-                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
-                        : 'bg-blue-400/20 text-blue-200 border-blue-400/40'
+                      ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                      : 'bg-blue-400/20 text-blue-200 border-blue-400/40'
                       }`}
                   >
                     {isFaculty ? 'FACULTY' : 'STUDENT'}

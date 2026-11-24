@@ -2812,8 +2812,8 @@ export const AdminPortal: React.FC = () => {
                       type="button"
                       onClick={() => setBannerUploadType('upload')}
                       className={`px-2.5 py-0.5 rounded-md transition-all ${bannerUploadType === 'upload'
-                          ? 'bg-white text-purple-700 font-bold shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                        ? 'bg-white text-purple-700 font-bold shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 font-medium'
                         }`}
                     >
                       Upload File
@@ -2822,8 +2822,8 @@ export const AdminPortal: React.FC = () => {
                       type="button"
                       onClick={() => setBannerUploadType('url')}
                       className={`px-2.5 py-0.5 rounded-md transition-all ${bannerUploadType === 'url'
-                          ? 'bg-white text-purple-700 font-bold shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                        ? 'bg-white text-purple-700 font-bold shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 font-medium'
                         }`}
                     >
                       Image URL

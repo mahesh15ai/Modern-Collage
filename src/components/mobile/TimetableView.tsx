@@ -73,8 +73,8 @@ export const TimetableView: React.FC = () => {
             <button
               onClick={() => setFacultyFilter('my')}
               className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${facultyFilter === 'my'
-                  ? 'bg-blue-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-blue-900 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
               <UserCheck className="w-3.5 h-3.5 mr-1" />
@@ -83,8 +83,8 @@ export const TimetableView: React.FC = () => {
             <button
               onClick={() => setFacultyFilter('all')}
               className={`flex-1 py-2 text-center rounded-xl transition-all flex items-center justify-center space-x-1.5 ${facultyFilter === 'all'
-                  ? 'bg-blue-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-blue-900 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
               <Building2 className="w-3.5 h-3.5 mr-1" />
@@ -98,8 +98,8 @@ export const TimetableView: React.FC = () => {
           <button
             onClick={() => setViewType('class')}
             className={`flex-1 py-1.5 text-center rounded-full transition-all ${viewType === 'class'
-                ? 'bg-blue-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-blue-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             Class Wise
@@ -107,8 +107,8 @@ export const TimetableView: React.FC = () => {
           <button
             onClick={() => setViewType('subject')}
             className={`flex-1 py-1.5 text-center rounded-full transition-all ${viewType === 'subject'
-                ? 'bg-blue-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-blue-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             Subject Wise
@@ -123,8 +123,8 @@ export const TimetableView: React.FC = () => {
             key={day}
             onClick={() => setSelectedDay(day)}
             className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${selectedDay === day
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
           >
             {day}
@@ -142,14 +142,14 @@ export const TimetableView: React.FC = () => {
               <div
                 key={slot.id}
                 className={`bg-white rounded-2xl p-4 border shadow-sm flex items-start space-x-3.5 transition-all ${isAssignedToMe
-                    ? 'border-blue-500 ring-2 ring-blue-500/10'
-                    : 'border-slate-100 hover:border-blue-200'
+                  ? 'border-blue-500 ring-2 ring-blue-500/10'
+                  : 'border-slate-100 hover:border-blue-200'
                   }`}
               >
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs flex-shrink-0 ${slot.category === 'CS'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-indigo-100 text-indigo-800'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-indigo-100 text-indigo-800'
                     }`}
                 >
                   {slot.category}

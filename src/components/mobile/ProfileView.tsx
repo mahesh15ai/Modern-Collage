@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   GraduationCap,
@@ -25,6 +25,7 @@ import {
   LogOut,
   Building2,
   IdCard,
+  UploadCloud,
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
@@ -40,8 +41,48 @@ const PRESET_AVATARS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=240&auto=format&fit=crop&q=80',
 ];
 
+// Helper to crop and compress passport size photo (standard 3:4 aspect ratio)
+const compressPassportPhoto = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const targetWidth = 450;
+        const targetHeight = 600;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+        const scale = Math.max(targetWidth / img.width, targetHeight / img.height);
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        const x = (targetWidth - scaledWidth) / 2;
+        const y = Math.min(0, (targetHeight - scaledHeight) * 0.25);
+
+        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 export const ProfileView: React.FC = () => {
-  const { currentUser, setCurrentUser, students, facultyList, updateStudent, setViewMode, logout, setRole } = useApp();
+  const { currentUser, setCurrentUser, students, facultyList, updateStudent, updateFaculty, setViewMode, logout, setRole } = useApp();
 
   const isFaculty = currentUser.role === 'faculty';
   const currentStudent = students.find((s) => s.id === currentUser.id) || students[0];
@@ -66,9 +107,7 @@ export const ProfileView: React.FC = () => {
   const studentMobile = currentUser.phone || '7896541230';
   const studentPrn = currentUser.prn || '202580019329';
   const studentEmail = currentUser.email || 'gomaskarm@gmail.com';
-  const studentAvatar = currentUser.avatar && !currentUser.avatar.includes('unsplash')
-    ? currentUser.avatar
-    : '/student-avatar.jpg';
+  const studentAvatar = currentUser.avatar || '/student-avatar.jpg';
 
   // Field values for Faculty
   const facultyName = currentUser.name || 'Dr. Nitish Sharma';
@@ -92,6 +131,62 @@ export const ProfileView: React.FC = () => {
   const [editEmpId, setEditEmpId] = useState(facultyEmpId);
   const [editQualification, setEditQualification] = useState(facultyQualification);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Photo upload state & ref
+  const directFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  // Direct photo upload handler (called from ID card photo click)
+  const handleDirectPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const optimizedPhoto = await compressPassportPhoto(file);
+      const updatedUser: UserProfile = {
+        ...currentUser,
+        avatar: optimizedPhoto,
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
+
+      if (!isFaculty && currentStudent && updateStudent) {
+        await updateStudent({
+          ...currentStudent,
+          avatar: optimizedPhoto,
+        });
+      } else if (isFaculty && updateFaculty) {
+        const linkedFaculty = facultyList.find(
+          (f) => f.id === currentUser.id || f.name?.toLowerCase() === currentUser.name?.toLowerCase()
+        );
+        if (linkedFaculty) {
+          await updateFaculty({
+            ...linkedFaculty,
+            avatar: optimizedPhoto,
+          });
+        }
+      }
+
+      setToastMessage('ID Card Photo updated successfully! ✓');
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch (err) {
+      console.error('Photo upload error:', err);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  // Modal photo upload handler
+  const handleModalPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const optimizedPhoto = await compressPassportPhoto(file);
+      setEditAvatar(optimizedPhoto);
+    } catch (err) {
+      console.error('Modal photo upload error:', err);
+    }
+  };
 
   // Generate verified Attendance / Faculty QR code matching the reference
   useEffect(() => {
@@ -191,6 +286,26 @@ export const ProfileView: React.FC = () => {
           avatar: editAvatar,
         };
         setCurrentUser(updatedUser);
+        localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
+
+        if (updateFaculty) {
+          const linkedFaculty = facultyList.find(
+            (f) => f.id === currentUser.id || f.name?.toLowerCase() === currentUser.name?.toLowerCase()
+          );
+          if (linkedFaculty) {
+            await updateFaculty({
+              ...linkedFaculty,
+              name: editName.trim(),
+              designation: editDesignation.trim(),
+              department: editDepartment.trim(),
+              employeeId: editEmpId.trim(),
+              phone: editMobile.trim(),
+              qualification: editQualification.trim(),
+              avatar: editAvatar,
+            });
+          }
+        }
+
         setShowEditModal(false);
         setToastMessage('Faculty ID Card updated successfully! ✓');
       } else {
@@ -205,6 +320,7 @@ export const ProfileView: React.FC = () => {
           avatar: editAvatar,
         };
         setCurrentUser(updatedUser);
+        localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
 
         if (currentStudent && updateStudent) {
           const updatedStudentRecord: StudentRecord = {
@@ -215,6 +331,7 @@ export const ProfileView: React.FC = () => {
             rollNo: editRoll.trim(),
             dob: editDob.trim(),
             phone: editMobile.trim(),
+            avatar: editAvatar,
           };
           await updateStudent(updatedStudentRecord);
         }
@@ -387,15 +504,35 @@ export const ProfileView: React.FC = () => {
             {/* Front Card Body (Photo on Left, Key-Value Table on Right) */}
             <div className="px-3.5 sm:px-4.5 pt-1 pb-0 relative">
               <div className="flex items-start gap-3.5 sm:gap-4">
-                {/* Left: Passport Size Student Photo */}
+                {/* Left: Passport Size Student Photo with Add Photo feature */}
                 <div className="shrink-0 flex flex-col items-center">
-                  <div className="w-[112px] sm:w-[124px] h-[146px] sm:h-[158px] rounded-2xl border border-slate-200 overflow-hidden shadow-xs bg-blue-50">
+                  <div className="relative group w-[112px] sm:w-[124px] h-[146px] sm:h-[158px] rounded-2xl border-2 border-slate-200 overflow-hidden shadow-xs bg-blue-50">
                     <img
                       src={isFaculty ? facultyAvatar : studentAvatar}
                       alt={isFaculty ? facultyName : studentName}
                       className="w-full h-full object-cover object-top"
                     />
+                    {/* Add / Change Photo Button */}
+                    <button
+                      type="button"
+                      onClick={() => directFileInputRef.current?.click()}
+                      className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/65 to-transparent pt-3 pb-1.5 px-1 flex items-center justify-center space-x-1 text-white hover:bg-blue-600/90 transition-all cursor-pointer opacity-90 hover:opacity-100"
+                      title="Click to add or change your ID card photo"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-blue-200" />
+                      <span className="text-[9.5px] font-bold text-white tracking-tight">
+                        {isUploadingPhoto ? 'Uploading...' : 'Add Photo'}
+                      </span>
+                    </button>
                   </div>
+                  {/* Hidden file input for direct photo upload */}
+                  <input
+                    ref={directFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleDirectPhotoUpload}
+                    className="hidden"
+                  />
                 </div>
 
                 {/* Right: Student Details Table */}
@@ -828,13 +965,43 @@ export const ProfileView: React.FC = () => {
 
             {/* Form */}
             <form onSubmit={handleSaveProfile} className="mt-4 space-y-3 text-xs">
-              {/* Avatar Selector */}
+              {/* Avatar Selector with Upload Photo feature */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1.5 flex items-center space-x-1">
-                  <Camera className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Choose Profile Photo</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-bold text-slate-700 flex items-center space-x-1">
+                    <Camera className="w-3.5 h-3.5 text-blue-600" />
+                    <span>ID Card Photo</span>
+                  </label>
+                  <span className="text-[10px] text-blue-600 font-semibold">Upload Photo or Pick Preset</span>
+                </div>
                 <div className="flex items-center space-x-2 overflow-x-auto pb-1.5">
+                  {/* Upload Your Photo Tile */}
+                  <label className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all shrink-0 group">
+                    <UploadCloud className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                    <span className="text-[8px] font-bold text-blue-800">Upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleModalPhotoUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* If user has custom uploaded photo, show it with verified checkmark */}
+                  {editAvatar && !PRESET_AVATARS.includes(editAvatar) && (
+                    <button
+                      type="button"
+                      onClick={() => setEditAvatar(editAvatar)}
+                      className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 border-blue-600 ring-2 ring-blue-500/30 scale-105"
+                      title="Your custom uploaded photo"
+                    >
+                      <img src={editAvatar} alt="custom photo" className="w-full h-full object-cover object-top" />
+                      <div className="absolute inset-0 bg-blue-600/30 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white stroke-[3]" />
+                      </div>
+                    </button>
+                  )}
+
                   {PRESET_AVATARS.map((url, idx) => (
                     <button
                       key={idx}

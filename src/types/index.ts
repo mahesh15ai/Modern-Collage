@@ -53,6 +53,7 @@ export interface StudentRecord {
   semester: string;
   admissionDate: string;
   status: 'Active' | 'Alumni' | 'Suspended';
+  avatar?: string;
   documents: {
     name: string;
     type: string;
@@ -79,6 +80,7 @@ export interface FacultyRecord {
   workloadHours: number;
   subjectsAssigned: string[];
   status: 'Active' | 'On Leave';
+  avatar?: string;
   classTeacherOf?: string;
   cabin?: string;
 }

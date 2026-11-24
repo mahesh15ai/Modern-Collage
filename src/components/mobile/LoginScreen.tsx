@@ -97,8 +97,8 @@ export const LoginScreen: React.FC = () => {
           type="button"
           onClick={() => setPortalRole('student')}
           className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'student'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'text-slate-600 hover:text-slate-900'
             }`}
         >
           <GraduationCap className="w-3.5 h-3.5 mr-1" />
@@ -109,8 +109,8 @@ export const LoginScreen: React.FC = () => {
           type="button"
           onClick={() => setPortalRole('faculty')}
           className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'faculty'
-              ? 'bg-blue-900 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+            ? 'bg-blue-900 text-white shadow-sm'
+            : 'text-slate-600 hover:text-slate-900'
             }`}
         >
           <Users className="w-3.5 h-3.5 mr-1" />
@@ -121,8 +121,8 @@ export const LoginScreen: React.FC = () => {
           type="button"
           onClick={() => setPortalRole('admin')}
           className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'admin'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+            ? 'bg-slate-900 text-white shadow-sm'
+            : 'text-slate-600 hover:text-slate-900'
             }`}
         >
           <ShieldCheck className="w-3.5 h-3.5 mr-1" />
