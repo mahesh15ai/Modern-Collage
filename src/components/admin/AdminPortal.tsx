@@ -45,10 +45,46 @@ import {
   Printer,
   Menu,
   BookOpen,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { DispatchedEmail } from '@/context/AppContext';
 import { clearAllLocalCaches } from '@/services/authService';
 import { StudentRecord, FacultyRecord, TimetableSlot } from '@/types';
+
+// Helper to compress and convert image files to optimized Data URL
+const compressImageFile = (file: File, maxWidth = 1200, quality = 0.85): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -233,7 +269,30 @@ export const AdminPortal: React.FC = () => {
   const [eventVenue, setEventVenue] = useState('');
   const [eventDesc, setEventDesc] = useState('');
   const [eventBanner, setEventBanner] = useState('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800');
+  const [bannerUploadType, setBannerUploadType] = useState<'upload' | 'url'>('upload');
+  const [bannerFileName, setBannerFileName] = useState('');
+  const [isProcessingBanner, setIsProcessingBanner] = useState(false);
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProcessingBanner(true);
+    setBannerFileName(file.name);
+    try {
+      const compressedDataUrl = await compressImageFile(file);
+      setEventBanner(compressedDataUrl);
+    } catch (err) {
+      console.error('Error processing banner image:', err);
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (evt.target?.result) setEventBanner(evt.target.result as string);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsProcessingBanner(false);
+    }
+  };
 
   // Student Marks Result Modal
   const [showResultModal, setShowResultModal] = useState(false);
@@ -285,14 +344,18 @@ export const AdminPortal: React.FC = () => {
         date: eventDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: eventTime || '10:00 AM - 04:00 PM',
         venue: eventVenue || 'College Auditorium',
-        bannerImage: eventBanner,
+        bannerImage: eventBanner || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
         description: eventDesc || 'Join us for this exciting campus event.',
         registrationOpen: true,
       });
       setShowEventModal(false);
       setEventTitle('');
       setEventSubtitle('');
+      setEventDate('');
+      setEventVenue('');
       setEventDesc('');
+      setBannerFileName('');
+      setEventBanner('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800');
     } finally {
       setIsSubmittingEvent(false);
     }
@@ -2742,13 +2805,100 @@ export const AdminPortal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Banner Image URL</label>
-                <input
-                  type="text"
-                  value={eventBanner}
-                  onChange={(e) => setEventBanner(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono text-[11px]"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-slate-700">Banner Image</label>
+                  <div className="flex items-center space-x-1 bg-slate-100 p-0.5 rounded-lg text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setBannerUploadType('upload')}
+                      className={`px-2.5 py-0.5 rounded-md transition-all ${bannerUploadType === 'upload'
+                          ? 'bg-white text-purple-700 font-bold shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                        }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBannerUploadType('url')}
+                      className={`px-2.5 py-0.5 rounded-md transition-all ${bannerUploadType === 'url'
+                          ? 'bg-white text-purple-700 font-bold shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                        }`}
+                    >
+                      Image URL
+                    </button>
+                  </div>
+                </div>
+
+                {bannerUploadType === 'upload' ? (
+                  <div className="space-y-2">
+                    <label className="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/30 hover:bg-purple-50/60 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerFileChange}
+                        className="hidden"
+                      />
+                      <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                        {isProcessingBanner ? (
+                          <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <CloudUpload className="w-5 h-5" />
+                        )}
+                      </div>
+                      <span className="font-bold text-purple-900 text-xs text-center">
+                        {isProcessingBanner ? 'Optimizing Image...' : 'Click to select banner image'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 text-center">
+                        Supports PNG, JPG, WebP from your device
+                      </span>
+                      {bannerFileName && (
+                        <span className="mt-2 text-[10px] font-semibold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-full flex items-center max-w-full truncate">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 mr-1 shrink-0" />
+                          <span className="truncate">{bannerFileName}</span>
+                        </span>
+                      )}
+                    </label>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="https://images.unsplash.com/photo-..."
+                      value={eventBanner}
+                      onChange={(e) => setEventBanner(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-600 font-mono text-[11px]"
+                    />
+                  </div>
+                )}
+
+                {/* Banner Live Preview */}
+                {eventBanner && (
+                  <div className="mt-2.5 relative rounded-xl overflow-hidden border border-slate-200 h-28 bg-slate-900 group shadow-xs">
+                    <img
+                      src={eventBanner}
+                      alt="Banner Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent flex items-end justify-between p-2">
+                      <span className="text-[10px] font-bold text-white bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-xs flex items-center">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400 mr-1" />
+                        Banner Preview
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEventBanner('');
+                          setBannerFileName('');
+                        }}
+                        className="text-[10px] font-bold text-white bg-rose-600/90 hover:bg-rose-600 px-2 py-0.5 rounded-md transition-colors shadow-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-100">
