@@ -64,11 +64,10 @@ export const EventsView: React.FC = () => {
           return (
             <div
               key={event.id}
-              className={`bg-white rounded-3xl overflow-hidden border transition-all ${
-                isRegistered
+              className={`bg-white rounded-3xl overflow-hidden border transition-all ${isRegistered
                   ? 'border-emerald-200/80 shadow-xs'
                   : 'border-slate-100 shadow-sm hover:shadow-md'
-              }`}
+                }`}
             >
               {/* Banner Image / Header (Clickable for Full Details Modal) */}
               <div

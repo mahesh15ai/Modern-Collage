@@ -125,6 +125,8 @@ export const AdminPortal: React.FC = () => {
     publishNotice,
     deleteNotice,
     createEvent,
+    updateEvent,
+    deleteEvent,
     updateComplaintStatus,
     publishResult,
     recordAttendance,
@@ -274,6 +276,22 @@ export const AdminPortal: React.FC = () => {
   const [isProcessingBanner, setIsProcessingBanner] = useState(false);
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
 
+  // Edit Event Modal State
+  const [showEditEventModal, setShowEditEventModal] = useState(false);
+  const [editingEventId, setEditingEventId] = useState('');
+  const [editEventTitle, setEditEventTitle] = useState('');
+  const [editEventSubtitle, setEditEventSubtitle] = useState('');
+  const [editEventDate, setEditEventDate] = useState('');
+  const [editEventTime, setEditEventTime] = useState('');
+  const [editEventVenue, setEditEventVenue] = useState('');
+  const [editEventDesc, setEditEventDesc] = useState('');
+  const [editEventBanner, setEditEventBanner] = useState('');
+  const [editBannerUploadType, setEditBannerUploadType] = useState<'upload' | 'url'>('upload');
+  const [editBannerFileName, setEditBannerFileName] = useState('');
+  const [isProcessingEditBanner, setIsProcessingEditBanner] = useState(false);
+  const [editEventRegistrationOpen, setEditEventRegistrationOpen] = useState(true);
+  const [isSubmittingEditEvent, setIsSubmittingEditEvent] = useState(false);
+
   // Event Registered Students Roster Modal State
   const [selectedEventForAttendees, setSelectedEventForAttendees] = useState<EventItem | null>(null);
   const [attendeeSearchQuery, setAttendeeSearchQuery] = useState('');
@@ -419,6 +437,26 @@ export const AdminPortal: React.FC = () => {
     }
   };
 
+  const handleEditBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProcessingEditBanner(true);
+    setEditBannerFileName(file.name);
+    try {
+      const compressedDataUrl = await compressImageFile(file);
+      setEditEventBanner(compressedDataUrl);
+    } catch (err) {
+      console.error('Error processing edit banner image:', err);
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (evt.target?.result) setEditEventBanner(evt.target.result as string);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsProcessingEditBanner(false);
+    }
+  };
+
   // Student Marks Result Modal
   const [showResultModal, setShowResultModal] = useState(false);
   const [resStudentId, setResStudentId] = useState('');
@@ -483,6 +521,66 @@ export const AdminPortal: React.FC = () => {
       setEventBanner('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800');
     } finally {
       setIsSubmittingEvent(false);
+    }
+  };
+
+  const handleOpenEditEventModal = (evt: EventItem) => {
+    setEditingEventId(evt.id);
+    setEditEventTitle(evt.title);
+    setEditEventSubtitle(evt.subtitle || '');
+    setEditEventDate(evt.date);
+    setEditEventTime(evt.time || '');
+    setEditEventVenue(evt.venue);
+    setEditEventDesc(evt.description || '');
+    setEditEventBanner(evt.bannerImage || '');
+    setEditBannerFileName('');
+    setEditBannerUploadType(evt.bannerImage?.startsWith('data:') ? 'upload' : 'url');
+    setEditEventRegistrationOpen(evt.registrationOpen !== false);
+    setShowEditEventModal(true);
+  };
+
+  const handleEditEventSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEventId || !editEventTitle.trim()) return;
+    setIsSubmittingEditEvent(true);
+    try {
+      const existing = events.find((e) => e.id === editingEventId);
+      const updated: EventItem = {
+        id: editingEventId,
+        title: editEventTitle.trim(),
+        subtitle: editEventSubtitle.trim() || 'Annual Campus Activity',
+        date: editEventDate.trim() || existing?.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: editEventTime.trim() || existing?.time || '10:00 AM - 04:00 PM',
+        venue: editEventVenue.trim() || existing?.venue || 'College Auditorium',
+        description: editEventDesc.trim() || existing?.description || 'Join us for this exciting campus event.',
+        bannerImage: editEventBanner || existing?.bannerImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+        registrationOpen: editEventRegistrationOpen,
+        registeredCount: existing?.registeredCount ?? (existing?.registeredStudents?.length || 0),
+        registeredUserIds: existing?.registeredUserIds || [],
+        registeredStudents: existing?.registeredStudents || [],
+      };
+      await updateEvent(updated);
+      if (selectedEventForAttendees?.id === editingEventId) {
+        setSelectedEventForAttendees(updated);
+      }
+      setShowEditEventModal(false);
+    } catch (err) {
+      console.error('Failed to update event:', err);
+    } finally {
+      setIsSubmittingEditEvent(false);
+    }
+  };
+
+  const handleDeleteEvent = async (evt: EventItem) => {
+    if (window.confirm(`Are you sure you want to delete event "${evt.title}"?\nThis will permanently delete the event and student registrations.`)) {
+      try {
+        await deleteEvent(evt.id);
+        if (selectedEventForAttendees?.id === evt.id) {
+          setSelectedEventForAttendees(null);
+        }
+      } catch (err) {
+        console.error('Failed to delete event:', err);
+      }
     }
   };
 
@@ -1972,75 +2070,144 @@ export const AdminPortal: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {events.map((evt) => {
-                  const regCount = evt.registeredCount || (evt.registeredStudents?.length || 0);
-                  return (
-                    <div
-                      key={evt.id}
-                      className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-                    >
-                      <div>
-                        <div
-                          onClick={() => {
-                            setSelectedEventForAttendees(evt);
-                            setAttendeeSearchQuery('');
-                          }}
-                          className="relative cursor-pointer group"
-                          title="Click image to view event details and registered students"
-                        >
-                          <img
-                            src={
-                              evt.bannerImage ||
-                              'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80'
-                            }
-                            alt={evt.title}
-                            className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-200"
-                          />
-                          <span className="absolute top-2.5 right-2.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-                            Active
-                          </span>
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <h4 className="font-bold text-sm text-slate-900 leading-snug">{evt.title}</h4>
-                          <p className="text-xs text-blue-600 font-semibold">{evt.subtitle}</p>
-                          <p className="text-xs text-slate-500 flex items-center space-x-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>
-                              {evt.date} • {evt.venue}
+              {events.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 p-6 space-y-3">
+                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-800">No events published yet</h4>
+                    <p className="text-xs text-slate-500 mt-1">Create tech fests, cultural activities, and campus workshops.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowEventModal(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-sm inline-flex items-center space-x-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create First Event</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {events.map((evt) => {
+                    const regCount = evt.registeredCount || (evt.registeredStudents?.length || 0);
+                    const isOpen = evt.registrationOpen !== false;
+                    return (
+                      <div
+                        key={evt.id}
+                        className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                      >
+                        <div>
+                          <div
+                            onClick={() => {
+                              setSelectedEventForAttendees(evt);
+                              setAttendeeSearchQuery('');
+                            }}
+                            className="relative cursor-pointer overflow-hidden"
+                            title="Click image to view event details and registered students"
+                          >
+                            <img
+                              src={
+                                evt.bannerImage ||
+                                'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80'
+                              }
+                              alt={evt.title}
+                              className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-200"
+                            />
+                            {/* Registration Status Pill */}
+                            <span
+                              className={`absolute top-2.5 right-2.5 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs ${
+                                isOpen ? 'bg-emerald-600/90' : 'bg-slate-700/90'
+                              }`}
+                            >
+                              {isOpen ? 'Active' : 'Closed'}
                             </span>
-                          </p>
+
+                            {/* Quick Action Badges on Banner */}
+                            <div className="absolute top-2.5 left-2.5 flex items-center space-x-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEditEventModal(evt);
+                                }}
+                                className="p-1.5 bg-white/90 hover:bg-white text-slate-700 hover:text-blue-600 rounded-lg shadow-sm backdrop-blur-sm transition-transform active:scale-90"
+                                title="Edit Event"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteEvent(evt);
+                                }}
+                                className="p-1.5 bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 rounded-lg shadow-sm backdrop-blur-sm transition-transform active:scale-90"
+                                title="Delete Event"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="p-4 space-y-2">
+                            <h4 className="font-bold text-sm text-slate-900 leading-snug">{evt.title}</h4>
+                            <p className="text-xs text-blue-600 font-semibold">{evt.subtitle}</p>
+                            <p className="text-xs text-slate-500 flex items-center space-x-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span>
+                                {evt.date} • {evt.venue}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 pt-0 space-y-2.5">
+                          <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span className="font-bold text-slate-700 flex items-center space-x-1.5">
+                              <Users className="w-3.5 h-3.5 text-blue-600" />
+                              <span>{regCount} Registered</span>
+                            </span>
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                              1 Pass / Student
+                            </span>
+                          </div>
+
+                          {/* Action Buttons: Roster, Edit, Delete */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEventForAttendees(evt);
+                                setAttendeeSearchQuery('');
+                              }}
+                              className="flex-1 py-2 px-3 bg-blue-50 hover:bg-blue-100 text-[#1d4ed8] hover:text-blue-900 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all active:scale-[0.98] border border-blue-200/80 shadow-2xs cursor-pointer"
+                            >
+                              <Users className="w-3.5 h-3.5" />
+                              <span>View Students ({regCount})</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditEventModal(evt)}
+                              className="p-2 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl border border-slate-200 hover:border-blue-200 transition-all active:scale-95 cursor-pointer"
+                              title="Edit Event"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEvent(evt)}
+                              className="p-2 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl border border-slate-200 hover:border-rose-200 transition-all active:scale-95 cursor-pointer"
+                              title="Delete Event"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="p-4 pt-0 space-y-2.5">
-                        <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
-                          <span className="font-bold text-slate-700 flex items-center space-x-1.5">
-                            <Users className="w-3.5 h-3.5 text-blue-600" />
-                            <span>{regCount} Registered</span>
-                          </span>
-                          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                            1 Pass / Student
-                          </span>
-                        </div>
-
-                        {/* Action: View Registered Students Roster */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedEventForAttendees(evt);
-                            setAttendeeSearchQuery('');
-                          }}
-                          className="w-full py-2 px-3 bg-blue-50 hover:bg-blue-100 text-[#1d4ed8] hover:text-blue-900 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all active:scale-[0.98] border border-blue-200/80 shadow-2xs cursor-pointer"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                          <span>View Registered Students ({regCount})</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -3112,6 +3279,246 @@ export const AdminPortal: React.FC = () => {
         </div>
       )}
 
+      {/* MODAL: EDIT EVENT MODAL */}
+      {showEditEventModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">Edit Campus Event</h3>
+                  <p className="text-[11px] text-slate-500">Update event details, venue, date & registration status</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditEventModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditEventSubmit} className="mt-4 space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Event Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Tech Fest 2026: National Symposium"
+                  value={editEventTitle}
+                  onChange={(e) => setEditEventTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Subtitle / Tagline</label>
+                <input
+                  type="text"
+                  placeholder="e.g. National Level Coding Competition & Web Hackathon"
+                  value={editEventSubtitle}
+                  onChange={(e) => setEditEventSubtitle(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 15-16 Dec 2026"
+                    value={editEventDate}
+                    onChange={(e) => setEditEventDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Venue</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Main Auditorium / Lab 3"
+                    value={editEventVenue}
+                    onChange={(e) => setEditEventVenue(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Timings</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 10:00 AM - 04:00 PM"
+                    value={editEventTime}
+                    onChange={(e) => setEditEventTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Registration Status</label>
+                  <select
+                    value={editEventRegistrationOpen ? 'open' : 'closed'}
+                    onChange={(e) => setEditEventRegistrationOpen(e.target.value === 'open')}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium bg-white"
+                  >
+                    <option value="open">🟢 Active (Registration Open)</option>
+                    <option value="closed">🔴 Closed (Registration Closed)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Description & Overview</label>
+                <textarea
+                  rows={3}
+                  placeholder="Details about rounds, eligibility, prizes, and guidelines..."
+                  value={editEventDesc}
+                  onChange={(e) => setEditEventDesc(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-slate-700">Banner Image</label>
+                  <div className="flex items-center space-x-1 bg-slate-100 p-0.5 rounded-lg text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setEditBannerUploadType('upload')}
+                      className={`px-2.5 py-0.5 rounded-md transition-all ${
+                        editBannerUploadType === 'upload'
+                          ? 'bg-white text-blue-700 font-bold shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditBannerUploadType('url')}
+                      className={`px-2.5 py-0.5 rounded-md transition-all ${
+                        editBannerUploadType === 'url'
+                          ? 'bg-white text-blue-700 font-bold shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                      }`}
+                    >
+                      Image URL
+                    </button>
+                  </div>
+                </div>
+
+                {editBannerUploadType === 'upload' ? (
+                  <div className="space-y-2">
+                    <label className="border-2 border-dashed border-blue-200 hover:border-blue-400 bg-blue-50/30 hover:bg-blue-50/60 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditBannerFileChange}
+                        className="hidden"
+                      />
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                        {isProcessingEditBanner ? (
+                          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <CloudUpload className="w-5 h-5" />
+                        )}
+                      </div>
+                      <span className="font-bold text-blue-900 text-xs text-center">
+                        {isProcessingEditBanner ? 'Optimizing Image...' : 'Click to upload replacement banner'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 text-center">
+                        Supports PNG, JPG, WebP from your device
+                      </span>
+                      {editBannerFileName && (
+                        <span className="mt-2 text-[10px] font-semibold text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full flex items-center max-w-full truncate">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 mr-1 shrink-0" />
+                          <span className="truncate">{editBannerFileName}</span>
+                        </span>
+                      )}
+                    </label>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="https://images.unsplash.com/photo-..."
+                      value={editEventBanner}
+                      onChange={(e) => setEditEventBanner(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono text-[11px]"
+                    />
+                  </div>
+                )}
+
+                {/* Banner Live Preview */}
+                {editEventBanner && (
+                  <div className="mt-2.5 relative rounded-xl overflow-hidden border border-slate-200 h-28 bg-slate-900 group shadow-xs">
+                    <img
+                      src={editEventBanner}
+                      alt="Banner Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent flex items-end justify-between p-2">
+                      <span className="text-[10px] font-bold text-white bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-xs flex items-center">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400 mr-1" />
+                        Banner Preview
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditEventBanner('');
+                          setEditBannerFileName('');
+                        }}
+                        className="text-[10px] font-bold text-white bg-rose-600/90 hover:bg-rose-600 px-2 py-0.5 rounded-md transition-colors shadow-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const evt = events.find((e) => e.id === editingEventId);
+                    if (evt) handleDeleteEvent(evt);
+                    setShowEditEventModal(false);
+                  }}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-center inline-flex items-center justify-center space-x-1.5 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Event</span>
+                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditEventModal(false)}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold text-center"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEditEvent}
+                    className="w-full sm:w-auto px-5 py-2 rounded-xl text-white bg-blue-600 hover:bg-blue-700 font-bold shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{isSubmittingEditEvent ? 'Saving Changes...' : 'Save Changes'}</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: EVENT REGISTERED STUDENTS ROSTER */}
       {selectedEventForAttendees && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
@@ -3136,17 +3543,37 @@ export const AdminPortal: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedEventForAttendees(null);
-                  setAttendeeSearchQuery('');
-                }}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                title="Close Roster"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center space-x-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditEventModal(selectedEventForAttendees)}
+                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-semibold flex items-center space-x-1 border border-slate-200 transition-colors"
+                  title="Edit Event"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Edit Event</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvent(selectedEventForAttendees)}
+                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-semibold flex items-center space-x-1 border border-slate-200 transition-colors"
+                  title="Delete Event"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedEventForAttendees(null);
+                    setAttendeeSearchQuery('');
+                  }}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="Close Roster"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Filter and Export Bar */}

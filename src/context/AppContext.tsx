@@ -66,6 +66,8 @@ import {
   saveNoticeToFirestore,
   deleteNoticeFromFirestore,
   saveEventToFirestore,
+  updateEventInFirestore,
+  deleteEventFromFirestore,
   registerForEventInFirestore,
   saveComplaintToFirestore,
   updateComplaintStatusInFirestore,
@@ -208,6 +210,8 @@ interface AppContextType {
   createEvent: (
     eventData: Omit<EventItem, 'id' | 'registeredCount'>
   ) => Promise<void>;
+  updateEvent: (event: EventItem) => Promise<void>;
+  deleteEvent: (eventId: string) => Promise<void>;
   addComplaint: (
     title: string,
     category: ComplaintItem['category'],
@@ -1471,6 +1475,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // Realtime Event Update
+  const updateEvent = async (updatedEvent: EventItem) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e))
+    );
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
+        localStorage.setItem('smart_campus_events', JSON.stringify(saved));
+      } catch (e) { }
+    }
+    await updateEventInFirestore(updatedEvent).catch((err) =>
+      console.warn('Firestore updateEvent note:', err)
+    );
+  };
+
+  // Realtime Event Deletion
+  const deleteEvent = async (eventId: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = events.filter((e) => e.id !== eventId);
+        localStorage.setItem('smart_campus_events', JSON.stringify(saved));
+      } catch (e) { }
+    }
+    await deleteEventFromFirestore(eventId).catch((err) =>
+      console.warn('Firestore deleteEvent note:', err)
+    );
+  };
+
   // Realtime Event Registration (One student can register only once)
   const registerForEvent = async (eventId: string): Promise<boolean> => {
     // Strictly enforce: Only 1 registration per student per event!
@@ -1712,6 +1746,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         publishNotice,
         deleteNotice,
         createEvent,
+        updateEvent,
+        deleteEvent,
         registerForEvent,
         addComplaint,
         updateComplaintStatus,

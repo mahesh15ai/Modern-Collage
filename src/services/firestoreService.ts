@@ -453,6 +453,32 @@ export async function saveEventToFirestore(event: EventItem): Promise<void> {
 }
 
 /**
+ * Update an Event in Cloud Firestore
+ */
+export async function updateEventInFirestore(event: EventItem): Promise<void> {
+  if (!isFirebaseConfigured) return;
+  try {
+    await setDoc(doc(db, COLLECTIONS.EVENTS, event.id), event, { merge: true });
+  } catch (error: any) {
+    console.warn('Error updating event in Firestore:', error?.message);
+    throw error;
+  }
+}
+
+/**
+ * Delete an Event from Cloud Firestore
+ */
+export async function deleteEventFromFirestore(eventId: string): Promise<void> {
+  if (!isFirebaseConfigured) return;
+  try {
+    await deleteDoc(doc(db, COLLECTIONS.EVENTS, eventId));
+  } catch (error: any) {
+    console.warn('Error deleting event from Firestore:', error?.message);
+    throw error;
+  }
+}
+
+/**
  * Register student for an event in Cloud Firestore (One student = one registration)
  */
 export async function registerForEventInFirestore(
