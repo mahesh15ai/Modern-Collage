@@ -3,13 +3,11 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import CollegeLogo from '@/components/common/CollegeLogo';
-import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, X, LogIn, QrCode, Sparkles, UploadCloud, GraduationCap, Users, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, X, LogIn, QrCode, Sparkles, UploadCloud } from 'lucide-react';
 import { sendResetPassword } from '@/services/authService';
-import { UserRole } from '@/types';
 
 export const LoginScreen: React.FC = () => {
   const { login, loginWithGoogleAuth, authLoading, authError } = useApp();
-  const [portalRole, setPortalRole] = useState<UserRole>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,11 +27,11 @@ export const LoginScreen: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
-    await login(email.trim(), password, portalRole);
+    await login(email.trim(), password);
   };
 
   const handleGoogleSignIn = async () => {
-    await loginWithGoogleAuth(portalRole);
+    await loginWithGoogleAuth();
   };
 
   const handleQrLogin = async (tokenOrUrl: string) => {
@@ -76,11 +74,32 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <div className="w-full min-h-full flex flex-col justify-between bg-white p-6 font-sans">
-      {/* College Logo & Header */}
-      <div className="flex flex-col items-center pt-4">
-        <CollegeLogo size={68} />
-        <h2 className="mt-3 text-lg font-bold text-slate-900">Smart Campus</h2>
-        <p className="text-xs text-slate-500">Sign in with your institutional credentials</p>
+      {/* College Logo & Official Institutional Branding Header */}
+      <div className="flex flex-col items-center pt-2 pb-1 text-center">
+        <CollegeLogo size={76} />
+
+        <div className="mt-3 space-y-0.5">
+          <h1 className="text-lg font-black text-slate-900 tracking-tight leading-tight uppercase">
+            Modern College
+          </h1>
+          <p className="text-[12px] font-bold text-blue-900 leading-tight">
+            of Computer Science &amp; Information Technology
+          </p>
+          <p className="text-[10px] font-semibold text-slate-500">
+            Nanded, Maharashtra • Affiliated to SRTMUN
+          </p>
+        </div>
+
+        <div className="mt-2.5 inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-200/90 px-3 py-1 rounded-full shadow-2xs">
+          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+          <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider">
+            Smart Campus ERP Portal
+          </span>
+        </div>
+
+        <p className="text-[11px] text-slate-500 mt-1">
+          Single Sign-On for Students, Faculty &amp; Staff
+        </p>
       </div>
 
       {/* Auth Error Banner */}
@@ -90,45 +109,6 @@ export const LoginScreen: React.FC = () => {
           <span>{authError}</span>
         </div>
       )}
-
-      {/* Select Portal: Student vs Teacher vs Admin */}
-      <div className="my-2 bg-slate-100 p-1 rounded-2xl flex items-center justify-between text-xs font-bold border border-slate-200">
-        <button
-          type="button"
-          onClick={() => setPortalRole('student')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'student'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-600 hover:text-slate-900'
-            }`}
-        >
-          <GraduationCap className="w-3.5 h-3.5 mr-1" />
-          <span>Student</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setPortalRole('faculty')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'faculty'
-            ? 'bg-blue-900 text-white shadow-sm'
-            : 'text-slate-600 hover:text-slate-900'
-            }`}
-        >
-          <Users className="w-3.5 h-3.5 mr-1" />
-          <span>Teacher</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setPortalRole('admin')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${portalRole === 'admin'
-            ? 'bg-slate-900 text-white shadow-sm'
-            : 'text-slate-600 hover:text-slate-900'
-            }`}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-          <span>Admin</span>
-        </button>
-      </div>
 
       {/* Form Fields */}
       <form onSubmit={handleLogin} className="space-y-3.5 my-3">
