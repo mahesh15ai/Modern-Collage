@@ -2,12 +2,26 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Calendar, MapPin, Users, CheckCircle, Sparkles, Ticket, ShieldCheck } from 'lucide-react';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  CheckCircle,
+  Sparkles,
+  Ticket,
+  ShieldCheck,
+  X,
+  Clock,
+  Award,
+  Eye,
+} from 'lucide-react';
+import { EventItem } from '@/types';
 
 export const EventsView: React.FC = () => {
   const { events, registerForEvent, isRegisteredForEvent, currentUser } = useApp();
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
   const handleRegister = async (eventId: string, eventTitle: string) => {
     if (isRegisteredForEvent(eventId)) {
@@ -50,33 +64,49 @@ export const EventsView: React.FC = () => {
           return (
             <div
               key={event.id}
-              className={`bg-white rounded-3xl overflow-hidden border transition-all ${isRegistered
-                ? 'border-emerald-200/80 shadow-xs'
-                : 'border-slate-100 shadow-sm hover:shadow-md'
-                }`}
+              className={`bg-white rounded-3xl overflow-hidden border transition-all ${
+                isRegistered
+                  ? 'border-emerald-200/80 shadow-xs'
+                  : 'border-slate-100 shadow-sm hover:shadow-md'
+              }`}
             >
-              {/* Banner Image / Header */}
-              <div className="relative h-36 w-full overflow-hidden">
+              {/* Banner Image / Header (Clickable for Full Details Modal) */}
+              <div
+                onClick={() => setSelectedEvent(event)}
+                className="relative h-36 w-full overflow-hidden cursor-pointer group"
+                title="Tap image to view full event details"
+              >
                 <img
                   src={event.bannerImage}
                   alt={event.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-4">
-                  {isFeatured && (
-                    <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">
-                      <Sparkles className="w-3 h-3" />
-                      <span>Featured Event</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex flex-col justify-end p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    {isFeatured ? (
+                      <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3" />
+                        <span>Featured Event</span>
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+
+                    {/* Visual Pill Indicator that Image is Clickable */}
+                    <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-white bg-black/45 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 shadow-xs group-hover:bg-[#1d4ed8] transition-colors">
+                      <Eye className="w-3 h-3" />
+                      <span>View Details</span>
                     </span>
-                  )}
-                  <h3 className="font-extrabold text-white text-base leading-tight">
+                  </div>
+
+                  <h3 className="font-extrabold text-white text-base leading-tight group-hover:text-blue-100 transition-colors">
                     {event.title}
                   </h3>
                   <p className="text-[11px] text-blue-200">{event.subtitle}</p>
                 </div>
               </div>
 
-              {/* Event Details & Registration */}
+              {/* Event Details & Registration Bar */}
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between text-xs text-slate-600">
                   <div className="flex items-center space-x-1.5">
@@ -109,7 +139,7 @@ export const EventsView: React.FC = () => {
                       type="button"
                       onClick={() => handleRegister(event.id, event.title)}
                       disabled={submittingId === event.id}
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-900 text-white hover:bg-blue-950 active:scale-95 transition-all shadow-sm flex items-center space-x-1.5 disabled:opacity-60"
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-[#1d4ed8] text-white hover:bg-blue-800 active:scale-95 transition-all shadow-sm flex items-center space-x-1.5 disabled:opacity-60"
                     >
                       <Ticket className="w-3.5 h-3.5" />
                       <span>{submittingId === event.id ? 'Registering...' : 'Register (1 Pass)'}</span>
@@ -125,7 +155,7 @@ export const EventsView: React.FC = () => {
                       <span>1 Registration Confirmed • Pass verified</span>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded-md">
-                      {currentUser.rollNo || 'Pass Active'}
+                      {currentUser.rollNo || 'PASS ACTIVE'}
                     </span>
                   </div>
                 )}
@@ -163,6 +193,180 @@ export const EventsView: React.FC = () => {
                 </div>
                 <p className="text-[11px] text-blue-200 mt-1">Cricket, Badminton, Drama, Dance &amp; Youth Cultural Festival.</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          FULL EVENT DETAILS MODAL (Opens on image click)
+         ========================================================================= */}
+      {selectedEvent && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col font-sans">
+            {/* Modal Hero Banner */}
+            <div className="relative h-48 sm:h-52 w-full overflow-hidden shrink-0">
+              <img
+                src={selectedEvent.bannerImage}
+                alt={selectedEvent.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex flex-col justify-between p-4">
+                <div className="flex justify-between items-center">
+                  <span className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-amber-400 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full uppercase tracking-wider border border-amber-400/30">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Campus Event</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEvent(null)}
+                    className="w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-md transition-colors"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div>
+                  <h3 className="font-extrabold text-white text-lg leading-tight drop-shadow-md">
+                    {selectedEvent.title}
+                  </h3>
+                  <p className="text-xs text-blue-200 font-medium mt-0.5 drop-shadow-sm">
+                    {selectedEvent.subtitle}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Event Metadata Chips Grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-2xl flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Date</span>
+                    <span className="text-xs font-bold text-slate-900 truncate block">{selectedEvent.date}</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-2xl flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Time</span>
+                    <span className="text-xs font-bold text-slate-900 truncate block">
+                      {selectedEvent.time || '10:00 AM Onwards'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-2xl flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Venue</span>
+                    <span className="text-xs font-bold text-slate-900 truncate block">{selectedEvent.venue}</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-2xl flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Capacity</span>
+                    <span className="text-xs font-bold text-slate-900 truncate block">
+                      {selectedEvent.registeredCount} Registered
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Single Registration Policy Box */}
+              <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-3 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-2 text-blue-900 font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-[#1d4ed8] shrink-0" />
+                  <span>Single Student Registration Rule Enforced</span>
+                </div>
+                <span className="text-[10px] font-bold bg-blue-200/70 text-blue-900 px-2 py-0.5 rounded-md shrink-0">
+                  1 Pass Only
+                </span>
+              </div>
+
+              {/* Detailed Description */}
+              <div className="space-y-1.5">
+                <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                  About this Event &amp; Schedule
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                  {selectedEvent.description ||
+                    'Join us for the premier annual Tech Fest at Modern College! Participate in algorithmic challenges, web & app design sprints, debugging wars, and tech presentations. Winners receive prestigious trophies and institutional merit certificates.'}
+                </p>
+              </div>
+
+              {/* Highlights & Guidelines */}
+              <div className="space-y-2 bg-slate-50 rounded-2xl p-3 border border-slate-100 text-xs">
+                <h5 className="font-bold text-slate-800 text-[11px] uppercase tracking-wide flex items-center space-x-1.5">
+                  <Award className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Event Highlights &amp; Rules</span>
+                </h5>
+                <ul className="space-y-1.5 text-slate-600 text-[11px]">
+                  <li className="flex items-start space-x-1.5">
+                    <span className="text-blue-600 font-bold">•</span>
+                    <span>Bring your valid Modern College Digital ID card or QR Pass for auditorium entry.</span>
+                  </li>
+                  <li className="flex items-start space-x-1.5">
+                    <span className="text-blue-600 font-bold">•</span>
+                    <span>All participants receive university-recognized certificates of participation.</span>
+                  </li>
+                  <li className="flex items-start space-x-1.5">
+                    <span className="text-blue-600 font-bold">•</span>
+                    <span>Complimentary refreshments and event badges will be provided at the registration desk.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Modal Sticky Bottom Action Footer */}
+            <div className="p-3.5 bg-white border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+              {isRegisteredForEvent(selectedEvent.id) ? (
+                <div className="w-full flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <div>
+                      <span className="text-xs font-bold text-emerald-900 block leading-tight">Registration Confirmed ✓</span>
+                      <span className="text-[10px] text-emerald-700">Pass verified • Single entry active</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-2.5 py-1 rounded-lg">
+                    {currentUser.rollNo || 'PASS ACTIVE'}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEvent(null)}
+                    className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submittingId === selectedEvent.id}
+                    onClick={() => handleRegister(selectedEvent.id, selectedEvent.title)}
+                    className="flex-1 py-2.5 px-4 rounded-2xl bg-[#1d4ed8] hover:bg-blue-700 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-2 transition-all active:scale-95 disabled:opacity-60"
+                  >
+                    <Ticket className="w-4 h-4" />
+                    <span>{submittingId === selectedEvent.id ? 'Registering...' : 'Register Now (1 Pass)'}</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

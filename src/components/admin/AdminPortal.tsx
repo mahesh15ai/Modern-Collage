@@ -1981,14 +1981,21 @@ export const AdminPortal: React.FC = () => {
                       className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
                     >
                       <div>
-                        <div className="relative">
+                        <div
+                          onClick={() => {
+                            setSelectedEventForAttendees(evt);
+                            setAttendeeSearchQuery('');
+                          }}
+                          className="relative cursor-pointer group"
+                          title="Click image to view event details and registered students"
+                        >
                           <img
                             src={
                               evt.bannerImage ||
                               'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80'
                             }
                             alt={evt.title}
-                            className="w-full h-36 object-cover"
+                            className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-200"
                           />
                           <span className="absolute top-2.5 right-2.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
                             Active
