@@ -450,17 +450,27 @@ export async function saveEventToFirestore(event: EventItem): Promise<void> {
 }
 
 /**
- * Register student for an event in Cloud Firestore
+ * Register student for an event in Cloud Firestore (One student = one registration)
  */
-export async function registerForEventInFirestore(eventId: string): Promise<void> {
+export async function registerForEventInFirestore(
+  eventId: string,
+  userId?: string
+): Promise<void> {
   if (!isFirebaseConfigured) return;
   try {
     const eventRef = doc(db, COLLECTIONS.EVENTS, eventId);
     const snap = await getDoc(eventRef);
     if (snap.exists()) {
       const data = snap.data() as EventItem;
+      const registeredUserIds = data.registeredUserIds || [];
+      if (userId && registeredUserIds.includes(userId)) {
+        // Already registered in Firestore, skip duplicate
+        return;
+      }
+      const updatedUserIds = userId ? [...registeredUserIds, userId] : registeredUserIds;
       await updateDoc(eventRef, {
         registeredCount: (data.registeredCount || 0) + 1,
+        registeredUserIds: updatedUserIds,
       });
     }
   } catch (error: any) {

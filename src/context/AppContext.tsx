@@ -182,6 +182,9 @@ interface AppContextType {
   markAllNoticesAsRead: () => void;
   toggleNoticeRead: (noticeId: string) => void;
   events: EventItem[];
+  registeredEventIds: string[];
+  registerForEvent: (eventId: string) => Promise<boolean>;
+  isRegisteredForEvent: (eventId: string) => boolean;
   complaints: ComplaintItem[];
   // Realtime Actions
   updateStudent: (student: StudentRecord) => Promise<void>;
@@ -200,7 +203,6 @@ interface AppContextType {
   createEvent: (
     eventData: Omit<EventItem, 'id' | 'registeredCount'>
   ) => Promise<void>;
-  registerForEvent: (eventId: string) => Promise<void>;
   addComplaint: (
     title: string,
     category: ComplaintItem['category'],
@@ -522,6 +524,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const unreadNoticesCount = notices.filter((n) => !readNoticeIds.includes(n.id)).length;
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
+
+  // Student Event Registrations (Enforce 1 student = 1 registration per event)
+  const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smart_campus_registered_events');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  // Sync registered events per-user when currentUser or events change
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const userKey = currentUser.id || currentUser.email || currentUser.prn || currentUser.name || 'guest';
+    try {
+      const savedForUser = localStorage.getItem(`smart_campus_registered_events_${userKey}`);
+      if (savedForUser) {
+        setRegisteredEventIds(JSON.parse(savedForUser));
+      } else {
+        const matched = events
+          .filter((evt) => evt.registeredUserIds?.includes(userKey) || (currentUser.id && evt.registeredUserIds?.includes(currentUser.id)))
+          .map((evt) => evt.id);
+        if (matched.length > 0) {
+          setRegisteredEventIds(matched);
+        }
+      }
+    } catch (e) {}
+  }, [currentUser, events]);
+
+  const isRegisteredForEvent = useCallback(
+    (eventId: string): boolean => {
+      const userKey = currentUser.id || currentUser.email || currentUser.prn || currentUser.name || 'guest';
+      const event = events.find((e) => e.id === eventId);
+      return (
+        registeredEventIds.includes(eventId) ||
+        Boolean(event?.registeredUserIds?.includes(userKey)) ||
+        Boolean(currentUser.id && event?.registeredUserIds?.includes(currentUser.id))
+      );
+    },
+    [currentUser, events, registeredEventIds]
+  );
+
   const [complaints, setComplaints] = useState<ComplaintItem[]>(MOCK_COMPLAINTS);
   const [dispatchedEmails, setDispatchedEmails] = useState<DispatchedEmail[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -1263,18 +1309,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Realtime Event Registration
-  const registerForEvent = async (eventId: string) => {
-    setEvents((prev) =>
-      prev.map((evt) =>
-        evt.id === eventId
-          ? { ...evt, registeredCount: (evt.registeredCount || 0) + 1 }
-          : evt
-      )
-    );
-    await registerForEventInFirestore(eventId).catch((err) =>
+  // Realtime Event Registration (One student can register only once)
+  const registerForEvent = async (eventId: string): Promise<boolean> => {
+    const userKey = currentUser.id || currentUser.email || currentUser.prn || currentUser.name || 'guest';
+
+    // Strictly enforce: Only 1 registration per student per event!
+    if (isRegisteredForEvent(eventId)) {
+      console.warn('Student is already registered for this event:', eventId);
+      return false;
+    }
+
+    // 1. Update registered event IDs locally and persist per student in localStorage
+    const updatedRegistered = [...registeredEventIds, eventId];
+    setRegisteredEventIds(updatedRegistered);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`smart_campus_registered_events_${userKey}`, JSON.stringify(updatedRegistered));
+        localStorage.setItem('smart_campus_registered_events', JSON.stringify(updatedRegistered));
+      } catch (e) {}
+    }
+
+    // 2. Increment registeredCount by 1 and record student ID in registeredUserIds
+    setEvents((prev) => {
+      const updated = prev.map((evt) => {
+        if (evt.id === eventId) {
+          const existingUsers = evt.registeredUserIds || [];
+          return {
+            ...evt,
+            registeredCount: (evt.registeredCount || 0) + 1,
+            registeredUserIds: [...existingUsers, userKey],
+          };
+        }
+        return evt;
+      });
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('smart_campus_events', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+
+    // 3. Persist to Firestore
+    await registerForEventInFirestore(eventId, userKey).catch((err) =>
       console.warn('Firestore registerForEvent note:', err)
     );
+
+    return true;
   };
 
   // Realtime Complaint Filing
@@ -1433,6 +1514,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markAllNoticesAsRead,
         toggleNoticeRead,
         events,
+        registeredEventIds,
+        isRegisteredForEvent,
         complaints,
         publishNotice,
         deleteNotice,

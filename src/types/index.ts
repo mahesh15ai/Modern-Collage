@@ -264,6 +264,7 @@ export interface EventItem {
   registrationOpen: boolean;
   registeredCount: number;
   description: string;
+  registeredUserIds?: string[];
 }
 
 // Complaint / Grievance Portal
