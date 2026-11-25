@@ -18,8 +18,11 @@ import {
   ChevronRight,
   ShieldCheck,
   UserCheck,
+  Users,
+  Lock,
+  Volume2,
 } from 'lucide-react';
-import { FacultyRecord, StudentRecord, ChatMessage } from '@/types';
+import { FacultyRecord, StudentRecord, ChatMessage, ClassGroupChannel } from '@/types';
 
 // Fallback faculty records matching the design reference perfectly
 const DEFAULT_CLASS_TEACHER: FacultyRecord = {
@@ -93,12 +96,36 @@ export const ChatView: React.FC = () => {
   const subjectTeachers: FacultyRecord[] =
     rawSubjectTeachers.length > 0 ? rawSubjectTeachers : DEFAULT_SUBJECT_FACULTY;
 
-  // Filter messages between current user and active recipient
+  // Class Group Channel definition (Managed by Class Teacher)
+  const classGroupName = classTeacher.classTeacherOf || 'TY B.Sc Computer Science';
+  const classGroupChannel: ClassGroupChannel = {
+    id: `GROUP-${classGroupName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`,
+    name: `${classGroupName} (Official Class Group)`,
+    type: 'group',
+    className: classGroupName,
+    classTeacherId: classTeacher.id,
+    classTeacherName: classTeacher.name,
+    avatar: classTeacher.avatar,
+    academicYear: '2025-2026',
+    description: `Official Broadcast Group for ${classGroupName}. Administered by Class Teacher ${classTeacher.name}.`,
+    membersCount: 64,
+  };
+
+  const isGroupActive = (activeChatRecipient as any)?.type === 'group';
+
+  // Filter messages between current user and active recipient (or group messages)
   const currentUserId = currentUser.id || (isStudent ? 'STU-001' : 'FAC-2024-009');
   const activeRecipientId = activeChatRecipient?.id;
 
   const conversationMessages = chatMessages.filter((msg) => {
     if (!activeRecipientId) return false;
+    if (isGroupActive) {
+      return (
+        msg.receiverId === activeRecipientId ||
+        msg.groupId === activeRecipientId ||
+        msg.receiverRole === 'group'
+      );
+    }
     return (
       (msg.senderId === currentUserId && msg.receiverId === activeRecipientId) ||
       (msg.senderId === activeRecipientId && msg.receiverId === currentUserId)
@@ -113,6 +140,9 @@ export const ChatView: React.FC = () => {
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputMessage.trim() || !activeChatRecipient) return;
+
+    // Strict Enforcement: In Class Group, ONLY Class Teacher can send messages! Students cannot!
+    if (isGroupActive && isStudent) return;
 
     const text = inputMessage.trim();
     setInputMessage('');
@@ -129,7 +159,7 @@ export const ChatView: React.FC = () => {
   };
 
   // ---------------------------------------------------------------------------
-  // VIEW A: Active 1-on-1 Realtime Doubt Clearing Chat View (Edge-to-Edge Full Height)
+  // VIEW A: Active Chat View (Group Broadcast or 1-on-1 Doubt Clearing)
   // ---------------------------------------------------------------------------
   if (activeChatRecipient) {
     const isRecipientFaculty = 'designation' in activeChatRecipient;
@@ -150,33 +180,46 @@ export const ChatView: React.FC = () => {
               <ArrowLeft className="w-5 h-5 text-slate-800" />
             </button>
 
-            <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-blue-50">
-                <img
-                  src={
-                    (activeChatRecipient as any).avatar ||
-                    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=240&auto=format&fit=crop&q=80'
-                  }
-                  alt={activeChatRecipient.name}
-                  className="w-full h-full object-cover"
-                />
+            {isGroupActive ? (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-700 flex items-center justify-center text-white shrink-0 shadow-xs border border-blue-400/30">
+                <Users className="w-5 h-5 text-amber-300" />
               </div>
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
-            </div>
+            ) : (
+              <div className="relative shrink-0">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-blue-50">
+                  <img
+                    src={
+                      (activeChatRecipient as any).avatar ||
+                      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=240&auto=format&fit=crop&q=80'
+                    }
+                    alt={activeChatRecipient.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+              </div>
+            )}
 
             <div className="min-w-0">
               <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
                 <h3 className="font-extrabold text-sm text-slate-900 truncate leading-tight">
                   {activeChatRecipient.name}
                 </h3>
-                {isClassTeacher && (
+                {isGroupActive ? (
+                  <span className="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-200/80 px-1.5 py-0.2 rounded-md shrink-0 flex items-center space-x-0.5">
+                    <Lock className="w-2.5 h-2.5 text-amber-700 mr-0.5" />
+                    <span>Class Teacher Only</span>
+                  </span>
+                ) : isClassTeacher && (
                   <span className="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-200/80 px-1.5 py-0.2 rounded-md shrink-0">
                     ★ Class Teacher
                   </span>
                 )}
               </div>
               <p className="text-[10.5px] text-slate-500 truncate mt-0.5">
-                {isRecipientFaculty
+                {isGroupActive
+                  ? `Class Teacher: ${classTeacher.name} • Official Class Broadcast Channel`
+                  : isRecipientFaculty
                   ? `${teacherData?.designation || 'Faculty'} • ${teacherData?.department || 'CS Dept'}`
                   : `${(activeChatRecipient as StudentRecord).course || 'Student'}`}
               </p>
@@ -186,21 +229,36 @@ export const ChatView: React.FC = () => {
 
         {/* Message Thread Scroll Area (Takes remaining height and scrolls smoothly) */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-4 space-y-3.5">
-          {/* Welcome Official Doubts Banner */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl p-3 text-center space-y-1">
-            <div className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-blue-800 uppercase tracking-wider bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-100">
-              <ShieldCheck className="w-3 h-3 text-blue-600" />
-              <span>Official Academic Doubt Desk</span>
+          {/* Welcome Banner */}
+          {isGroupActive ? (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-2xl p-3 text-center space-y-1">
+              <div className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-blue-900 uppercase tracking-wider bg-white/90 px-2.5 py-0.5 rounded-full border border-blue-200">
+                <Users className="w-3 h-3 text-blue-700" />
+                <span>Official Class Announcement Group</span>
+              </div>
+              <h4 className="font-extrabold text-xs text-slate-900">
+                {activeChatRecipient.name}
+              </h4>
+              <p className="text-[10.5px] text-slate-600 leading-relaxed max-w-sm mx-auto">
+                📢 Official timetable updates, syllabus notices, and academic directives from Class Teacher <strong>{classTeacher.name}</strong>. Only the Class Teacher is permitted to post messages in this group.
+              </p>
             </div>
-            <h4 className="font-extrabold text-xs text-slate-900">
-              {isRecipientFaculty
-                ? `Direct Q&A with ${activeChatRecipient.name}`
-                : `Student Query: ${activeChatRecipient.name}`}
-            </h4>
-            <p className="text-[10.5px] text-slate-600 leading-relaxed max-w-xs mx-auto">
-              Ask your syllabus doubts, assignment questions, or lab schedule queries directly. Messages are synced in real time.
-            </p>
-          </div>
+          ) : (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl p-3 text-center space-y-1">
+              <div className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-blue-800 uppercase tracking-wider bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-100">
+                <ShieldCheck className="w-3 h-3 text-blue-600" />
+                <span>Official Academic Doubt Desk</span>
+              </div>
+              <h4 className="font-extrabold text-xs text-slate-900">
+                {isRecipientFaculty
+                  ? `Direct Q&A with ${activeChatRecipient.name}`
+                  : `Student Query: ${activeChatRecipient.name}`}
+              </h4>
+              <p className="text-[10.5px] text-slate-600 leading-relaxed max-w-xs mx-auto">
+                Ask your syllabus doubts, assignment questions, or lab schedule queries directly. Messages are synced in real time.
+              </p>
+            </div>
+          )}
 
           {/* Chat Messages */}
           {conversationMessages.length > 0 ? (
@@ -251,51 +309,78 @@ export const ChatView: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Pinned Bottom Container: Quick Chips + Message Input Bar */}
-        <div className="shrink-0 bg-white border-t border-slate-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.03)] z-20">
-          {/* Quick Academic Doubt Chips */}
-          <div className="px-3 py-1.5 bg-slate-50/90 border-b border-slate-100 flex items-center space-x-1.5 overflow-x-auto [scrollbar-width:none]">
-            {[
-              'Sir, I have a doubt in Unit 2',
-              'When is the assignment deadline?',
-              'Can you share the lecture slides?',
-              'Is the lab manual submission this week?',
-            ].map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                onClick={() => handleQuickChipClick(chip)}
-                className="px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-800 rounded-full text-[10.5px] font-semibold whitespace-nowrap border border-slate-200/90 shadow-2xs transition-colors shrink-0 active:scale-95"
-              >
-                {chip}
-              </button>
-            ))}
+        {/* Pinned Bottom Container: Group Broadcast Locked for Students, Enabled for Class Teacher */}
+        {isGroupActive && isStudent ? (
+          <div className="shrink-0 bg-slate-50 border-t border-slate-200/90 p-3.5 sm:p-4 text-center shadow-xs">
+            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-slate-800 bg-white border border-slate-200/90 rounded-2xl py-3 px-4 shadow-2xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <span className="text-[11px] sm:text-xs text-amber-950 font-bold">
+                🔒 Only Class Teacher ({classTeacher.name}) can send messages in this group
+              </span>
+            </div>
+            <p className="text-[10.5px] text-slate-500 mt-1.5">
+              Students can view all official notices. For personal queries, use 1-on-1 Chat with your Class Teacher.
+            </p>
           </div>
+        ) : (
+          <div className="shrink-0 bg-white border-t border-slate-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.03)] z-20">
+            {/* Quick Chips */}
+            <div className="px-3 py-1.5 bg-slate-50/90 border-b border-slate-100 flex items-center space-x-1.5 overflow-x-auto [scrollbar-width:none]">
+              {(isGroupActive
+                ? [
+                    '📢 Attendance shortage review meeting today',
+                    '📝 Practical journal submission deadline',
+                    '⚠️ Timetable adjustment notice for tomorrow',
+                    '✅ Internal examination schedule published',
+                  ]
+                : [
+                    'Sir, I have a doubt in Unit 2',
+                    'When is the assignment deadline?',
+                    'Can you share the lecture slides?',
+                    'Is the lab manual submission this week?',
+                  ]
+              ).map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => handleQuickChipClick(chip)}
+                  className="px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-800 rounded-full text-[10.5px] font-semibold whitespace-nowrap border border-slate-200/90 shadow-2xs transition-colors shrink-0 active:scale-95"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
 
-          {/* Message Input Bar */}
-          <form
-            onSubmit={handleSendMessage}
-            className="p-2.5 sm:p-3 bg-white flex items-center space-x-2"
-          >
-            <input
-              type="text"
-              required
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={`Ask ${activeChatRecipient.name} a doubt...`}
-              className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all shadow-inner"
-            />
-
-            <button
-              type="submit"
-              disabled={!inputMessage.trim()}
-              className="w-10 h-10 rounded-full bg-[#1d4ed8] hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center shadow-md active:scale-95 transition-all shrink-0"
-              title="Send message"
+            {/* Message Input Bar */}
+            <form
+              onSubmit={handleSendMessage}
+              className="p-2.5 sm:p-3 bg-white flex items-center space-x-2"
             >
-              <Send className="w-4 h-4 ml-0.5" />
-            </button>
-          </form>
-        </div>
+              <input
+                type="text"
+                required
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder={
+                  isGroupActive
+                    ? `Broadcast announcement to ${classGroupName}...`
+                    : `Ask ${activeChatRecipient.name} a doubt...`
+                }
+                className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all shadow-inner"
+              />
+
+              <button
+                type="submit"
+                disabled={!inputMessage.trim()}
+                className="px-3.5 py-2 rounded-full bg-[#1d4ed8] hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-bold flex items-center justify-center space-x-1 shadow-md active:scale-95 transition-all shrink-0"
+                title={isGroupActive ? 'Broadcast Announcement' : 'Send message'}
+              >
+                <Send className="w-3.5 h-3.5" />
+                {isGroupActive && <span className="hidden sm:inline">Broadcast</span>}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     );
   }
@@ -379,6 +464,71 @@ export const ChatView: React.FC = () => {
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-full text-xs font-normal text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all"
         />
       </div>
+
+      {/* =======================================================================
+          2.5. SECTION: OFFICIAL CLASS GROUP CHAT (BROADCAST ONLY)
+         ======================================================================= */}
+      {(!query ||
+        classGroupChannel.name.toLowerCase().includes(query) ||
+        classTeacher.name.toLowerCase().includes(query) ||
+        'class group'.includes(query)) && (
+        <section className="space-y-2">
+          {/* Section Header */}
+          <div className="flex items-center justify-between px-0.5">
+            <div className="flex items-center space-x-2">
+              <Users className="w-5 h-5 text-[#1d4ed8]" />
+              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
+                Official Class Group Chat
+              </h3>
+            </div>
+            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1">
+              <Lock className="w-2.5 h-2.5 text-amber-700 mr-0.5" />
+              <span>Class Teacher Only</span>
+            </span>
+          </div>
+
+          {/* Group Card */}
+          <div
+            onClick={() => setActiveChatRecipient(classGroupChannel)}
+            className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] relative overflow-hidden group cursor-pointer border border-blue-950"
+          >
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                  <Users className="w-6 h-6 text-amber-300" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-0.5">
+                    <h4 className="font-black text-sm text-white truncate">
+                      {classGroupChannel.name}
+                    </h4>
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/90 text-white px-2 py-0.5 rounded-full shadow-xs">
+                      Class Broadcast
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-blue-200 font-medium truncate mt-0.5">
+                    Class Teacher: <strong>{classTeacher.name}</strong> • All Enrolled Students
+                  </p>
+                  <p className="text-[10px] text-blue-300/80 truncate mt-0.5 flex items-center space-x-1">
+                    <span>📢</span>
+                    <span>Official Notices &amp; Directives • Only Class Teacher can post</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="px-3.5 py-1.5 bg-white text-blue-900 hover:bg-blue-50 rounded-full text-xs font-black flex items-center space-x-1 shrink-0 shadow-sm transition-all"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-blue-900" />
+                <span>Open Group</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* =======================================================================
           3. SECTION: ASSIGNED CLASS TEACHER

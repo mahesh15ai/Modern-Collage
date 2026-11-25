@@ -20,6 +20,7 @@ import {
   ComplaintItem,
   CollegeStats,
   ChatMessage,
+  ClassGroupChannel,
 } from '@/types';
 import {
   MOCK_STUDENT_USER,
@@ -232,8 +233,8 @@ interface AppContextType {
   payFees: (feeId: string) => void;
   // Realtime Academic Chat
   chatMessages: ChatMessage[];
-  activeChatRecipient: FacultyRecord | StudentRecord | null;
-  setActiveChatRecipient: (recipient: FacultyRecord | StudentRecord | null) => void;
+  activeChatRecipient: FacultyRecord | StudentRecord | ClassGroupChannel | null;
+  setActiveChatRecipient: (recipient: FacultyRecord | StudentRecord | ClassGroupChannel | null) => void;
   sendChatMessage: (text: string, subjectName?: string) => Promise<void>;
   openChatWithTeacher: (faculty: FacultyRecord) => void;
 }
@@ -641,13 +642,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         timestamp: '10:30 AM',
         isRead: true,
       },
+      {
+        id: 'MSG-GRP-001',
+        senderId: 'FAC-CT-001',
+        senderName: 'Nikita Sharma (Class Teacher)',
+        senderRole: 'faculty',
+        receiverId: 'GROUP-TY_B_SC_COMPUTER_SCIENCE',
+        receiverName: 'TY B.Sc Computer Science (Official Class Group)',
+        receiverRole: 'group',
+        subjectName: 'Official Class Notice',
+        text: '📢 Welcome students to the official TY B.Sc Computer Science Class Group. Important notices regarding practical journals, attendance review, and upcoming semester submissions will be announced here by the Class Teacher.',
+        timestamp: '09:00 AM',
+        isRead: true,
+        isGroupMessage: true,
+        groupId: 'GROUP-TY_B_SC_COMPUTER_SCIENCE',
+      },
     ];
   });
-  const [activeChatRecipient, setActiveChatRecipientState] = useState<FacultyRecord | StudentRecord | null>(null);
-  const activeChatRecipientRef = useRef<FacultyRecord | StudentRecord | null>(null);
+  const [activeChatRecipient, setActiveChatRecipientState] = useState<FacultyRecord | StudentRecord | ClassGroupChannel | null>(null);
+  const activeChatRecipientRef = useRef<FacultyRecord | StudentRecord | ClassGroupChannel | null>(null);
   activeChatRecipientRef.current = activeChatRecipient;
 
-  const setActiveChatRecipient = useCallback((recipient: FacultyRecord | StudentRecord | null) => {
+  const setActiveChatRecipient = useCallback((recipient: FacultyRecord | StudentRecord | ClassGroupChannel | null) => {
     setActiveChatRecipientState(recipient);
     activeChatRecipientRef.current = recipient;
   }, []);
@@ -661,24 +677,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!text.trim() || !activeChatRecipient) return;
 
     const isStudent = currentUser.role === 'student';
+    const isGroupChannel = (activeChatRecipient as any).type === 'group' || (activeChatRecipient as any).isGroup;
+
+    // Strict Enforcement: In Class Group Chat, ONLY Class Teacher / Faculty can send messages! Students CANNOT!
+    if (isGroupChannel && isStudent) {
+      console.warn('Students are not permitted to send messages in the Class Group Chat.');
+      return;
+    }
+
     const senderName = currentUser.name || (isStudent ? 'Mahesh Gomaskar' : 'Faculty Member');
     const senderId = currentUser.id || (isStudent ? 'STU-001' : 'FAC-2024-009');
     const receiverId = activeChatRecipient.id;
     const receiverName = activeChatRecipient.name;
-    const receiverRole = isStudent ? 'faculty' : 'student';
+    const receiverRole = isGroupChannel ? 'group' : isStudent ? 'faculty' : 'student';
 
     const newMsg: ChatMessage = {
       id: `MSG-${Date.now()}`,
       senderId,
-      senderName,
+      senderName: isGroupChannel ? `${senderName} (Class Teacher)` : senderName,
       senderRole: isStudent ? 'student' : 'faculty',
       receiverId,
       receiverName,
       receiverRole,
-      subjectName: subjectName || (activeChatRecipient as FacultyRecord).subjectsAssigned?.[0] || 'Academic Doubt',
+      subjectName: isGroupChannel ? 'Official Class Announcement' : (subjectName || (activeChatRecipient as FacultyRecord).subjectsAssigned?.[0] || 'Academic Doubt'),
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isRead: false,
+      isGroupMessage: isGroupChannel,
+      groupId: isGroupChannel ? receiverId : undefined,
     };
 
     setChatMessages((prev) => {

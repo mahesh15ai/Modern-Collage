@@ -2115,9 +2115,8 @@ export const AdminPortal: React.FC = () => {
                             />
                             {/* Registration Status Pill */}
                             <span
-                              className={`absolute top-2.5 right-2.5 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs ${
-                                isOpen ? 'bg-emerald-600/90' : 'bg-slate-700/90'
-                              }`}
+                              className={`absolute top-2.5 right-2.5 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs ${isOpen ? 'bg-emerald-600/90' : 'bg-slate-700/90'
+                                }`}
                             >
                               {isOpen ? 'Active' : 'Closed'}
                             </span>
@@ -3390,22 +3389,20 @@ export const AdminPortal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setEditBannerUploadType('upload')}
-                      className={`px-2.5 py-0.5 rounded-md transition-all ${
-                        editBannerUploadType === 'upload'
+                      className={`px-2.5 py-0.5 rounded-md transition-all ${editBannerUploadType === 'upload'
                           ? 'bg-white text-blue-700 font-bold shadow-xs'
                           : 'text-slate-500 hover:text-slate-800 font-medium'
-                      }`}
+                        }`}
                     >
                       Upload File
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditBannerUploadType('url')}
-                      className={`px-2.5 py-0.5 rounded-md transition-all ${
-                        editBannerUploadType === 'url'
+                      className={`px-2.5 py-0.5 rounded-md transition-all ${editBannerUploadType === 'url'
                           ? 'bg-white text-blue-700 font-bold shadow-xs'
                           : 'text-slate-500 hover:text-slate-800 font-medium'
-                      }`}
+                        }`}
                     >
                       Image URL
                     </button>

@@ -64,8 +64,8 @@ export const EventsView: React.FC = () => {
             <div
               key={event.id}
               className={`bg-white rounded-3xl overflow-hidden border transition-all ${isRegistered
-                  ? 'border-emerald-200/80 shadow-xs'
-                  : 'border-slate-100 shadow-sm hover:shadow-md'
+                ? 'border-emerald-200/80 shadow-xs'
+                : 'border-slate-100 shadow-sm hover:shadow-md'
                 }`}
             >
               {/* Banner Image / Header (Clickable for Full Details Modal) */}

@@ -292,7 +292,7 @@ export interface ComplaintItem {
   resolvedAt?: string;
 }
 
-// 15. Realtime Academic Chat (Subject Teacher & Class Teacher)
+// 15. Realtime Academic Chat (Subject Teacher, Class Teacher & Official Class Group)
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -300,9 +300,24 @@ export interface ChatMessage {
   senderRole: 'student' | 'faculty';
   receiverId: string;
   receiverName: string;
-  receiverRole: 'student' | 'faculty';
+  receiverRole: 'student' | 'faculty' | 'group';
   text: string;
   timestamp: string;
   subjectName?: string;
   isRead?: boolean;
+  isGroupMessage?: boolean;
+  groupId?: string;
+}
+
+export interface ClassGroupChannel {
+  id: string;
+  name: string;
+  type: 'group';
+  className: string;
+  classTeacherId: string;
+  classTeacherName: string;
+  avatar?: string;
+  academicYear?: string;
+  description?: string;
+  membersCount?: number;
 }

@@ -446,8 +446,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
             >
               <div
                 className={`w-6 h-6 rounded-full overflow-hidden border transition-all ${activeScreen === 'profile'
-                    ? 'border-[#2563eb] ring-2 ring-blue-500/40 shadow-xs'
-                    : 'border-slate-300 group-hover:border-slate-400'
+                  ? 'border-[#2563eb] ring-2 ring-blue-500/40 shadow-xs'
+                  : 'border-slate-300 group-hover:border-slate-400'
                   }`}
               >
                 <img
