@@ -75,6 +75,7 @@ import {
   saveStudentResultToFirestore,
   saveStudyMaterialToFirestore,
   saveAttendanceToFirestore,
+  subscribeToStudentAttendance,
   updateFacultyInFirestore,
   subscribeToTimetable,
   saveTimetableSlotToFirestore,
@@ -640,7 +641,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             );
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -923,6 +924,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
   }, [resultsList, currentUser]);
+
+  // Realtime Student Attendance Subscription from Cloud Firestore
+  useEffect(() => {
+    const studentMatch = students.find(
+      (s) =>
+        s.id === currentUser.id ||
+        (currentUser.email && s.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+        (currentUser.rollNo && s.rollNo === currentUser.rollNo)
+    );
+    const studentId =
+      currentUser.id ||
+      studentMatch?.id ||
+      (currentUser.role === 'student' ? 'STU-001' : null);
+
+    if (!studentId) return;
+
+    const unsubAttendance = subscribeToStudentAttendance(studentId, (remoteAttendance) => {
+      if (remoteAttendance) {
+        setAttendance(remoteAttendance);
+      }
+    });
+
+    return () => {
+      unsubAttendance();
+    };
+  }, [currentUser.id, currentUser.role, currentUser.email, currentUser.rollNo, students]);
 
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);

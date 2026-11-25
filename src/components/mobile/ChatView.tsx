@@ -64,17 +64,17 @@ export const ChatView: React.FC = () => {
   const classGroupName = classTeacher?.classTeacherOf || currentUser.course || 'TY B.Sc Computer Science';
   const classGroupChannel: ClassGroupChannel | null = classTeacher
     ? {
-        id: `GROUP-${classGroupName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`,
-        name: `${classGroupName} (Official Class Group)`,
-        type: 'group',
-        className: classGroupName,
-        classTeacherId: classTeacher.id,
-        classTeacherName: classTeacher.name,
-        avatar: classTeacher.avatar,
-        academicYear: '2025-2026',
-        description: `Official Broadcast Group for ${classGroupName}. Administered by Class Teacher ${classTeacher.name}.`,
-        membersCount: 64,
-      }
+      id: `GROUP-${classGroupName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`,
+      name: `${classGroupName} (Official Class Group)`,
+      type: 'group',
+      className: classGroupName,
+      classTeacherId: classTeacher.id,
+      classTeacherName: classTeacher.name,
+      avatar: classTeacher.avatar,
+      academicYear: '2025-2026',
+      description: `Official Broadcast Group for ${classGroupName}. Administered by Class Teacher ${classTeacher.name}.`,
+      membersCount: 64,
+    }
     : null;
 
   const isGroupActive = (activeChatRecipient as any)?.type === 'group';
@@ -185,8 +185,8 @@ export const ChatView: React.FC = () => {
                 {isGroupActive
                   ? `Class Teacher: ${classTeacher?.name || 'Class Teacher'} • Broadcast Channel`
                   : isRecipientFaculty
-                  ? `${teacherData?.designation || 'Faculty'} • ${teacherData?.department || 'CS Dept'}`
-                  : `${(activeChatRecipient as StudentRecord).course || 'Student'}`}
+                    ? `${teacherData?.designation || 'Faculty'} • ${teacherData?.department || 'CS Dept'}`
+                    : `${(activeChatRecipient as StudentRecord).course || 'Student'}`}
               </p>
             </div>
           </div>
@@ -236,11 +236,10 @@ export const ChatView: React.FC = () => {
                   className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${
-                      isMine
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${isMine
                         ? 'bg-[#1d4ed8] text-white rounded-br-xs'
                         : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs shadow-sm'
-                    }`}
+                      }`}
                   >
                     {!isMine && (
                       <span className="text-[9.5px] font-bold text-blue-700 block mb-0.5">
@@ -251,9 +250,8 @@ export const ChatView: React.FC = () => {
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
                     <div
-                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${
-                        isMine ? 'text-blue-200' : 'text-slate-400'
-                      }`}
+                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${isMine ? 'text-blue-200' : 'text-slate-400'
+                        }`}
                     >
                       <span>{msg.timestamp}</span>
                       {isMine && <CheckCheck className="w-3 h-3 text-blue-300" />}
@@ -295,17 +293,17 @@ export const ChatView: React.FC = () => {
             <div className="px-3 py-1.5 bg-slate-50/90 border-b border-slate-100 flex items-center space-x-1.5 overflow-x-auto [scrollbar-width:none]">
               {(isGroupActive
                 ? [
-                    '📢 Attendance shortage review meeting today',
-                    '📝 Practical journal submission deadline',
-                    '⚠️ Timetable adjustment notice for tomorrow',
-                    '✅ Internal examination schedule published',
-                  ]
+                  '📢 Attendance shortage review meeting today',
+                  '📝 Practical journal submission deadline',
+                  '⚠️ Timetable adjustment notice for tomorrow',
+                  '✅ Internal examination schedule published',
+                ]
                 : [
-                    'Sir, I have a doubt in Unit 2',
-                    'When is the assignment deadline?',
-                    'Can you share the lecture slides?',
-                    'Is the lab manual submission this week?',
-                  ]
+                  'Sir, I have a doubt in Unit 2',
+                  'When is the assignment deadline?',
+                  'Can you share the lecture slides?',
+                  'Is the lab manual submission this week?',
+                ]
               ).map((chip) => (
                 <button
                   key={chip}

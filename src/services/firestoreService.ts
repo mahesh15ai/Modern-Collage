@@ -605,6 +605,35 @@ export async function saveAttendanceToFirestore(
 }
 
 /**
+ * Subscribe to realtime attendance updates for a student (Cloud Firestore onSnapshot)
+ */
+export function subscribeToStudentAttendance(
+  studentId: string,
+  callback: (attendance: AttendanceSummary | null) => void
+): () => void {
+  if (!isFirebaseConfigured || !studentId) return () => {};
+  try {
+    const docRef = doc(db, COLLECTIONS.ATTENDANCE, studentId);
+    return onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          callback(docSnap.data() as AttendanceSummary);
+        } else {
+          callback(null);
+        }
+      },
+      (error) => {
+        console.warn('Student attendance realtime listener error:', error?.message);
+      }
+    );
+  } catch (err: any) {
+    console.warn('Could not attach attendance realtime listener:', err?.message);
+    return () => {};
+  }
+}
+
+/**
  * Fetch all students from Cloud Firestore (one-time fetch)
  */
 export async function fetchStudentsFromFirestore(): Promise<StudentRecord[]> {
