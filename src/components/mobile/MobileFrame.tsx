@@ -350,29 +350,29 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               />
             </button>
 
-            {/* 2. Results */}
+            {/* 2. Chat (Academic Doubts) */}
             <button
               type="button"
-              onClick={() => setActiveScreen('results')}
+              onClick={() => setActiveScreen('chat')}
               className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
             >
-              <Award
-                className={`w-6 h-6 transition-colors ${activeScreen === 'results'
+              <MessageSquare
+                className={`w-6 h-6 transition-colors ${activeScreen === 'chat'
                   ? 'text-[#2563eb] stroke-[2.4]'
                   : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
                   }`}
               />
               <span
-                className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'results'
+                className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'chat'
                   ? 'font-bold text-[#2563eb]'
                   : 'font-medium text-slate-500 group-hover:text-slate-700'
                   }`}
               >
-                Results
+                Chat
               </span>
               {/* Active Dot Indicator */}
               <span
-                className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'results'
+                className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${activeScreen === 'chat'
                   ? 'bg-[#2563eb] opacity-100 scale-100 shadow-sm'
                   : 'bg-transparent opacity-0 scale-50'
                   }`}

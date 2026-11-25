@@ -353,41 +353,6 @@ export const StudentDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Ask Subject / Class Teacher Direct Doubt Chat Card */}
-      <div
-        onClick={() => setActiveScreen('chat')}
-        className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 rounded-2xl p-3.5 text-white shadow-sm border border-blue-800/80 cursor-pointer hover:shadow-md transition-all active:scale-[0.99] flex items-center justify-between"
-      >
-        <div className="flex items-center space-x-3 min-w-0 pr-2">
-          <div className="w-10 h-10 rounded-xl bg-white/15 text-white flex items-center justify-center font-bold shrink-0">
-            <MessageSquare className="w-5 h-5 text-cyan-300" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center space-x-1.5">
-              <h4 className="font-extrabold text-xs text-white truncate">
-                {currentUser.role === 'faculty' ? 'Student Queries & Messages' : 'Ask Subject / Class Teacher'}
-              </h4>
-              <span className="text-[9px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
-                LIVE
-              </span>
-            </div>
-            <p className="text-[10px] text-blue-200 truncate mt-0.5">
-              {currentUser.role === 'faculty'
-                ? 'Respond directly to academic doubts and syllabus queries'
-                : 'Direct Q&A doubt clearing with your assigned faculty'}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[10.5px] font-bold flex items-center space-x-1 shrink-0"
-        >
-          <span>Chat</span>
-          <ChevronRight className="w-3 h-3" />
-        </button>
-      </div>
-
       {/* Quick Access Grid */}
       <div>
         <h4 className="font-bold text-slate-800 text-xs mb-2.5">
