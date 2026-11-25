@@ -111,6 +111,11 @@ export default function Home() {
   };
 
   const renderActiveMobileScreen = () => {
+    // Unauthenticated guard: Any logout or unauthenticated session redirects to LoginScreen
+    if (!isAuthenticated && activeScreen !== 'splash') {
+      return <LoginScreen />;
+    }
+
     switch (activeScreen) {
       case 'splash':
         return <SplashScreen />;
@@ -142,7 +147,22 @@ export default function Home() {
   };
 
   if (viewMode === 'desktop') {
-    if (isAuthenticated && currentUser.role !== 'admin') {
+    if (!isAuthenticated) {
+      return (
+        <div className="min-h-screen bg-slate-100 flex flex-col justify-start items-center text-slate-900 relative">
+          <div className="w-full flex-1 flex justify-center">
+            <MobileFrame
+              title={undefined}
+              showBack={false}
+              showNav={false}
+            >
+              <LoginScreen />
+            </MobileFrame>
+          </div>
+        </div>
+      );
+    }
+    if (currentUser.role !== 'admin') {
       return (
         <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center font-sans">
           <div className="max-w-md bg-slate-900 border border-rose-500/30 rounded-3xl p-8 shadow-2xl space-y-4">
@@ -208,8 +228,8 @@ export default function Home() {
       {/* Main Full-App Responsive View (No Phone Bezel/Mockup) */}
       <div className="w-full flex-1 flex justify-center">
         <MobileFrame
-          title={screenTitleMap[activeScreen]}
-          showBack={activeScreen !== 'dashboard' && activeScreen !== 'splash' && activeScreen !== 'login'}
+          title={isAuthenticated ? screenTitleMap[activeScreen] : undefined}
+          showBack={isAuthenticated && activeScreen !== 'dashboard' && activeScreen !== 'splash' && activeScreen !== 'login'}
           onBack={() => {
             if (typeof window !== 'undefined' && window.history.length > 1) {
               window.history.back();
@@ -217,7 +237,7 @@ export default function Home() {
               setActiveScreen('dashboard');
             }
           }}
-          showNav={activeScreen !== 'splash' && activeScreen !== 'login'}
+          showNav={isAuthenticated && activeScreen !== 'splash' && activeScreen !== 'login'}
         >
           {renderActiveMobileScreen()}
         </MobileFrame>

@@ -847,8 +847,8 @@ export const AdminPortal: React.FC = () => {
           </nav>
         </div>
 
-        {/* Sidebar Footer - Switch to Mobile View */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+        {/* Sidebar Footer - Switch to Mobile View & Sign Out */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60 space-y-2">
           <button
             onClick={() => {
               setViewMode('mobile');
@@ -858,6 +858,17 @@ export const AdminPortal: React.FC = () => {
           >
             <Smartphone className="w-4 h-4 text-white" />
             <span>Switch to Mobile App Preview</span>
+          </button>
+
+          <button
+            onClick={async () => {
+              setSidebarOpen(false);
+              await logout();
+            }}
+            className="w-full py-2 px-3 bg-slate-900 hover:bg-rose-950/50 text-slate-300 hover:text-rose-300 border border-slate-800 hover:border-rose-900/60 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center space-x-2 transition-all active:scale-95"
+          >
+            <LogOut className="w-3.5 h-3.5 text-rose-500" />
+            <span>Sign Out Session</span>
           </button>
         </div>
       </aside>

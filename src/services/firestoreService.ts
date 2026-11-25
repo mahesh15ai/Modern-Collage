@@ -300,7 +300,7 @@ export async function deleteStudentFromFirestore(
   if (!isFirebaseConfigured) return;
   try {
     await deleteDoc(doc(db, COLLECTIONS.STUDENTS, studentId));
-    await deleteDoc(doc(db, COLLECTIONS.USERS, studentId)).catch(() => {});
+    await deleteDoc(doc(db, COLLECTIONS.USERS, studentId)).catch(() => { });
   } catch (error: any) {
     console.warn('Error deleting student from Firestore:', error?.message);
     throw error;
@@ -347,7 +347,7 @@ export async function updateFacultyInFirestore(
         subjectsAssigned: faculty.subjectsAssigned || [],
       },
       { merge: true }
-    ).catch(() => {});
+    ).catch(() => { });
   } catch (error: any) {
     console.warn('Error updating faculty in Firestore:', error?.message);
     throw error;
@@ -360,7 +360,7 @@ export async function updateFacultyInFirestore(
 export function subscribeToTimetable(
   callback: (slots: TimetableSlot[]) => void
 ): () => void {
-  if (!isFirebaseConfigured) return () => {};
+  if (!isFirebaseConfigured) return () => { };
   try {
     const q = collection(db, COLLECTIONS.TIMETABLE);
     const unsubscribe = onSnapshot(
@@ -376,7 +376,7 @@ export function subscribeToTimetable(
     return unsubscribe;
   } catch (err) {
     console.warn('Could not attach timetable listener:', err);
-    return () => {};
+    return () => { };
   }
 }
 

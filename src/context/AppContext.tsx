@@ -531,7 +531,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const saved = localStorage.getItem('smart_campus_registered_events');
         if (saved) return JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -552,7 +552,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setRegisteredEventIds(matched);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [currentUser, events]);
 
   const isRegisteredForEvent = useCallback(
@@ -928,9 +928,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = async () => {
-    await logoutUser();
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.warn('Logout error from Firebase:', e);
+    }
+
+    // 1. Clear session from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('smart_campus_session');
+      } catch (e) {}
+    }
+
+    // 2. Set authentication to false
     setIsAuthenticated(false);
-    setActiveScreen('login');
+
+    // 3. Reset viewMode to 'mobile' (so Admin Portal immediately closes)
+    setViewMode('mobile');
+
+    // 4. Close navigation drawer
+    setIsDrawerOpenState(false);
+
+    // 5. Clean up history and route directly to login page
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(
+        { screen: 'login', root: true },
+        '',
+        window.location.pathname + '#login'
+      );
+    }
+    setActiveScreenState('login');
   };
 
   const registerAdmin = async (
@@ -1326,7 +1354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         localStorage.setItem(`smart_campus_registered_events_${userKey}`, JSON.stringify(updatedRegistered));
         localStorage.setItem('smart_campus_registered_events', JSON.stringify(updatedRegistered));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 2. Increment registeredCount by 1 and record student ID in registeredUserIds
@@ -1345,7 +1373,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('smart_campus_events', JSON.stringify(updated));
-        } catch (e) {}
+        } catch (e) { }
       }
       return updated;
     });
