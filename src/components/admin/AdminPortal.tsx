@@ -45,7 +45,9 @@ import {
   Menu,
   BookOpen,
   Image as ImageIcon,
+  ScanLine,
 } from 'lucide-react';
+import { TeacherAttendanceScanner } from '@/components/mobile/TeacherAttendanceScanner';
 import { DispatchedEmail } from '@/context/AppContext';
 import { clearAllLocalCaches } from '@/services/authService';
 import { StudentRecord, FacultyRecord, TimetableSlot, EventItem, EventRegistration } from '@/types';
@@ -469,6 +471,7 @@ export const AdminPortal: React.FC = () => {
 
   // Attendance Modal
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showTeacherScanner, setShowTeacherScanner] = useState(false);
   const [attStudentId, setAttStudentId] = useState('');
   const [attPct, setAttPct] = useState(85);
   const [isSubmittingAtt, setIsSubmittingAtt] = useState(false);
@@ -1620,6 +1623,13 @@ export const AdminPortal: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-0.5">Statutory University minimum requirement: 75.0%</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setShowTeacherScanner(true)}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1.5 transition-all active:scale-95"
+                  >
+                    <ScanLine className="w-3.5 h-3.5" />
+                    <span>Class Teacher QR Scanner</span>
+                  </button>
                   <button
                     onClick={() => {
                       if (students.length > 0) setAttStudentId(students[0].id);
@@ -3892,6 +3902,11 @@ export const AdminPortal: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* MODAL: CLASS TEACHER LIVE ATTENDANCE SCANNER */}
+      {showTeacherScanner && (
+        <TeacherAttendanceScanner onClose={() => setShowTeacherScanner(false)} />
       )}
 
       {/* MODAL 7: UPDATE ATTENDANCE MODAL */}

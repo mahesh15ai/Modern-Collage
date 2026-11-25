@@ -118,6 +118,35 @@ export interface Subject {
 }
 
 // 5. Attendance Management
+export interface AttendanceStudentStatus {
+  studentId: string;
+  studentName: string;
+  rollNo: string;
+  prn?: string;
+  course?: string;
+  status: 'Present' | 'Absent';
+  scannedAt?: string;
+  verifiedByTeacher: boolean;
+  teacherId?: string;
+  teacherName?: string;
+}
+
+export interface LectureAttendanceSession {
+  id: string; // e.g. LECTURE-ATT-2026-11-25-CS501
+  date: string; // e.g. '2026-11-25'
+  subjectCode: string;
+  subjectName: string;
+  className: string;
+  teacherId: string;
+  teacherName: string;
+  totalEnrolled: number;
+  presentCount: number;
+  absentCount: number;
+  status: 'In Progress' | 'Completed';
+  scannedStudents: Record<string, AttendanceStudentStatus>;
+  updatedAt: string;
+}
+
 export interface AttendanceSummary {
   overallPercentage: number;
   totalClasses: number;

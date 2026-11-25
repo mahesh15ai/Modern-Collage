@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
+import { TeacherAttendanceScanner } from './TeacherAttendanceScanner';
 
 interface MobileFrameProps {
   children: React.ReactNode;
@@ -171,10 +172,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
 
   // Center QR Attendance Modal State
   const [showQrModal, setShowQrModal] = useState(false);
-  const [qrModalTab, setQrModalTab] = useState<'pass' | 'scanner'>('pass');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanSuccess, setScanSuccess] = useState<string | null>(null);
 
   // Intercept mobile hardware back button to close QR modal
   useEffect(() => {
@@ -242,33 +240,6 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
       .then((url) => setQrDataUrl(url))
       .catch((err) => console.error('Failed to generate Attendance QR:', err));
   }, [currentUser, currentStudent, studentName, studentRoll, studentPrn, studentClass, isFaculty]);
-
-  // Handle simulated lecture scan
-  const handleSimulateScan = async () => {
-    setIsScanning(true);
-    setScanSuccess(null);
-
-    setTimeout(async () => {
-      setIsScanning(false);
-      const newPresent = attendance.present + 1;
-      const newTotal = attendance.totalClasses + 1;
-      const newOverall = Math.round((newPresent / newTotal) * 100);
-
-      const updated = {
-        ...attendance,
-        present: newPresent,
-        totalClasses: newTotal,
-        overallPercentage: newOverall,
-      };
-
-      if (recordAttendance) {
-        await recordAttendance(currentUser.id || 'STU-001', updated);
-      }
-
-      setScanSuccess(`Attendance Registered: Data Structures & Algorithms (Present) ✓`);
-      setTimeout(() => setScanSuccess(null), 4000);
-    }, 1800);
-  };
 
   return (
     <div className="relative w-full max-w-lg min-h-screen bg-white sm:shadow-xl sm:border-x sm:border-slate-200/80 flex flex-col font-sans mx-auto">
@@ -378,7 +349,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               />
             </button>
 
-            {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button with white halo & starburst) */}
+            {/* 3. CENTER: ATTENDANCE QR (Prominent floating action button with white halo) */}
             <div className="flex-1 flex flex-col items-center justify-center -mt-8 shrink-0 z-10">
               {/* Outer halo / cradle ring */}
               <div className="p-1 bg-white rounded-full shadow-[0_8px_25px_rgba(37,99,235,0.35)] ring-4 ring-white transition-transform hover:scale-105 active:scale-95">
@@ -386,20 +357,20 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   type="button"
                   onClick={() => setShowQrModal(true)}
                   className="w-[56px] h-[56px] rounded-full bg-gradient-to-tr from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] text-white flex items-center justify-center shadow-inner border-2 border-white/80 group"
-                  title="Attendance QR Pass & Scanner"
-                  aria-label="Attendance QR Pass"
+                  title={isFaculty ? 'Class Teacher Live Attendance Scanner' : 'Student Attendance QR Pass'}
+                  aria-label={isFaculty ? 'Class Teacher Scanner' : 'Attendance QR Pass'}
                 >
                   <div className="relative flex items-center justify-center">
-                    <QrCode className="w-7 h-7 text-white stroke-[2.2] transition-transform group-hover:rotate-6" />
-                    {/* Starburst icon in exact center of QR code (matching reference image) */}
-                    <span className="absolute text-[11px] text-white font-extrabold pointer-events-none drop-shadow-sm leading-none select-none">
-                      ✦
-                    </span>
+                    {isFaculty ? (
+                      <ScanLine className="w-7 h-7 text-white stroke-[2.2] transition-transform group-hover:scale-110" />
+                    ) : (
+                      <QrCode className="w-7 h-7 text-white stroke-[2.2] transition-transform group-hover:rotate-6" />
+                    )}
                   </div>
                 </button>
               </div>
               <span className="text-[10px] font-black text-[#0f2c77] mt-1 tracking-tight uppercase whitespace-nowrap">
-                ATTENDANCE QR
+                {isFaculty ? 'CLASS SCANNER' : 'ATTENDANCE QR'}
               </span>
             </div>
 
@@ -480,9 +451,15 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
       )}
 
       {/* =========================================================================
-          ATTENDANCE QR PASS & SCANNER MODAL (Activated by Middle Button)
+          ATTENDANCE QR PASS & SCANNER (Activated by Middle Button)
          ========================================================================= */}
-      {showQrModal && (
+      {/* 1. If Teacher / Faculty / Admin: Live Class Teacher Scanner */}
+      {showQrModal && isFaculty && (
+        <TeacherAttendanceScanner onClose={() => setShowQrModal(false)} />
+      )}
+
+      {/* 2. If Student: Official Student Attendance Pass (Requires Teacher Scan) */}
+      {showQrModal && !isFaculty && (
         <div className="fixed inset-0 bg-black/65 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
@@ -491,7 +468,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 <CollegeLogo size={36} />
                 <div>
                   <h3 className="font-black text-sm text-slate-900 uppercase tracking-wide">
-                    Attendance QR Pass
+                    Student Attendance Pass
                   </h3>
                   <p className="text-[10px] text-blue-600 font-semibold">
                     Modern College Smart Campus
@@ -506,143 +483,45 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               </button>
             </div>
 
-            {/* Mode Tabs: My QR Pass vs Scan Classroom QR */}
-            <div className="mt-3 flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
-              <button
-                onClick={() => setQrModalTab('pass')}
-                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${qrModalTab === 'pass'
-                  ? 'bg-white text-blue-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
-              >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>My QR Pass</span>
-              </button>
-
-              <button
-                onClick={() => setQrModalTab('scanner')}
-                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all ${qrModalTab === 'scanner'
-                  ? 'bg-white text-blue-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <span>{isFaculty ? 'Scan Student QR' : 'Scan Classroom QR'}</span>
-              </button>
+            {/* Student Info Card */}
+            <div className="mt-4 p-3.5 bg-gradient-to-r from-[#071D3A] via-blue-950 to-indigo-950 text-white rounded-2xl text-center shadow-xs">
+              <h4 className="font-extrabold text-sm">{studentName}</h4>
+              <p className="text-[11px] text-blue-200 mt-0.5">{studentClass}</p>
+              <div className="flex items-center justify-center space-x-3 mt-1.5 text-[10px] font-mono text-amber-300">
+                <span>Roll: <strong>{studentRoll}</strong></span>
+                <span>•</span>
+                <span>PRN: <strong>{studentPrn}</strong></span>
+              </div>
             </div>
 
-            {/* Toast Alert Inside Modal */}
-            {scanSuccess && (
-              <div className="mt-3 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center space-x-2 font-bold animate-in fade-in slide-in-from-top-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{scanSuccess}</span>
-              </div>
-            )}
-
-            {/* Tab 1: My QR Pass */}
-            {qrModalTab === 'pass' && (
-              <div className="mt-3 text-center space-y-3">
-                {/* Faculty vs Student Info Pill */}
-                {isFaculty ? (
-                  <div className="p-3 bg-gradient-to-r from-[#071D3A] via-blue-950 to-indigo-950 text-white rounded-2xl">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-extrabold text-sm">{currentUser.name}</h4>
-                      <span className="text-[9px] bg-amber-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">
-                        FACULTY PASS
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-blue-200 mt-0.5">
-                      {currentUser.designation || 'Assistant Professor'} • {currentUser.department || 'Computer Science'} Dept
-                    </p>
-                    <div className="flex items-center justify-center space-x-3 mt-1.5 text-[10px] font-mono text-amber-300">
-                      <span>EMP ID: <strong>{currentUser.employeeId || currentUser.id || 'FAC-102'}</strong></span>
-                      <span>•</span>
-                      <span>Status: <strong>Active Staff</strong></span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 bg-gradient-to-r from-[#071D3A] via-blue-950 to-indigo-950 text-white rounded-2xl">
-                    <h4 className="font-extrabold text-sm">{studentName}</h4>
-                    <p className="text-[11px] text-blue-200 mt-0.5">{studentClass}</p>
-                    <div className="flex items-center justify-center space-x-3 mt-1.5 text-[10px] font-mono text-amber-300">
-                      <span>Roll: <strong>{studentRoll}</strong></span>
-                      <span>•</span>
-                      <span>PRN: <strong>{studentPrn}</strong></span>
-                    </div>
-                  </div>
-                )}
-
-                {/* QR Code Container */}
-                <div className="p-3 bg-white border-2 border-dashed border-blue-400 rounded-2xl inline-block shadow-sm">
-                  {qrDataUrl ? (
-                    <img
-                      src={qrDataUrl}
-                      alt="Attendance QR Code"
-                      className="w-48 h-48 mx-auto rounded-xl"
-                    />
-                  ) : (
-                    <div className="w-48 h-48 flex items-center justify-center text-xs text-slate-400">
-                      Generating Attendance QR...
-                    </div>
-                  )}
+            {/* QR Code Container */}
+            <div className="mt-3.5 p-3.5 bg-white border-2 border-dashed border-blue-400 rounded-2xl flex flex-col items-center justify-center shadow-xs">
+              {qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt="Student Attendance QR"
+                  className="w-48 h-48 rounded-xl shadow-xs"
+                />
+              ) : (
+                <div className="w-48 h-48 flex items-center justify-center text-xs text-slate-400">
+                  Generating Dynamic Pass...
                 </div>
+              )}
+            </div>
 
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  {isFaculty
-                    ? '📷 Present this Official Faculty ID & Lecture Pass to security or campus attendance terminals.'
-                    : '📷 Present this QR code on your phone screen to the professor or classroom terminal for attendance.'}
-                </p>
-
-                {/* Simulate Teacher Scanner Action */}
-                <button
-                  type="button"
-                  onClick={handleSimulateScan}
-                  disabled={isScanning}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md transition-all active:scale-95 disabled:opacity-50"
-                >
-                  <UserCheck className="w-4 h-4 text-white" />
-                  <span>
-                    {isScanning ? 'Verifying with Terminal...' : 'Simulate Professor Biometric Scan'}
-                  </span>
-                </button>
+            {/* Mandatory Teacher Scan Notice */}
+            <div className="mt-3.5 p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-left space-y-1">
+              <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-xs">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Class Teacher Scan Mandatory</span>
               </div>
-            )}
-
-            {/* Tab 2: Scan Classroom QR */}
-            {qrModalTab === 'scanner' && (
-              <div className="mt-3 space-y-3 text-center">
-                {/* Simulated Camera Viewfinder */}
-                <div className="relative w-full h-52 bg-slate-900 rounded-2xl overflow-hidden flex flex-col items-center justify-center border-2 border-slate-700 shadow-inner">
-                  {/* Scanning Laser Line */}
-                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-rose-500 shadow-[0_0_8px_#ef4444] animate-pulse" />
-
-                  {/* Corner Targets */}
-                  <div className="w-40 h-40 border-2 border-white/50 rounded-2xl flex items-center justify-center relative">
-                    <ScanLine className="w-10 h-10 text-white/70 animate-bounce" />
-                    <span className="absolute bottom-2 text-[9px] text-white/80 font-mono">
-                      Align QR in frame
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-slate-500 leading-tight">
-                  Point camera at the lecture QR code displayed on the classroom projector.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleSimulateScan}
-                  disabled={isScanning}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md transition-all active:scale-95 disabled:opacity-50"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>{isScanning ? 'Scanning Lecture Code...' : 'Scan Today’s Lecture QR'}</span>
-                </button>
-              </div>
-            )}
+              <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
+                Present this QR code to your <strong>Class Teacher</strong>. Attendance is marked <strong>PRESENT</strong> only when your Class Teacher scans this code. If unscanned, you will remain marked <strong>ABSENT</strong>.
+              </p>
+            </div>
 
             {/* Bottom Link: View Full Attendance Record */}
-            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+            <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
               <div className="flex items-center space-x-1.5 text-slate-600 font-medium text-[11px]">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Overall: <strong>{attendance.overallPercentage}%</strong></span>

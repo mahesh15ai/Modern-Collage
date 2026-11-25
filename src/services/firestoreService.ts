@@ -25,6 +25,8 @@ import {
   StudentResult,
   StudyMaterial,
   AttendanceSummary,
+  LectureAttendanceSession,
+  AttendanceStudentStatus,
   TimetableSlot,
   ChatMessage,
 } from '@/types';
@@ -54,6 +56,7 @@ export const COLLECTIONS = {
   MATERIALS: 'study_materials',
   TIMETABLE: 'timetable',
   CHATS: 'chats',
+  LECTURE_ATTENDANCE: 'lecture_attendance',
 };
 
 // ---------------------------------------------------------------------------
@@ -629,6 +632,78 @@ export function subscribeToStudentAttendance(
     );
   } catch (err: any) {
     console.warn('Could not attach attendance realtime listener:', err?.message);
+    return () => {};
+  }
+}
+
+/**
+ * Save / Update Lecture Attendance Session in Cloud Firestore
+ */
+export async function saveLectureAttendanceSession(
+  session: LectureAttendanceSession
+): Promise<void> {
+  if (!isFirebaseConfigured || !session.id) return;
+  try {
+    await setDoc(doc(db, COLLECTIONS.LECTURE_ATTENDANCE, session.id), session);
+  } catch (error: any) {
+    console.warn('Error saving lecture attendance session:', error?.message);
+    throw error;
+  }
+}
+
+/**
+ * Subscribe to Realtime Lecture Attendance Session
+ */
+export function subscribeToLectureAttendanceSession(
+  sessionId: string,
+  callback: (session: LectureAttendanceSession | null) => void
+): () => void {
+  if (!isFirebaseConfigured || !sessionId) return () => {};
+  try {
+    const docRef = doc(db, COLLECTIONS.LECTURE_ATTENDANCE, sessionId);
+    return onSnapshot(
+      docRef,
+      (snap) => {
+        if (snap.exists()) {
+          callback(snap.data() as LectureAttendanceSession);
+        } else {
+          callback(null);
+        }
+      },
+      (error) => {
+        console.warn('Lecture session realtime listener error:', error?.message);
+      }
+    );
+  } catch (err: any) {
+    console.warn('Could not attach lecture session listener:', err?.message);
+    return () => {};
+  }
+}
+
+/**
+ * Subscribe to all Lecture Attendance Sessions for a class
+ */
+export function subscribeToClassLectureSessions(
+  className: string,
+  callback: (sessions: LectureAttendanceSession[]) => void
+): () => void {
+  if (!isFirebaseConfigured) return () => {};
+  try {
+    const q = collection(db, COLLECTIONS.LECTURE_ATTENDANCE);
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items = snapshot.docs
+          .map((d) => d.data() as LectureAttendanceSession)
+          .filter((s) => !className || s.className?.toLowerCase() === className?.toLowerCase());
+        callback(items);
+      },
+      (error) => {
+        console.warn('Class lecture sessions listener error:', error?.message);
+      }
+    );
+  } catch (err: any) {
+    console.warn('Could not attach class lecture sessions listener:', err?.message);
     return () => {};
   }
 }
