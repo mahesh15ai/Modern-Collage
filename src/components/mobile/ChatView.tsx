@@ -130,7 +130,7 @@ export const ChatView: React.FC = () => {
   };
 
   // ---------------------------------------------------------------------------
-  // VIEW A: Active 1-on-1 Realtime Doubt Clearing Chat View
+  // VIEW A: Active 1-on-1 Realtime Doubt Clearing Chat View (Edge-to-Edge Full Height)
   // ---------------------------------------------------------------------------
   if (activeChatRecipient) {
     const isRecipientFaculty = 'designation' in activeChatRecipient;
@@ -138,21 +138,21 @@ export const ChatView: React.FC = () => {
     const isClassTeacher = teacherData?.classTeacherOf;
 
     return (
-      <div className="flex flex-col h-[calc(100vh-65px)] max-w-lg mx-auto bg-slate-50 relative font-sans">
-        {/* Chat Top Header */}
-        <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3.5 py-2.5 flex items-center justify-between z-30 shadow-xs">
+      <div className="fixed inset-0 z-40 max-w-lg mx-auto flex flex-col bg-slate-50 overflow-hidden font-sans h-full shadow-2xl">
+        {/* Dedicated 1-on-1 Chat Header (Replaces Outer Frame Header) */}
+        <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3 py-2.5 flex items-center justify-between z-30 shadow-xs shrink-0">
           <div className="flex items-center space-x-2.5 min-w-0">
             <button
               type="button"
               onClick={handleBackToList}
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-700 transition-colors"
+              className="p-1.5 -ml-1 rounded-full hover:bg-slate-100 text-slate-700 transition-colors"
               title="Back to teachers list"
             >
               <ArrowLeft className="w-5 h-5 text-slate-800" />
             </button>
 
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-blue-50 shrink-0">
+            <div className="relative shrink-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-blue-50">
                 <img
                   src={
                     (activeChatRecipient as any).avatar ||
@@ -162,11 +162,11 @@ export const ChatView: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
             </div>
 
             <div className="min-w-0">
-              <div className="flex items-center space-x-1.5">
+              <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
                 <h3 className="font-extrabold text-sm text-slate-900 truncate leading-tight">
                   {activeChatRecipient.name}
                 </h3>
@@ -176,7 +176,7 @@ export const ChatView: React.FC = () => {
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-500 truncate mt-0.5">
+              <p className="text-[10.5px] text-slate-500 truncate mt-0.5">
                 {isRecipientFaculty
                   ? `${teacherData?.designation || 'Faculty'} • ${teacherData?.department || 'CS Dept'}`
                   : `${(activeChatRecipient as StudentRecord).course || 'Student'}`}
@@ -185,10 +185,10 @@ export const ChatView: React.FC = () => {
           </div>
         </header>
 
-        {/* Message Thread Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
-          {/* Welcome Banner */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl p-3.5 text-center space-y-1">
+        {/* Message Thread Scroll Area (Takes remaining height and scrolls smoothly) */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-4 space-y-3.5">
+          {/* Welcome Official Doubts Banner */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl p-3 text-center space-y-1">
             <div className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-blue-800 uppercase tracking-wider bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-100">
               <ShieldCheck className="w-3 h-3 text-blue-600" />
               <span>Official Academic Doubt Desk</span>
@@ -214,7 +214,7 @@ export const ChatView: React.FC = () => {
                   className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${
                       isMine
                         ? 'bg-[#1d4ed8] text-white rounded-br-xs'
                         : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs shadow-sm'
@@ -254,48 +254,51 @@ export const ChatView: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Academic Doubt Chips */}
-        <div className="px-3 py-1.5 bg-white border-t border-slate-100 flex items-center space-x-1.5 overflow-x-auto [scrollbar-width:none]">
-          {[
-            'Sir, I have a doubt in Unit 2',
-            'When is the assignment deadline?',
-            'Can you share the lecture slides?',
-            'Is the lab manual submission this week?',
-          ].map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => handleQuickChipClick(chip)}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-800 rounded-full text-[10.5px] font-semibold whitespace-nowrap border border-slate-200/80 transition-colors shrink-0"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
+        {/* Pinned Bottom Container: Quick Chips + Message Input Bar */}
+        <div className="shrink-0 bg-white border-t border-slate-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.03)] z-20">
+          {/* Quick Academic Doubt Chips */}
+          <div className="px-3 py-1.5 bg-slate-50/90 border-b border-slate-100 flex items-center space-x-1.5 overflow-x-auto [scrollbar-width:none]">
+            {[
+              'Sir, I have a doubt in Unit 2',
+              'When is the assignment deadline?',
+              'Can you share the lecture slides?',
+              'Is the lab manual submission this week?',
+            ].map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => handleQuickChipClick(chip)}
+                className="px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-800 rounded-full text-[10.5px] font-semibold whitespace-nowrap border border-slate-200/90 shadow-2xs transition-colors shrink-0 active:scale-95"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
 
-        {/* Message Input Bar */}
-        <form
-          onSubmit={handleSendMessage}
-          className="p-3 bg-white border-t border-slate-200 flex items-center space-x-2"
-        >
-          <input
-            type="text"
-            required
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={`Ask ${activeChatRecipient.name} a doubt...`}
-            className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
-          />
-
-          <button
-            type="submit"
-            disabled={!inputMessage.trim()}
-            className="w-10 h-10 rounded-2xl bg-[#1d4ed8] hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center shadow-md active:scale-95 transition-all shrink-0"
-            title="Send message"
+          {/* Message Input Bar */}
+          <form
+            onSubmit={handleSendMessage}
+            className="p-2.5 sm:p-3 bg-white flex items-center space-x-2"
           >
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
+            <input
+              type="text"
+              required
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder={`Ask ${activeChatRecipient.name} a doubt...`}
+              className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all shadow-inner"
+            />
+
+            <button
+              type="submit"
+              disabled={!inputMessage.trim()}
+              className="w-10 h-10 rounded-full bg-[#1d4ed8] hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center shadow-md active:scale-95 transition-all shrink-0"
+              title="Send message"
+            >
+              <Send className="w-4 h-4 ml-0.5" />
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
@@ -351,7 +354,7 @@ export const ChatView: React.FC = () => {
         <div className="h-10 w-[1.5px] bg-white/20 mx-3 shrink-0" />
 
         {/* Banner Texts */}
-        <div className="min-w-0 pr-8">
+        <div className="min-w-0 flex-1 pr-4">
           <h2 className="font-extrabold text-[15px] sm:text-base text-white tracking-tight leading-tight">
             Academic Doubt Desk
           </h2>
@@ -406,7 +409,7 @@ export const ChatView: React.FC = () => {
           {/* Teacher Card */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow">
             {/* Left: Avatar + Details */}
-            <div className="flex items-center space-x-3 min-w-0 pr-2">
+            <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
               {/* Circular Avatar with Active Green Dot */}
               <div className="relative shrink-0">
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 border border-slate-200/70">
@@ -423,7 +426,7 @@ export const ChatView: React.FC = () => {
               </div>
 
               {/* Info Lines */}
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                   <h4 className="font-extrabold text-sm text-slate-900 truncate">
                     {classTeacher.name}
@@ -483,7 +486,7 @@ export const ChatView: React.FC = () => {
               className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow"
             >
               {/* Left: Avatar + Details */}
-              <div className="flex items-center space-x-3 min-w-0 pr-2">
+              <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
                 {/* Circular Avatar with Active Green Dot */}
                 <div className="relative shrink-0">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 border border-slate-200/70">
@@ -500,7 +503,7 @@ export const ChatView: React.FC = () => {
                 </div>
 
                 {/* Info Lines */}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                     <h4 className="font-extrabold text-sm text-slate-900 truncate">
                       {faculty.name}

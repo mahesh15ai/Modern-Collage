@@ -333,6 +333,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
 
+      // 1.5 If active 1-on-1 chat is open, close it and return to the chat directory
+      if (activeChatRecipientRef.current) {
+        setActiveChatRecipientState(null);
+        activeChatRecipientRef.current = null;
+        return;
+      }
+
       const state = event.state;
       const current = activeScreenRef.current;
 
@@ -605,7 +612,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
     ];
   });
-  const [activeChatRecipient, setActiveChatRecipient] = useState<FacultyRecord | StudentRecord | null>(null);
+  const [activeChatRecipient, setActiveChatRecipientState] = useState<FacultyRecord | StudentRecord | null>(null);
+  const activeChatRecipientRef = useRef<FacultyRecord | StudentRecord | null>(null);
+  activeChatRecipientRef.current = activeChatRecipient;
+
+  const setActiveChatRecipient = useCallback((recipient: FacultyRecord | StudentRecord | null) => {
+    setActiveChatRecipientState(recipient);
+    activeChatRecipientRef.current = recipient;
+  }, []);
 
   const openChatWithTeacher = (faculty: FacultyRecord) => {
     setActiveChatRecipient(faculty);

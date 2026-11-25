@@ -34,6 +34,8 @@ export default function Home() {
     isAuthenticated,
     logout,
     login,
+    activeChatRecipient,
+    setActiveChatRecipient,
   } = useApp();
 
   const [qrToast, setQrToast] = useState<{ show: boolean; name: string } | null>(null);
@@ -232,16 +234,35 @@ export default function Home() {
       {/* Main Full-App Responsive View (No Phone Bezel/Mockup) */}
       <div className="w-full flex-1 flex justify-center">
         <MobileFrame
-          title={isAuthenticated ? screenTitleMap[activeScreen] : undefined}
-          showBack={isAuthenticated && activeScreen !== 'dashboard' && activeScreen !== 'splash' && activeScreen !== 'login'}
+          title={
+            isAuthenticated
+              ? activeScreen === 'chat' && activeChatRecipient
+                ? undefined
+                : screenTitleMap[activeScreen]
+              : undefined
+          }
+          showBack={
+            isAuthenticated &&
+            activeScreen !== 'dashboard' &&
+            activeScreen !== 'splash' &&
+            activeScreen !== 'login' &&
+            !(activeScreen === 'chat' && activeChatRecipient)
+          }
           onBack={() => {
-            if (typeof window !== 'undefined' && window.history.length > 1) {
+            if (activeScreen === 'chat' && activeChatRecipient) {
+              setActiveChatRecipient(null);
+            } else if (typeof window !== 'undefined' && window.history.length > 1) {
               window.history.back();
             } else {
               setActiveScreen('dashboard');
             }
           }}
-          showNav={isAuthenticated && activeScreen !== 'splash' && activeScreen !== 'login'}
+          showNav={
+            isAuthenticated &&
+            activeScreen !== 'splash' &&
+            activeScreen !== 'login' &&
+            !(activeScreen === 'chat' && activeChatRecipient)
+          }
         >
           {renderActiveMobileScreen()}
         </MobileFrame>
