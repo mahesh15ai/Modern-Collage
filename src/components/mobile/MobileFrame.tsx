@@ -29,6 +29,7 @@ import {
   CreditCard,
   LayoutGrid,
   GraduationCap,
+  MessageSquare,
 } from 'lucide-react';
 import CollegeLogo from '@/components/common/CollegeLogo';
 import QRCode from 'qrcode';
@@ -116,6 +117,14 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           screen: 'materials' as const,
           badge: null,
           color: 'text-teal-600 bg-teal-50',
+        },
+        {
+          id: 'chat',
+          label: isFaculty ? 'Student Doubts & Queries' : 'Ask Subject / Class Teacher',
+          icon: MessageSquare,
+          screen: 'chat' as const,
+          badge: 'Live',
+          color: 'text-blue-600 bg-blue-50',
         },
       ],
     },

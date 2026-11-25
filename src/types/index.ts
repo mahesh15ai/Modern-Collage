@@ -277,3 +277,18 @@ export interface ComplaintItem {
   description: string;
   resolvedAt?: string;
 }
+
+// 15. Realtime Academic Chat (Subject Teacher & Class Teacher)
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: 'student' | 'faculty';
+  receiverId: string;
+  receiverName: string;
+  receiverRole: 'student' | 'faculty';
+  text: string;
+  timestamp: string;
+  subjectName?: string;
+  isRead?: boolean;
+}

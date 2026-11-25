@@ -25,6 +25,7 @@ import {
   StudyMaterial,
   AttendanceSummary,
   TimetableSlot,
+  ChatMessage,
 } from '@/types';
 import {
   MOCK_STUDENTS,
@@ -51,6 +52,7 @@ export const COLLECTIONS = {
   COMPLAINTS: 'complaints',
   MATERIALS: 'study_materials',
   TIMETABLE: 'timetable',
+  CHATS: 'chats',
 };
 
 // ---------------------------------------------------------------------------
@@ -661,4 +663,44 @@ export async function clearAllFirestoreData(): Promise<{ deleted: number }> {
     }
   }
   return { deleted };
+}
+
+/**
+ * Send chat message to Cloud Firestore
+ */
+export async function sendChatMessageToFirestore(message: ChatMessage): Promise<void> {
+  if (!isFirebaseConfigured) return;
+  try {
+    await setDoc(doc(db, COLLECTIONS.CHATS, message.id), message);
+  } catch (error: any) {
+    console.warn('Error saving chat message to Firestore:', error?.message);
+    throw error;
+  }
+}
+
+/**
+ * Subscribe to realtime chat messages
+ */
+export function subscribeToChatMessages(
+  callback: (messages: ChatMessage[]) => void
+): Unsubscribe {
+  if (!isFirebaseConfigured) {
+    return () => {};
+  }
+  try {
+    const q = query(collection(db, COLLECTIONS.CHATS), orderBy('timestamp', 'asc'));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const messages = snapshot.docs.map((doc) => doc.data() as ChatMessage);
+        callback(messages);
+      },
+      (error) => {
+        console.warn('Chat subscription note:', error.message);
+      }
+    );
+  } catch (err: any) {
+    console.warn('subscribeToChatMessages error:', err?.message);
+    return () => {};
+  }
 }

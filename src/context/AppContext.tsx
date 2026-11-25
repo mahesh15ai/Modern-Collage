@@ -18,6 +18,7 @@ import {
   EventItem,
   ComplaintItem,
   CollegeStats,
+  ChatMessage,
 } from '@/types';
 import {
   MOCK_STUDENT_USER,
@@ -74,6 +75,8 @@ import {
   subscribeToTimetable,
   saveTimetableSlotToFirestore,
   deleteTimetableSlotFromFirestore,
+  sendChatMessageToFirestore,
+  subscribeToChatMessages,
 } from '@/services/firestoreService';
 
 export type MobileScreen =
@@ -88,7 +91,8 @@ export type MobileScreen =
   | 'complaints'
   | 'events'
   | 'notices'
-  | 'profile';
+  | 'profile'
+  | 'chat';
 
 export type AdminSection =
   | 'overview'
@@ -221,6 +225,12 @@ interface AppContextType {
     materialData: Omit<StudyMaterial, 'id' | 'downloads' | 'uploadedDate'>
   ) => Promise<void>;
   payFees: (feeId: string) => void;
+  // Realtime Academic Chat
+  chatMessages: ChatMessage[];
+  activeChatRecipient: FacultyRecord | StudentRecord | null;
+  setActiveChatRecipient: (recipient: FacultyRecord | StudentRecord | null) => void;
+  sendChatMessage: (text: string, subjectName?: string) => Promise<void>;
+  openChatWithTeacher: (faculty: FacultyRecord) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -300,6 +310,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'events',
       'notices',
       'profile',
+      'chat',
     ];
 
     const hash = window.location.hash.replace('#', '') as MobileScreen;
@@ -569,6 +580,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const [complaints, setComplaints] = useState<ComplaintItem[]>(MOCK_COMPLAINTS);
+
+  // Realtime Academic Chat (Subject Teacher & Class Teacher)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smart_campus_chat_messages');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'MSG-001',
+        senderId: 'FAC-2024-009',
+        senderName: 'Dr. Nitish Sharma',
+        senderRole: 'faculty',
+        receiverId: 'STU-001',
+        receiverName: 'Mahesh Gomaskar',
+        receiverRole: 'student',
+        subjectName: 'Data Structures & Algorithms',
+        text: 'Hello! Welcome to the Modern College Academic Doubt Desk. You can ask any question regarding your syllabus, assignments, or lectures here.',
+        timestamp: '10:30 AM',
+        isRead: true,
+      },
+    ];
+  });
+  const [activeChatRecipient, setActiveChatRecipient] = useState<FacultyRecord | StudentRecord | null>(null);
+
+  const openChatWithTeacher = (faculty: FacultyRecord) => {
+    setActiveChatRecipient(faculty);
+    setActiveScreen('chat');
+  };
+
+  const sendChatMessage = async (text: string, subjectName?: string): Promise<void> => {
+    if (!text.trim() || !activeChatRecipient) return;
+
+    const isStudent = currentUser.role === 'student';
+    const senderName = currentUser.name || (isStudent ? 'Mahesh Gomaskar' : 'Faculty Member');
+    const senderId = currentUser.id || (isStudent ? 'STU-001' : 'FAC-2024-009');
+    const receiverId = activeChatRecipient.id;
+    const receiverName = activeChatRecipient.name;
+    const receiverRole = isStudent ? 'faculty' : 'student';
+
+    const newMsg: ChatMessage = {
+      id: `MSG-${Date.now()}`,
+      senderId,
+      senderName,
+      senderRole: isStudent ? 'student' : 'faculty',
+      receiverId,
+      receiverName,
+      receiverRole,
+      subjectName: subjectName || (activeChatRecipient as FacultyRecord).subjectsAssigned?.[0] || 'Academic Doubt',
+      text: text.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isRead: false,
+    };
+
+    setChatMessages((prev) => {
+      const updated = [...prev, newMsg];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('smart_campus_chat_messages', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+
+    await sendChatMessageToFirestore(newMsg).catch((err) =>
+      console.warn('Firestore sendChatMessage note:', err)
+    );
+  };
   const [dispatchedEmails, setDispatchedEmails] = useState<DispatchedEmail[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -747,6 +828,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
+    const unsubChats = subscribeToChatMessages((remoteMessages) => {
+      if (remoteMessages && remoteMessages.length > 0) {
+        setChatMessages(remoteMessages);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('smart_campus_chat_messages', JSON.stringify(remoteMessages));
+          } catch (e) {}
+        }
+      }
+    });
+
     return () => {
       unsubscribeAuth();
       unsubStudents();
@@ -757,6 +849,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubResults();
       unsubMaterials();
       unsubTimetable();
+      unsubChats();
     };
   }, []);
 
@@ -938,7 +1031,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('smart_campus_session');
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 2. Set authentication to false
@@ -1555,6 +1648,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         recordAttendance,
         uploadMaterial,
         payFees,
+        chatMessages,
+        activeChatRecipient,
+        setActiveChatRecipient,
+        sendChatMessage,
+        openChatWithTeacher,
       }}
     >
       {children}

@@ -15,6 +15,7 @@ import { ComplaintsView } from '@/components/mobile/ComplaintsView';
 import { EventsView } from '@/components/mobile/EventsView';
 import { NoticesView } from '@/components/mobile/NoticesView';
 import { ProfileView } from '@/components/mobile/ProfileView';
+import { ChatView } from '@/components/mobile/ChatView';
 import { AdminPortal } from '@/components/admin/AdminPortal';
 import {
   Laptop,
@@ -108,6 +109,7 @@ export default function Home() {
     events: 'Events & Activities',
     notices: 'Notice Board',
     profile: 'Student Profile',
+    chat: 'Academic Doubt Desk',
   };
 
   const renderActiveMobileScreen = () => {
@@ -141,6 +143,8 @@ export default function Home() {
         return <NoticesView />;
       case 'profile':
         return <ProfileView />;
+      case 'chat':
+        return <ChatView />;
       default:
         return <StudentDashboard />;
     }
