@@ -214,11 +214,10 @@ export const ChatView: React.FC = () => {
                   className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${
-                      isMine
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${isMine
                         ? 'bg-[#1d4ed8] text-white rounded-br-xs'
                         : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs shadow-sm'
-                    }`}
+                      }`}
                   >
                     {!isMine && (
                       <span className="text-[9.5px] font-bold text-blue-700 block mb-0.5">
@@ -229,9 +228,8 @@ export const ChatView: React.FC = () => {
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
                     <div
-                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${
-                        isMine ? 'text-blue-200' : 'text-slate-400'
-                      }`}
+                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${isMine ? 'text-blue-200' : 'text-slate-400'
+                        }`}
                     >
                       <span>{msg.timestamp}</span>
                       {isMine && <CheckCheck className="w-3 h-3 text-blue-300" />}

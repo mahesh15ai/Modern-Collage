@@ -253,6 +253,19 @@ export interface NoticeItem {
 }
 
 // 13. Events & Activities
+export interface EventRegistration {
+  studentId: string;
+  studentName: string;
+  rollNo?: string;
+  prn?: string;
+  department?: string;
+  course?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  registeredAt: string;
+}
+
 export interface EventItem {
   id: string;
   title: string;
@@ -265,6 +278,7 @@ export interface EventItem {
   registeredCount: number;
   description: string;
   registeredUserIds?: string[];
+  registeredStudents?: EventRegistration[];
 }
 
 // Complaint / Grievance Portal

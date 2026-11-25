@@ -19,6 +19,7 @@ import {
   Course,
   NoticeItem,
   EventItem,
+  EventRegistration,
   ComplaintItem,
   UserProfile,
   StudentResult,
@@ -456,7 +457,8 @@ export async function saveEventToFirestore(event: EventItem): Promise<void> {
  */
 export async function registerForEventInFirestore(
   eventId: string,
-  userId?: string
+  userId?: string,
+  studentInfo?: EventRegistration
 ): Promise<void> {
   if (!isFirebaseConfigured) return;
   try {
@@ -465,14 +467,28 @@ export async function registerForEventInFirestore(
     if (snap.exists()) {
       const data = snap.data() as EventItem;
       const registeredUserIds = data.registeredUserIds || [];
-      if (userId && registeredUserIds.includes(userId)) {
-        // Already registered in Firestore, skip duplicate
+      const registeredStudents = data.registeredStudents || [];
+
+      // Check if user is already registered in Firestore (skip duplicates)
+      if (
+        (userId && registeredUserIds.includes(userId)) ||
+        (studentInfo &&
+          registeredStudents.some(
+            (s) =>
+              s.studentId === studentInfo.studentId ||
+              (s.email && studentInfo.email && s.email.toLowerCase() === studentInfo.email.toLowerCase())
+          ))
+      ) {
         return;
       }
+
       const updatedUserIds = userId ? [...registeredUserIds, userId] : registeredUserIds;
+      const updatedStudents = studentInfo ? [...registeredStudents, studentInfo] : registeredStudents;
+
       await updateDoc(eventRef, {
         registeredCount: (data.registeredCount || 0) + 1,
         registeredUserIds: updatedUserIds,
+        registeredStudents: updatedStudents,
       });
     }
   } catch (error: any) {
@@ -685,7 +701,7 @@ export function subscribeToChatMessages(
   callback: (messages: ChatMessage[]) => void
 ): Unsubscribe {
   if (!isFirebaseConfigured) {
-    return () => {};
+    return () => { };
   }
   try {
     const q = query(collection(db, COLLECTIONS.CHATS), orderBy('timestamp', 'asc'));
@@ -701,6 +717,6 @@ export function subscribeToChatMessages(
     );
   } catch (err: any) {
     console.warn('subscribeToChatMessages error:', err?.message);
-    return () => {};
+    return () => { };
   }
 }

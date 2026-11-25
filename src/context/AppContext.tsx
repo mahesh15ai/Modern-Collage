@@ -16,6 +16,7 @@ import {
   FeeSummary,
   NoticeItem,
   EventItem,
+  EventRegistration,
   ComplaintItem,
   CollegeStats,
   ChatMessage,
@@ -564,7 +565,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setRegisteredEventIds(JSON.parse(savedForUser));
       } else {
         const matched = events
-          .filter((evt) => evt.registeredUserIds?.includes(userKey) || (currentUser.id && evt.registeredUserIds?.includes(currentUser.id)))
+          .filter(
+            (evt) =>
+              evt.registeredUserIds?.includes(userKey) ||
+              (currentUser.id && evt.registeredUserIds?.includes(currentUser.id)) ||
+              (currentUser.email && evt.registeredUserIds?.includes(currentUser.email)) ||
+              (currentUser.prn && evt.registeredUserIds?.includes(currentUser.prn)) ||
+              evt.registeredStudents?.some(
+                (rs) =>
+                  (currentUser.id && rs.studentId === currentUser.id) ||
+                  (currentUser.email && rs.email?.toLowerCase() === currentUser.email?.toLowerCase()) ||
+                  (currentUser.prn && rs.prn === currentUser.prn) ||
+                  (currentUser.name && rs.studentName?.toLowerCase() === currentUser.name?.toLowerCase())
+              )
+          )
           .map((evt) => evt.id);
         if (matched.length > 0) {
           setRegisteredEventIds(matched);
@@ -577,10 +591,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (eventId: string): boolean => {
       const userKey = currentUser.id || currentUser.email || currentUser.prn || currentUser.name || 'guest';
       const event = events.find((e) => e.id === eventId);
+      if (!event) return registeredEventIds.includes(eventId);
+
       return (
         registeredEventIds.includes(eventId) ||
-        Boolean(event?.registeredUserIds?.includes(userKey)) ||
-        Boolean(currentUser.id && event?.registeredUserIds?.includes(currentUser.id))
+        Boolean(event.registeredUserIds?.includes(userKey)) ||
+        Boolean(currentUser.id && event.registeredUserIds?.includes(currentUser.id)) ||
+        Boolean(currentUser.email && event.registeredUserIds?.includes(currentUser.email)) ||
+        Boolean(currentUser.prn && event.registeredUserIds?.includes(currentUser.prn)) ||
+        Boolean(
+          event.registeredStudents?.some(
+            (rs) =>
+              (currentUser.id && rs.studentId === currentUser.id) ||
+              (currentUser.email && rs.email?.toLowerCase() === currentUser.email?.toLowerCase()) ||
+              (currentUser.prn && rs.prn === currentUser.prn) ||
+              (currentUser.name && rs.studentName?.toLowerCase() === currentUser.name?.toLowerCase())
+          )
+        )
       );
     },
     [currentUser, events, registeredEventIds]
@@ -1446,16 +1473,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Realtime Event Registration (One student can register only once)
   const registerForEvent = async (eventId: string): Promise<boolean> => {
-    const userKey = currentUser.id || currentUser.email || currentUser.prn || currentUser.name || 'guest';
-
     // Strictly enforce: Only 1 registration per student per event!
     if (isRegisteredForEvent(eventId)) {
       console.warn('Student is already registered for this event:', eventId);
       return false;
     }
 
+    const userKey = currentUser.id || currentUser.email || currentUser.prn || currentUser.name || 'STU-001';
+
+    // Prepare complete student registration record
+    const studentInfo: EventRegistration = {
+      studentId: currentUser.id || 'STU-001',
+      studentName: currentUser.name || 'Student',
+      rollNo: currentUser.rollNo || '',
+      prn: currentUser.prn || '',
+      department: currentUser.department || 'Computer Science',
+      course: currentUser.course || 'B.Sc Computer Science',
+      email: currentUser.email || '',
+      phone: currentUser.phone || '',
+      avatar: currentUser.avatar || '',
+      registeredAt: new Date().toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+
     // 1. Update registered event IDs locally and persist per student in localStorage
-    const updatedRegistered = [...registeredEventIds, eventId];
+    const updatedRegistered = Array.from(new Set([...registeredEventIds, eventId]));
     setRegisteredEventIds(updatedRegistered);
     if (typeof window !== 'undefined') {
       try {
@@ -1464,15 +1511,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) { }
     }
 
-    // 2. Increment registeredCount by 1 and record student ID in registeredUserIds
+    // 2. Increment registeredCount by 1 and record student ID in registeredUserIds & registeredStudents
     setEvents((prev) => {
       const updated = prev.map((evt) => {
         if (evt.id === eventId) {
           const existingUsers = evt.registeredUserIds || [];
+          const existingStudents = evt.registeredStudents || [];
+
+          if (
+            existingUsers.includes(userKey) ||
+            existingStudents.some((s) => s.studentId === studentInfo.studentId)
+          ) {
+            return evt;
+          }
+
           return {
             ...evt,
             registeredCount: (evt.registeredCount || 0) + 1,
             registeredUserIds: [...existingUsers, userKey],
+            registeredStudents: [...existingStudents, studentInfo],
           };
         }
         return evt;
@@ -1486,7 +1543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     // 3. Persist to Firestore
-    await registerForEventInFirestore(eventId, userKey).catch((err) =>
+    await registerForEventInFirestore(eventId, userKey, studentInfo).catch((err) =>
       console.warn('Firestore registerForEvent note:', err)
     );
 

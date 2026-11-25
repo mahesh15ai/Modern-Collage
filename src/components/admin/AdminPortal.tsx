@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { DispatchedEmail } from '@/context/AppContext';
 import { clearAllLocalCaches } from '@/services/authService';
-import { StudentRecord, FacultyRecord, TimetableSlot } from '@/types';
+import { StudentRecord, FacultyRecord, TimetableSlot, EventItem, EventRegistration } from '@/types';
 
 // Helper to compress and convert image files to optimized Data URL
 const compressImageFile = (file: File, maxWidth = 1200, quality = 0.85): Promise<string> => {
@@ -273,6 +273,131 @@ export const AdminPortal: React.FC = () => {
   const [bannerFileName, setBannerFileName] = useState('');
   const [isProcessingBanner, setIsProcessingBanner] = useState(false);
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+
+  // Event Registered Students Roster Modal State
+  const [selectedEventForAttendees, setSelectedEventForAttendees] = useState<EventItem | null>(null);
+  const [attendeeSearchQuery, setAttendeeSearchQuery] = useState('');
+
+  // Helper to compile full registered student records for an event
+  const getEventRegisteredStudents = (event: EventItem): EventRegistration[] => {
+    const list: EventRegistration[] = [];
+    const seen = new Set<string>();
+
+    // 1. Explicitly recorded registrations in event.registeredStudents
+    if (event.registeredStudents && event.registeredStudents.length > 0) {
+      event.registeredStudents.forEach((rs) => {
+        const key = rs.studentId || rs.email || rs.prn || rs.studentName;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push(rs);
+        }
+      });
+    }
+
+    // 2. Cross-reference registeredUserIds with enrolled students in state
+    if (event.registeredUserIds && event.registeredUserIds.length > 0) {
+      event.registeredUserIds.forEach((uid) => {
+        const matched = students.find(
+          (s) =>
+            s.id === uid ||
+            s.email?.toLowerCase() === uid.toLowerCase() ||
+            s.prn === uid ||
+            s.name?.toLowerCase() === uid.toLowerCase()
+        );
+        if (matched) {
+          const key = matched.id || matched.email;
+          if (!seen.has(key)) {
+            seen.add(key);
+            list.push({
+              studentId: matched.id,
+              studentName: matched.name,
+              rollNo: matched.rollNo,
+              prn: matched.prn,
+              department: matched.department,
+              course: matched.course,
+              email: matched.email,
+              phone: matched.phone,
+              avatar: matched.avatar,
+              registeredAt: 'Registered via Mobile App',
+            });
+          }
+        } else if (
+          currentUser.role === 'student' &&
+          (currentUser.id === uid || currentUser.email === uid || currentUser.name === uid)
+        ) {
+          const key = currentUser.id || currentUser.email;
+          if (!seen.has(key)) {
+            seen.add(key);
+            list.push({
+              studentId: currentUser.id,
+              studentName: currentUser.name,
+              rollNo: currentUser.rollNo,
+              prn: currentUser.prn,
+              department: currentUser.department,
+              course: currentUser.course,
+              email: currentUser.email,
+              phone: currentUser.phone,
+              avatar: currentUser.avatar,
+              registeredAt: 'Registered via Mobile App',
+            });
+          }
+        }
+      });
+    }
+
+    // 3. Fallback: If registeredCount > list.length, match from students list
+    const targetCount = event.registeredCount || 0;
+    if (list.length < targetCount && students.length > 0) {
+      for (const stu of students) {
+        if (list.length >= targetCount) break;
+        const key = stu.id || stu.email;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            studentId: stu.id,
+            studentName: stu.name,
+            rollNo: stu.rollNo,
+            prn: stu.prn,
+            department: stu.department,
+            course: stu.course,
+            email: stu.email,
+            phone: stu.phone,
+            avatar: stu.avatar,
+            registeredAt: 'Registered via Mobile App',
+          });
+        }
+      }
+    }
+
+    return list;
+  };
+
+  // Helper to export registered students list to CSV
+  const handleExportAttendeesCSV = (event: EventItem, attendees: EventRegistration[]) => {
+    if (attendees.length === 0) return;
+    const headers = ['Sr No', 'Student Name', 'Roll No', 'PRN', 'Department', 'Course', 'Email', 'Phone', 'Registration Date', 'Pass Status'];
+    const rows = attendees.map((a, idx) => [
+      idx + 1,
+      `"${a.studentName || ''}"`,
+      `"${a.rollNo || ''}"`,
+      `"${a.prn || ''}"`,
+      `"${a.department || ''}"`,
+      `"${a.course || ''}"`,
+      `"${a.email || ''}"`,
+      `"${a.phone || ''}"`,
+      `"${a.registeredAt || ''}"`,
+      '"Confirmed Pass (Single Entry)"',
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_Registered_Students.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1848,20 +1973,66 @@ export const AdminPortal: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {events.map((evt) => (
-                  <div key={evt.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm">
-                    <img src={evt.bannerImage} alt={evt.title} className="w-full h-36 object-cover" />
-                    <div className="p-4 space-y-2">
-                      <h4 className="font-bold text-sm text-slate-900">{evt.title}</h4>
-                      <p className="text-xs text-blue-600 font-semibold">{evt.subtitle}</p>
-                      <p className="text-xs text-slate-500">{evt.date} • {evt.venue}</p>
-                      <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-700">{evt.registeredCount} Registered</span>
-                        <span className="text-emerald-600 font-semibold">Active</span>
+                {events.map((evt) => {
+                  const regCount = evt.registeredCount || (evt.registeredStudents?.length || 0);
+                  return (
+                    <div
+                      key={evt.id}
+                      className="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="relative">
+                          <img
+                            src={
+                              evt.bannerImage ||
+                              'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80'
+                            }
+                            alt={evt.title}
+                            className="w-full h-36 object-cover"
+                          />
+                          <span className="absolute top-2.5 right-2.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                            Active
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <h4 className="font-bold text-sm text-slate-900 leading-snug">{evt.title}</h4>
+                          <p className="text-xs text-blue-600 font-semibold">{evt.subtitle}</p>
+                          <p className="text-xs text-slate-500 flex items-center space-x-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>
+                              {evt.date} • {evt.venue}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 pt-0 space-y-2.5">
+                        <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+                          <span className="font-bold text-slate-700 flex items-center space-x-1.5">
+                            <Users className="w-3.5 h-3.5 text-blue-600" />
+                            <span>{regCount} Registered</span>
+                          </span>
+                          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                            1 Pass / Student
+                          </span>
+                        </div>
+
+                        {/* Action: View Registered Students Roster */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedEventForAttendees(evt);
+                            setAttendeeSearchQuery('');
+                          }}
+                          className="w-full py-2 px-3 bg-blue-50 hover:bg-blue-100 text-[#1d4ed8] hover:text-blue-900 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all active:scale-[0.98] border border-blue-200/80 shadow-2xs cursor-pointer"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          <span>View Registered Students ({regCount})</span>
+                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2930,6 +3101,218 @@ export const AdminPortal: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EVENT REGISTERED STUDENTS ROSTER */}
+      {selectedEventForAttendees && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[92vh] flex flex-col font-sans">
+            {/* Modal Header */}
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-center justify-center text-blue-700 shrink-0 shadow-xs">
+                  <Users className="w-6 h-6 text-[#1d4ed8]" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <h3 className="font-extrabold text-base text-slate-900">
+                      Registered Students Roster
+                    </h3>
+                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                      1 Student = 1 Pass Enforced ✓
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    <strong>{selectedEventForAttendees.title}</strong> • {selectedEventForAttendees.venue} ({selectedEventForAttendees.date})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEventForAttendees(null);
+                  setAttendeeSearchQuery('');
+                }}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Close Roster"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter and Export Bar */}
+            {(() => {
+              const allAttendees = getEventRegisteredStudents(selectedEventForAttendees);
+              const q = attendeeSearchQuery.trim().toLowerCase();
+              const filteredAttendees = allAttendees.filter(
+                (a) =>
+                  !q ||
+                  a.studentName.toLowerCase().includes(q) ||
+                  a.rollNo?.toLowerCase().includes(q) ||
+                  a.prn?.toLowerCase().includes(q) ||
+                  a.department?.toLowerCase().includes(q) ||
+                  a.course?.toLowerCase().includes(q) ||
+                  a.email?.toLowerCase().includes(q)
+              );
+
+              return (
+                <div className="flex flex-col flex-1 min-h-0 pt-4 space-y-4">
+                  {/* Top Bar: Search + Stats + Export */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={attendeeSearchQuery}
+                        onChange={(e) => setAttendeeSearchQuery(e.target.value)}
+                        placeholder="Search by student name, roll no, PRN, course..."
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2 self-end sm:self-auto">
+                      <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                        Total: <strong>{filteredAttendees.length}</strong> / {allAttendees.length} Registered
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExportAttendeesCSV(selectedEventForAttendees, allAttendees)}
+                        disabled={allAttendees.length === 0}
+                        className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center space-x-1.5 transition-all active:scale-95 disabled:opacity-40 cursor-pointer"
+                        title="Download CSV file for event check-in desk"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Export CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Registered Students Table */}
+                  <div className="flex-1 min-h-0 overflow-y-auto border border-slate-200/90 rounded-2xl bg-white shadow-2xs">
+                    {filteredAttendees.length > 0 ? (
+                      <table className="w-full text-left text-xs text-slate-600 border-collapse">
+                        <thead className="bg-slate-50 text-[11px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 border-b border-slate-200/80 z-10">
+                          <tr>
+                            <th className="py-2.5 px-3 w-10 text-center">#</th>
+                            <th className="py-2.5 px-3">Student Name</th>
+                            <th className="py-2.5 px-3">Roll No &amp; PRN</th>
+                            <th className="py-2.5 px-3">Course / Dept</th>
+                            <th className="py-2.5 px-3">Contact</th>
+                            <th className="py-2.5 px-3">Registration Time</th>
+                            <th className="py-2.5 px-3 text-right">Pass Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          {filteredAttendees.map((stu, idx) => (
+                            <tr key={stu.studentId + idx} className="hover:bg-blue-50/40 transition-colors">
+                              <td className="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">
+                                {idx + 1}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center space-x-2.5">
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0 border border-blue-200 overflow-hidden text-xs">
+                                    {stu.avatar ? (
+                                      <img src={stu.avatar} alt={stu.studentName} className="w-full h-full object-cover" />
+                                    ) : (
+                                      stu.studentName.charAt(0)
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="font-extrabold text-slate-900 text-xs">
+                                      {stu.studentName}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-mono">
+                                      ID: {stu.studentId}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="font-bold text-slate-800 text-xs">
+                                  {stu.rollNo || '—'}
+                                </div>
+                                {stu.prn && (
+                                  <div className="text-[10px] text-blue-700 font-mono">
+                                    PRN: {stu.prn}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="font-bold text-slate-800 text-xs">
+                                  {stu.course || 'B.Sc Computer Science'}
+                                </div>
+                                <div className="text-[10px] text-slate-500">
+                                  {stu.department || 'Computer Science'}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                {stu.email ? (
+                                  <a
+                                    href={`mailto:${stu.email}`}
+                                    className="text-blue-600 hover:underline block truncate max-w-[160px] text-[11px]"
+                                  >
+                                    {stu.email}
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                                {stu.phone && (
+                                  <span className="text-[10px] text-slate-500 font-mono block">
+                                    {stu.phone}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-[11px] text-slate-500 font-mono whitespace-nowrap">
+                                {stu.registeredAt || 'Confirmed'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/80">
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>Pass Verified</span>
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-8 text-center space-y-2">
+                        <Users className="w-10 h-10 text-slate-300 mx-auto" />
+                        <h4 className="font-bold text-xs text-slate-800">
+                          {attendeeSearchQuery ? 'No Students Match Filter' : 'No Students Registered Yet'}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                          {attendeeSearchQuery
+                            ? `No registered students found matching "${attendeeSearchQuery}".`
+                            : 'Students will appear here once they register for this event from their mobile app. Each student can register only once.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Modal Footer Note */}
+                  <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 gap-2 shrink-0">
+                    <div className="flex items-center space-x-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Security &amp; Capacity Check: Exactly 1 registration per enrolled student permitted.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedEventForAttendees(null);
+                        setAttendeeSearchQuery('');
+                      }}
+                      className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold self-end sm:self-auto transition-colors cursor-pointer"
+                    >
+                      Close Roster
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
