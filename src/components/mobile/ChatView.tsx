@@ -181,8 +181,8 @@ export const ChatView: React.FC = () => {
             </button>
 
             {isGroupActive ? (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-700 flex items-center justify-center text-white shrink-0 shadow-xs border border-blue-400/30">
-                <Users className="w-5 h-5 text-amber-300" />
+              <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-200/80 flex items-center justify-center text-[#1d4ed8] shrink-0">
+                <Users className="w-5 h-5 text-[#1d4ed8]" />
               </div>
             ) : (
               <div className="relative shrink-0">
@@ -206,19 +206,18 @@ export const ChatView: React.FC = () => {
                   {activeChatRecipient.name}
                 </h3>
                 {isGroupActive ? (
-                  <span className="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-200/80 px-1.5 py-0.2 rounded-md shrink-0 flex items-center space-x-0.5">
-                    <Lock className="w-2.5 h-2.5 text-amber-700 mr-0.5" />
-                    <span>Class Teacher Only</span>
+                  <span className="text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md shrink-0">
+                    Class Group
                   </span>
                 ) : isClassTeacher && (
-                  <span className="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-200/80 px-1.5 py-0.2 rounded-md shrink-0">
+                  <span className="text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200/80 px-1.5 py-0.5 rounded-md shrink-0">
                     ★ Class Teacher
                   </span>
                 )}
               </div>
               <p className="text-[10.5px] text-slate-500 truncate mt-0.5">
                 {isGroupActive
-                  ? `Class Teacher: ${classTeacher.name} • Official Class Broadcast Channel`
+                  ? `Class Teacher: ${classTeacher.name} • Broadcast Channel`
                   : isRecipientFaculty
                   ? `${teacherData?.designation || 'Faculty'} • ${teacherData?.department || 'CS Dept'}`
                   : `${(activeChatRecipient as StudentRecord).course || 'Student'}`}
@@ -227,34 +226,34 @@ export const ChatView: React.FC = () => {
           </div>
         </header>
 
-        {/* Message Thread Scroll Area (Takes remaining height and scrolls smoothly) */}
+        {/* Message Thread Scroll Area */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-4 space-y-3.5">
           {/* Welcome Banner */}
           {isGroupActive ? (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-2xl p-3 text-center space-y-1">
-              <div className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-blue-900 uppercase tracking-wider bg-white/90 px-2.5 py-0.5 rounded-full border border-blue-200">
-                <Users className="w-3 h-3 text-blue-700" />
-                <span>Official Class Announcement Group</span>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 text-center space-y-1 shadow-xs">
+              <div className="inline-flex items-center space-x-1 text-[10px] font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-full">
+                <Users className="w-3 h-3 text-slate-600" />
+                <span>Class Broadcast Group</span>
               </div>
-              <h4 className="font-extrabold text-xs text-slate-900">
+              <h4 className="font-bold text-xs text-slate-900">
                 {activeChatRecipient.name}
               </h4>
-              <p className="text-[10.5px] text-slate-600 leading-relaxed max-w-sm mx-auto">
-                📢 Official timetable updates, syllabus notices, and academic directives from Class Teacher <strong>{classTeacher.name}</strong>. Only the Class Teacher is permitted to post messages in this group.
+              <p className="text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
+                Official notices and announcements from Class Teacher <strong>{classTeacher.name}</strong>. Only the Class Teacher can send messages in this group.
               </p>
             </div>
           ) : (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl p-3 text-center space-y-1">
-              <div className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-blue-800 uppercase tracking-wider bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-100">
-                <ShieldCheck className="w-3 h-3 text-blue-600" />
-                <span>Official Academic Doubt Desk</span>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 text-center space-y-1 shadow-xs">
+              <div className="inline-flex items-center space-x-1 text-[10px] font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-full">
+                <ShieldCheck className="w-3 h-3 text-slate-600" />
+                <span>Academic Doubt Desk</span>
               </div>
-              <h4 className="font-extrabold text-xs text-slate-900">
+              <h4 className="font-bold text-xs text-slate-900">
                 {isRecipientFaculty
                   ? `Direct Q&A with ${activeChatRecipient.name}`
                   : `Student Query: ${activeChatRecipient.name}`}
               </h4>
-              <p className="text-[10.5px] text-slate-600 leading-relaxed max-w-xs mx-auto">
+              <p className="text-[11px] text-slate-500 leading-relaxed max-w-xs mx-auto">
                 Ask your syllabus doubts, assignment questions, or lab schedule queries directly. Messages are synced in real time.
               </p>
             </div>
@@ -311,14 +310,14 @@ export const ChatView: React.FC = () => {
 
         {/* Pinned Bottom Container: Group Broadcast Locked for Students, Enabled for Class Teacher */}
         {isGroupActive && isStudent ? (
-          <div className="shrink-0 bg-slate-50 border-t border-slate-200/90 p-3.5 sm:p-4 text-center shadow-xs">
-            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-slate-800 bg-white border border-slate-200/90 rounded-2xl py-3 px-4 shadow-2xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-              <span className="text-[11px] sm:text-xs text-amber-950 font-bold">
-                🔒 Only Class Teacher ({classTeacher.name}) can send messages in this group
+          <div className="shrink-0 bg-white border-t border-slate-200/80 p-3 sm:p-3.5 text-center shadow-xs">
+            <div className="flex items-center justify-center space-x-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3">
+              <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-700">
+                Only Class Teacher ({classTeacher.name}) can send messages in this group
               </span>
             </div>
-            <p className="text-[10.5px] text-slate-500 mt-1.5">
+            <p className="text-[10px] text-slate-400 mt-1">
               Students can view all official notices. For personal queries, use 1-on-1 Chat with your Class Teacher.
             </p>
           </div>
@@ -412,47 +411,7 @@ export const ChatView: React.FC = () => {
   return (
     <div className="w-full min-h-full px-4 pt-3 pb-8 space-y-4 font-sans bg-slate-50/50">
       {/* =======================================================================
-          1. TOP BLUE GRADIENT BANNER
-         ======================================================================= */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#1e40af] p-4 text-white shadow-[0_4px_20px_rgba(29,78,216,0.25)] flex items-center">
-        {/* Left Side: Speech Bubble with Question Mark & Perched Graduation Cap */}
-        <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
-          {/* White Speech Bubble */}
-          <div className="w-9 h-9 bg-white rounded-2xl rounded-bl-xs shadow-md flex items-center justify-center relative mt-2">
-            <span className="text-[#1d4ed8] font-black text-lg leading-none">?</span>
-          </div>
-          {/* Navy Graduation Cap with Golden Tassel perched on top at angle */}
-          <div className="absolute top-0.5 -left-1 -rotate-12 drop-shadow-sm pointer-events-none">
-            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-              <polygon points="12,3 22,8 12,13 2,8" fill="#0f172a" />
-              <path d="M6,10.5 V15 C6,17.5 18,17.5 18,15 V10.5" fill="#1e293b" />
-              <path d="M20,8.5 V15" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="20" cy="16" r="1.2" fill="#f59e0b" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Thin Vertical White Divider */}
-        <div className="h-10 w-[1.5px] bg-white/20 mx-3 shrink-0" />
-
-        {/* Banner Texts */}
-        <div className="min-w-0 flex-1 pr-4">
-          <h2 className="font-extrabold text-[15px] sm:text-base text-white tracking-tight leading-tight">
-            Academic Doubt Desk
-          </h2>
-          <p className="text-[11px] text-blue-100 font-normal leading-snug mt-0.5">
-            Chat directly with your Class Teacher &amp; Subject Faculty
-          </p>
-        </div>
-
-        {/* Watermark Book Icon on Right */}
-        <div className="absolute -right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-20">
-          <BookOpen className="w-16 h-16 text-white stroke-[1.4]" />
-        </div>
-      </div>
-
-      {/* =======================================================================
-          2. SEARCH INPUT
+          1. SEARCH INPUT
          ======================================================================= */}
       <div className="relative">
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -466,7 +425,7 @@ export const ChatView: React.FC = () => {
       </div>
 
       {/* =======================================================================
-          2.5. SECTION: OFFICIAL CLASS GROUP CHAT (BROADCAST ONLY)
+          2. SECTION: CLASS GROUP CHAT (BROADCAST ONLY)
          ======================================================================= */}
       {(!query ||
         classGroupChannel.name.toLowerCase().includes(query) ||
@@ -478,54 +437,57 @@ export const ChatView: React.FC = () => {
             <div className="flex items-center space-x-2">
               <Users className="w-5 h-5 text-[#1d4ed8]" />
               <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
-                Official Class Group Chat
+                Class Group Chat
               </h3>
             </div>
-            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1">
-              <Lock className="w-2.5 h-2.5 text-amber-700 mr-0.5" />
-              <span>Class Teacher Only</span>
+            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1">
+              <Lock className="w-2.5 h-2.5 text-slate-500 mr-0.5" />
+              <span>Teacher Only</span>
             </span>
           </div>
 
-          {/* Group Card */}
+          {/* Group Card - Clean White Card */}
           <div
             onClick={() => setActiveChatRecipient(classGroupChannel)}
-            className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] relative overflow-hidden group cursor-pointer border border-blue-950"
+            className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
           >
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
-                  <Users className="w-6 h-6 text-amber-300" />
+            <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
+              <div className="relative shrink-0">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-50 border border-blue-200/70 flex items-center justify-center text-[#1d4ed8]">
+                  <Users className="w-5 h-5 text-[#1d4ed8]" />
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-2 flex-wrap gap-y-0.5">
-                    <h4 className="font-black text-sm text-white truncate">
-                      {classGroupChannel.name}
-                    </h4>
-                    <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/90 text-white px-2 py-0.5 rounded-full shadow-xs">
-                      Class Broadcast
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-blue-200 font-medium truncate mt-0.5">
-                    Class Teacher: <strong>{classTeacher.name}</strong> • All Enrolled Students
-                  </p>
-                  <p className="text-[10px] text-blue-300/80 truncate mt-0.5 flex items-center space-x-1">
-                    <span>📢</span>
-                    <span>Official Notices &amp; Directives • Only Class Teacher can post</span>
-                  </p>
-                </div>
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
               </div>
 
-              <button
-                type="button"
-                className="px-3.5 py-1.5 bg-white text-blue-900 hover:bg-blue-50 rounded-full text-xs font-black flex items-center space-x-1 shrink-0 shadow-sm transition-all"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-blue-900" />
-                <span>Open Group</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <h4 className="font-extrabold text-sm text-slate-900 truncate">
+                    {classGroupChannel.name}
+                  </h4>
+                  <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center shrink-0 border border-blue-100">
+                    Class Group
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
+                  Class Teacher: <strong>{classTeacher.name}</strong> • All Enrolled Students
+                </p>
+
+                <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5 flex items-center space-x-1">
+                  <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                  <span>Only Class Teacher can send messages</span>
+                </p>
+              </div>
             </div>
+
+            <button
+              type="button"
+              className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 shadow-sm active:scale-95 transition-all"
+            >
+              <MessageSquare className="w-3.5 h-3.5 fill-white/20 text-white" />
+              <span>Chat</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </section>
       )}
