@@ -625,39 +625,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('smart_campus_chat_messages');
-        if (saved) return JSON.parse(saved);
-      } catch (e) { }
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            // Filter out old legacy dummy test messages
+            return parsed.filter(
+              (m: ChatMessage) =>
+                m.id !== 'MSG-001' &&
+                m.id !== 'MSG-GRP-001' &&
+                !m.senderName?.includes('Nikita Sharma') &&
+                !m.senderName?.includes('Rohit Mehta') &&
+                !m.receiverName?.includes('Nikita Sharma') &&
+                !m.receiverName?.includes('Rohit Mehta')
+            );
+          }
+        }
+      } catch (e) {}
     }
-    return [
-      {
-        id: 'MSG-001',
-        senderId: 'FAC-2024-009',
-        senderName: 'Dr. Nitish Sharma',
-        senderRole: 'faculty',
-        receiverId: 'STU-001',
-        receiverName: 'Mahesh Gomaskar',
-        receiverRole: 'student',
-        subjectName: 'Data Structures & Algorithms',
-        text: 'Hello! Welcome to the Modern College Academic Doubt Desk. You can ask any question regarding your syllabus, assignments, or lectures here.',
-        timestamp: '10:30 AM',
-        isRead: true,
-      },
-      {
-        id: 'MSG-GRP-001',
-        senderId: 'FAC-CT-001',
-        senderName: 'Nikita Sharma (Class Teacher)',
-        senderRole: 'faculty',
-        receiverId: 'GROUP-TY_B_SC_COMPUTER_SCIENCE',
-        receiverName: 'TY B.Sc Computer Science (Official Class Group)',
-        receiverRole: 'group',
-        subjectName: 'Official Class Notice',
-        text: '📢 Welcome students to the official TY B.Sc Computer Science Class Group. Important notices regarding practical journals, attendance review, and upcoming semester submissions will be announced here by the Class Teacher.',
-        timestamp: '09:00 AM',
-        isRead: true,
-        isGroupMessage: true,
-        groupId: 'GROUP-TY_B_SC_COMPUTER_SCIENCE',
-      },
-    ];
+    return [];
   });
   const [activeChatRecipient, setActiveChatRecipientState] = useState<FacultyRecord | StudentRecord | ClassGroupChannel | null>(null);
   const activeChatRecipientRef = useRef<FacultyRecord | StudentRecord | ClassGroupChannel | null>(null);

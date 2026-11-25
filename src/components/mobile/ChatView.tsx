@@ -24,40 +24,6 @@ import {
 } from 'lucide-react';
 import { FacultyRecord, StudentRecord, ChatMessage, ClassGroupChannel } from '@/types';
 
-// Fallback faculty records matching the design reference perfectly
-const DEFAULT_CLASS_TEACHER: FacultyRecord = {
-  id: 'FAC-CT-001',
-  name: 'Nikita Sharma',
-  employeeId: 'EMP-CS-012',
-  email: 'nikita.sharma@modernclg.edu.in',
-  phone: '+91 94220 12345',
-  department: 'Computer Science Dept',
-  designation: 'Associate Professor',
-  qualification: 'M.Tech, Ph.D (Computer Science)',
-  workloadHours: 18,
-  subjectsAssigned: ['Data Structures', 'Web Tech'],
-  classTeacherOf: 'TY B.Sc Computer Science',
-  status: 'Active',
-  avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=240&auto=format&fit=crop&q=80',
-};
-
-const DEFAULT_SUBJECT_FACULTY: FacultyRecord[] = [
-  {
-    id: 'FAC-SUB-001',
-    name: 'Rohit Mehta',
-    employeeId: 'EMP-CS-018',
-    email: 'rohit.mehta@modernclg.edu.in',
-    phone: '+91 94220 54321',
-    department: 'Computer Science',
-    designation: 'Associate Professor',
-    qualification: 'M.Sc., NET-SET, Ph.D',
-    workloadHours: 16,
-    subjectsAssigned: ['Data Structures', 'Web Tech'],
-    status: 'Active',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=240&auto=format&fit=crop&q=80',
-  },
-];
-
 export const ChatView: React.FC = () => {
   const {
     currentUser,
@@ -77,8 +43,8 @@ export const ChatView: React.FC = () => {
 
   const isStudent = currentUser.role === 'student';
 
-  // Determine Class Teacher: check facultyList first, otherwise fallback to DEFAULT_CLASS_TEACHER
-  const classTeacher: FacultyRecord =
+  // Determine Class Teacher from registered facultyList (assigned to student's course or first faculty)
+  const classTeacher: FacultyRecord | undefined =
     facultyList.find(
       (f) =>
         f.classTeacherOf &&
@@ -87,29 +53,29 @@ export const ChatView: React.FC = () => {
           f.classTeacherOf.toLowerCase().includes('computer science'))
     ) ||
     facultyList.find((f) => f.classTeacherOf) ||
-    (facultyList.length > 0 ? facultyList[0] : DEFAULT_CLASS_TEACHER);
+    facultyList[0];
 
-  // Determine Subject Faculty list:
-  const rawSubjectTeachers: FacultyRecord[] =
-    facultyList.filter((f) => f.id !== classTeacher?.id);
-
-  const subjectTeachers: FacultyRecord[] =
-    rawSubjectTeachers.length > 0 ? rawSubjectTeachers : DEFAULT_SUBJECT_FACULTY;
+  // Subject Faculty list: ONLY real faculty registered in the system (excluding class teacher)
+  const subjectTeachers: FacultyRecord[] = classTeacher
+    ? facultyList.filter((f) => f.id !== classTeacher.id)
+    : facultyList;
 
   // Class Group Channel definition (Managed by Class Teacher)
-  const classGroupName = classTeacher.classTeacherOf || 'TY B.Sc Computer Science';
-  const classGroupChannel: ClassGroupChannel = {
-    id: `GROUP-${classGroupName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`,
-    name: `${classGroupName} (Official Class Group)`,
-    type: 'group',
-    className: classGroupName,
-    classTeacherId: classTeacher.id,
-    classTeacherName: classTeacher.name,
-    avatar: classTeacher.avatar,
-    academicYear: '2025-2026',
-    description: `Official Broadcast Group for ${classGroupName}. Administered by Class Teacher ${classTeacher.name}.`,
-    membersCount: 64,
-  };
+  const classGroupName = classTeacher?.classTeacherOf || currentUser.course || 'TY B.Sc Computer Science';
+  const classGroupChannel: ClassGroupChannel | null = classTeacher
+    ? {
+        id: `GROUP-${classGroupName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`,
+        name: `${classGroupName} (Official Class Group)`,
+        type: 'group',
+        className: classGroupName,
+        classTeacherId: classTeacher.id,
+        classTeacherName: classTeacher.name,
+        avatar: classTeacher.avatar,
+        academicYear: '2025-2026',
+        description: `Official Broadcast Group for ${classGroupName}. Administered by Class Teacher ${classTeacher.name}.`,
+        membersCount: 64,
+      }
+    : null;
 
   const isGroupActive = (activeChatRecipient as any)?.type === 'group';
 
@@ -217,7 +183,7 @@ export const ChatView: React.FC = () => {
               </div>
               <p className="text-[10.5px] text-slate-500 truncate mt-0.5">
                 {isGroupActive
-                  ? `Class Teacher: ${classTeacher.name} • Broadcast Channel`
+                  ? `Class Teacher: ${classTeacher?.name || 'Class Teacher'} • Broadcast Channel`
                   : isRecipientFaculty
                   ? `${teacherData?.designation || 'Faculty'} • ${teacherData?.department || 'CS Dept'}`
                   : `${(activeChatRecipient as StudentRecord).course || 'Student'}`}
@@ -239,7 +205,7 @@ export const ChatView: React.FC = () => {
                 {activeChatRecipient.name}
               </h4>
               <p className="text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
-                Official notices and announcements from Class Teacher <strong>{classTeacher.name}</strong>. Only the Class Teacher can send messages in this group.
+                Official notices and announcements from Class Teacher <strong>{classTeacher?.name || 'Class Teacher'}</strong>. Only the Class Teacher can send messages in this group.
               </p>
             </div>
           ) : (
@@ -316,7 +282,7 @@ export const ChatView: React.FC = () => {
             <div className="flex items-center justify-center space-x-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3">
               <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <span className="text-[11px] sm:text-xs font-semibold text-slate-700">
-                Only Class Teacher ({classTeacher.name}) can send messages in this group
+                Only Class Teacher ({classTeacher?.name || 'Class Teacher'}) can send messages in this group
               </span>
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
@@ -394,11 +360,12 @@ export const ChatView: React.FC = () => {
   const query = searchQuery.trim().toLowerCase();
 
   const isClassTeacherMatch =
-    !query ||
-    classTeacher.name.toLowerCase().includes(query) ||
-    classTeacher.department?.toLowerCase().includes(query) ||
-    classTeacher.subjectsAssigned?.some((s) => s.toLowerCase().includes(query)) ||
-    classTeacher.classTeacherOf?.toLowerCase().includes(query);
+    classTeacher &&
+    (!query ||
+      classTeacher.name.toLowerCase().includes(query) ||
+      classTeacher.department?.toLowerCase().includes(query) ||
+      classTeacher.subjectsAssigned?.some((s) => s.toLowerCase().includes(query)) ||
+      classTeacher.classTeacherOf?.toLowerCase().includes(query));
 
   const filteredSubjectTeachers = subjectTeachers.filter((f) => {
     if (!query) return true;
@@ -429,75 +396,77 @@ export const ChatView: React.FC = () => {
       {/* =======================================================================
           2. SECTION: CLASS GROUP CHAT (BROADCAST ONLY)
          ======================================================================= */}
-      {(!query ||
-        classGroupChannel.name.toLowerCase().includes(query) ||
-        classTeacher.name.toLowerCase().includes(query) ||
-        'class group'.includes(query)) && (
-        <section className="space-y-2">
-          {/* Section Header */}
-          <div className="flex items-center justify-between px-0.5">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-[#1d4ed8]" />
-              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
-                Class Group Chat
-              </h3>
-            </div>
-            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1">
-              <Lock className="w-2.5 h-2.5 text-slate-500 mr-0.5" />
-              <span>Teacher Only</span>
-            </span>
-          </div>
-
-          {/* Group Card - Clean White Card */}
-          <div
-            onClick={() => setActiveChatRecipient(classGroupChannel)}
-            className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
-          >
-            <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
-              <div className="relative shrink-0">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-50 border border-blue-200/70 flex items-center justify-center text-[#1d4ed8]">
-                  <Users className="w-5 h-5 text-[#1d4ed8]" />
-                </div>
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+      {classGroupChannel &&
+        classTeacher &&
+        (!query ||
+          classGroupChannel.name.toLowerCase().includes(query) ||
+          classTeacher.name.toLowerCase().includes(query) ||
+          'class group'.includes(query)) && (
+          <section className="space-y-2">
+            {/* Section Header */}
+            <div className="flex items-center justify-between px-0.5">
+              <div className="flex items-center space-x-2">
+                <Users className="w-5 h-5 text-[#1d4ed8]" />
+                <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
+                  Class Group Chat
+                </h3>
               </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                  <h4 className="font-extrabold text-sm text-slate-900 truncate">
-                    {classGroupChannel.name}
-                  </h4>
-                  <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center shrink-0 border border-blue-100">
-                    Class Group
-                  </span>
-                </div>
-
-                <p className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
-                  Class Teacher: <strong>{classTeacher.name}</strong> • All Enrolled Students
-                </p>
-
-                <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5 flex items-center space-x-1">
-                  <Lock className="w-3 h-3 text-slate-400 shrink-0" />
-                  <span>Only Class Teacher can send messages</span>
-                </p>
-              </div>
+              <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1">
+                <Lock className="w-2.5 h-2.5 text-slate-500 mr-0.5" />
+                <span>Teacher Only</span>
+              </span>
             </div>
 
-            <button
-              type="button"
-              className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 shadow-sm active:scale-95 transition-all"
+            {/* Group Card - Clean White Card */}
+            <div
+              onClick={() => setActiveChatRecipient(classGroupChannel)}
+              className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5 fill-white/20 text-white" />
-              <span>Chat</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </section>
-      )}
+              <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-50 border border-blue-200/70 flex items-center justify-center text-[#1d4ed8]">
+                    <Users className="w-5 h-5 text-[#1d4ed8]" />
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <h4 className="font-extrabold text-sm text-slate-900 truncate">
+                      {classGroupChannel.name}
+                    </h4>
+                    <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center shrink-0 border border-blue-100">
+                      Class Group
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
+                    Class Teacher: <strong>{classTeacher.name}</strong> • All Enrolled Students
+                  </p>
+
+                  <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5 flex items-center space-x-1">
+                    <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>Only Class Teacher can send messages</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 shadow-sm active:scale-95 transition-all"
+              >
+                <MessageSquare className="w-3.5 h-3.5 fill-white/20 text-white" />
+                <span>Chat</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </section>
+        )}
 
       {/* =======================================================================
           3. SECTION: ASSIGNED CLASS TEACHER
          ======================================================================= */}
-      {isClassTeacherMatch && (
+      {classTeacher && isClassTeacherMatch && (
         <section className="space-y-2">
           {/* Section Header */}
           <div className="flex items-center justify-between px-0.5">
@@ -507,14 +476,16 @@ export const ChatView: React.FC = () => {
                 Assigned Class Teacher
               </h3>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowAllFaculty((prev) => !prev)}
-              className="text-[11px] font-semibold text-[#1d4ed8] bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-full flex items-center space-x-1 transition-colors"
-            >
-              <span>{showAllFaculty ? 'Show Less' : 'View All'}</span>
-              <ChevronRight className="w-3 h-3 text-[#1d4ed8]" />
-            </button>
+            {subjectTeachers.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllFaculty((prev) => !prev)}
+                className="text-[11px] font-semibold text-[#1d4ed8] bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-full flex items-center space-x-1 transition-colors"
+              >
+                <span>{showAllFaculty ? 'Show Less' : 'View All'}</span>
+                <ChevronRight className="w-3 h-3 text-[#1d4ed8]" />
+              </button>
+            )}
           </div>
 
           {/* Teacher Card */}
@@ -552,14 +523,14 @@ export const ChatView: React.FC = () => {
                   {classTeacher.designation} • {classTeacher.department || 'Computer Science Dept'}
                 </p>
 
-                <div className="flex items-center space-x-1 mt-0.5 text-[#2563eb]">
-                  <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#2563eb]" />
-                  <span className="text-[11px] font-medium text-[#2563eb] truncate">
-                    {classTeacher.subjectsAssigned && classTeacher.subjectsAssigned.length > 0
-                      ? classTeacher.subjectsAssigned.join(', ')
-                      : 'Data Structures, Web Tech'}
-                  </span>
-                </div>
+                {classTeacher.subjectsAssigned && classTeacher.subjectsAssigned.length > 0 && (
+                  <div className="flex items-center space-x-1 mt-0.5 text-[#2563eb]">
+                    <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#2563eb]" />
+                    <span className="text-[11px] font-medium text-[#2563eb] truncate">
+                      {classTeacher.subjectsAssigned.join(', ')}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -578,88 +549,103 @@ export const ChatView: React.FC = () => {
       )}
 
       {/* =======================================================================
-          4. SECTION: SUBJECT TEACHING FACULTY
+          4. SECTION: SUBJECT TEACHING FACULTY (Only shown if subject faculty exist)
          ======================================================================= */}
-      <section className="space-y-2 pt-1">
-        {/* Section Header */}
-        <div className="flex items-center space-x-2 px-0.5">
-          <BookOpen className="w-5 h-5 text-[#1d4ed8]" />
-          <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
-            Subject Teaching Faculty
-          </h3>
-        </div>
+      {subjectTeachers.length > 0 && (
+        <section className="space-y-2 pt-1">
+          {/* Section Header */}
+          <div className="flex items-center space-x-2 px-0.5">
+            <BookOpen className="w-5 h-5 text-[#1d4ed8]" />
+            <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
+              Subject Teaching Faculty
+            </h3>
+          </div>
 
-        {/* Faculty Cards */}
-        <div className="space-y-2.5">
-          {filteredSubjectTeachers.map((faculty) => (
-            <div
-              key={faculty.id}
-              className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow"
-            >
-              {/* Left: Avatar + Details */}
-              <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
-                {/* Circular Avatar with Active Green Dot */}
-                <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 border border-slate-200/70">
-                    <img
-                      src={
-                        faculty.avatar ||
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=240&auto=format&fit=crop&q=80'
-                      }
-                      alt={faculty.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
-                </div>
-
-                {/* Info Lines */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                    <h4 className="font-extrabold text-sm text-slate-900 truncate">
-                      {faculty.name}
-                    </h4>
-                    <span className="bg-[#dbeafe] text-[#1e40af] text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center shrink-0">
-                      Subject Faculty
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
-                    {faculty.designation} • {faculty.department || 'Computer Science'}
-                  </p>
-
-                  <div className="flex items-center space-x-1 mt-0.5 text-[#2563eb]">
-                    <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#2563eb]" />
-                    <span className="text-[11px] font-medium text-[#2563eb] truncate">
-                      {faculty.subjectsAssigned && faculty.subjectsAssigned.length > 0
-                        ? faculty.subjectsAssigned.join(', ')
-                        : 'Data Structures, Web Tech'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Outlined Royal Blue Pill Button (💬 Chat) */}
-              <button
-                type="button"
-                onClick={() => setActiveChatRecipient(faculty)}
-                className="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1d4ed8] border border-[#1d4ed8] rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 active:scale-95 transition-all"
+          {/* Faculty Cards */}
+          <div className="space-y-2.5">
+            {filteredSubjectTeachers.map((faculty) => (
+              <div
+                key={faculty.id}
+                className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-[#1d4ed8]" />
-                <span>Chat</span>
-              </button>
-            </div>
-          ))}
+                {/* Left: Avatar + Details */}
+                <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
+                  {/* Circular Avatar with Active Green Dot */}
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 border border-slate-200/70">
+                      <img
+                        src={
+                          faculty.avatar ||
+                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=240&auto=format&fit=crop&q=80'
+                        }
+                        alt={faculty.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+                  </div>
 
-          {filteredSubjectTeachers.length === 0 && (
-            <div className="p-6 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-              <p className="text-xs text-slate-500 font-medium">
-                No faculty members match your search &ldquo;{searchQuery}&rdquo;.
-              </p>
-            </div>
-          )}
+                  {/* Info Lines */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <h4 className="font-extrabold text-sm text-slate-900 truncate">
+                        {faculty.name}
+                      </h4>
+                      <span className="bg-[#dbeafe] text-[#1e40af] text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center shrink-0">
+                        Subject Faculty
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
+                      {faculty.designation} • {faculty.department || 'Computer Science'}
+                    </p>
+
+                    {faculty.subjectsAssigned && faculty.subjectsAssigned.length > 0 && (
+                      <div className="flex items-center space-x-1 mt-0.5 text-[#2563eb]">
+                        <BookOpen className="w-3.5 h-3.5 shrink-0 text-[#2563eb]" />
+                        <span className="text-[11px] font-medium text-[#2563eb] truncate">
+                          {faculty.subjectsAssigned.join(', ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Outlined Royal Blue Pill Button (💬 Chat) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveChatRecipient(faculty)}
+                  className="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1d4ed8] border border-[#1d4ed8] rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 active:scale-95 transition-all"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-[#1d4ed8]" />
+                  <span>Chat</span>
+                </button>
+              </div>
+            ))}
+
+            {filteredSubjectTeachers.length === 0 && (
+              <div className="p-6 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+                <p className="text-xs text-slate-500 font-medium">
+                  No faculty members match your search &ldquo;{searchQuery}&rdquo;.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* If neither classTeacher nor subjectTeachers exist */}
+      {!classTeacher && subjectTeachers.length === 0 && (
+        <div className="p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2 my-4">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <Users className="w-6 h-6 text-blue-600" />
+          </div>
+          <h4 className="font-bold text-sm text-slate-800">No Faculty Assigned Yet</h4>
+          <p className="text-xs text-slate-500 max-w-xs mx-auto">
+            Faculty members and class teachers added in the Admin Portal will appear here.
+          </p>
         </div>
-      </section>
+      )}
 
       {/* =======================================================================
           5. BOTTOM ILLUSTRATION: "Have a doubt? Our faculty is here to help you!"
