@@ -106,14 +106,13 @@ export const StudentDashboard: React.FC = () => {
             )}
           </button>
           <div
-            onClick={() => setActiveScreen('profile')}
-            className="w-9 h-9 rounded-xl overflow-hidden border-2 border-blue-600 cursor-pointer shadow-sm hover:ring-2 hover:ring-blue-400 active:scale-95 transition-all"
-            title="View Profile / ID Card"
+            className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/90 p-1 flex items-center justify-center shadow-xs"
+            title="Modern College of Computer Science & IT, Nanded"
           >
             <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-full h-full object-cover"
+              src="/college-logo.png"
+              alt="Modern College Nanded Crest"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>

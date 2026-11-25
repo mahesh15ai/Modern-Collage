@@ -445,12 +445,22 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               onClick={() => setActiveScreen('profile')}
               className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
             >
-              <LayoutGrid
-                className={`w-6 h-6 transition-colors ${activeScreen === 'profile'
-                  ? 'text-[#2563eb] stroke-[2.4]'
-                  : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
-                  }`}
-              />
+              <div
+                className={`w-6 h-6 rounded-full overflow-hidden border transition-all ${
+                  activeScreen === 'profile'
+                    ? 'border-[#2563eb] ring-2 ring-blue-500/40 shadow-xs'
+                    : 'border-slate-300 group-hover:border-slate-400'
+                }`}
+              >
+                <img
+                  src={
+                    currentUser.avatar ||
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+                  }
+                  alt={currentUser.name || 'User Profile'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'profile'
                   ? 'font-bold text-[#2563eb]'
