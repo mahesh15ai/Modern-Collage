@@ -19,7 +19,7 @@ import {
   Users,
   CornerDownLeft,
   CheckCircle2,
-  Sparkles,
+  Award,
   Download,
   Laptop,
   LogOut,
@@ -566,7 +566,7 @@ export const ProfileView: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <div className="w-7 h-7 rounded-full bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-xs">
-                          <Sparkles className="w-4 h-4 text-[#1d4ed8]" />
+                          <Award className="w-4 h-4 text-[#1d4ed8]" />
                         </div>
                         <div className="flex-1 text-[11px] leading-tight flex items-center justify-between min-w-0">
                           <span className="font-semibold text-slate-600 text-[11px] shrink-0 w-24">Designation</span>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Clock, MapPin, User, Calendar as CalendarIcon, Sparkles, BookOpen, CheckCircle2, UserCheck, Building2 } from 'lucide-react';
+import { Clock, MapPin, User, Calendar as CalendarIcon, Award, BookOpen, CheckCircle2, UserCheck, Building2 } from 'lucide-react';
 
 export const TimetableView: React.FC = () => {
   const { timetable, currentUser, facultyList } = useApp();
@@ -58,7 +58,7 @@ export const TimetableView: React.FC = () => {
           {myClassTeacherOf && (
             <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs">
               <div className="flex items-center space-x-2">
-                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <Award className="w-4 h-4 text-amber-600 shrink-0" />
                 <span className="font-bold text-amber-950">
                   Class Teacher: <strong>{myClassTeacherOf}</strong>
                 </span>

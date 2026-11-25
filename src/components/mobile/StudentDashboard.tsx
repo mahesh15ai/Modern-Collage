@@ -14,7 +14,6 @@ import {
   AlertCircle,
   Trophy,
   ChevronRight,
-  Sparkles,
   Award,
   BadgeCheck,
   IdCard,
@@ -250,7 +249,7 @@ export const StudentDashboard: React.FC = () => {
             className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-98"
           >
             <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2">
-              <Sparkles className="w-5 h-5 text-amber-600" />
+              <Award className="w-5 h-5 text-amber-600" />
             </div>
             <div className="text-sm font-black text-slate-900 truncate" title={myClassTeacherOf || 'Faculty Staff'}>
               {myClassTeacherOf || 'CS & IT Dept'}
@@ -436,7 +435,7 @@ export const StudentDashboard: React.FC = () => {
           <div className="relative flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center space-x-1 text-amber-400 text-[10px] font-bold tracking-wider uppercase">
-                <Sparkles className="w-3 h-3" />
+                <Calendar className="w-3 h-3" />
                 <span>Featured Event</span>
               </div>
               <h4 className="font-extrabold text-sm text-white">{events[0].title}</h4>

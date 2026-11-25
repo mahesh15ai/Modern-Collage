@@ -21,7 +21,6 @@ import {
   Laptop,
   ShieldAlert,
   CheckCircle2,
-  Sparkles,
 } from 'lucide-react';
 
 export default function Home() {
@@ -210,8 +209,7 @@ export default function Home() {
           </div>
           <div className="flex-1 pr-1">
             <h4 className="font-bold text-xs flex items-center space-x-1">
-              <span>🎉 QR Pass Verified &amp; Signed In!</span>
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>QR Pass Verified &amp; Signed In!</span>
             </h4>
             <p className="text-[11px] text-emerald-100 mt-0.5">Welcome, {qrToast.name}! Smart Campus loaded.</p>
           </div>

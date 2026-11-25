@@ -7,7 +7,6 @@ import {
   MapPin,
   Users,
   CheckCircle,
-  Sparkles,
   Ticket,
   ShieldCheck,
   X,
@@ -84,7 +83,7 @@ export const EventsView: React.FC = () => {
                   <div className="flex items-center justify-between mb-1">
                     {isFeatured ? (
                       <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                        <Sparkles className="w-3 h-3" />
+                        <Award className="w-3 h-3" />
                         <span>Featured Event</span>
                       </span>
                     ) : (
@@ -173,7 +172,7 @@ export const EventsView: React.FC = () => {
           {/* Upcoming College Annual Highlights Card */}
           <div className="bg-gradient-to-br from-indigo-950 to-blue-900 rounded-3xl p-4 text-white space-y-3 shadow-md">
             <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
-              <Sparkles className="w-4 h-4" />
+              <Award className="w-4 h-4" />
               <span>Modern College Flagship Events (2025-26)</span>
             </div>
             <div className="space-y-2 text-xs">
@@ -213,7 +212,7 @@ export const EventsView: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex flex-col justify-between p-4">
                 <div className="flex justify-between items-center">
                   <span className="inline-flex items-center space-x-1 text-[10px] font-extrabold text-amber-400 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full uppercase tracking-wider border border-amber-400/30">
-                    <Sparkles className="w-3 h-3" />
+                    <Calendar className="w-3 h-3" />
                     <span>Campus Event</span>
                   </span>
                   <button

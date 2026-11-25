@@ -12,7 +12,6 @@ import {
   X,
   Camera,
   CheckCircle2,
-  Sparkles,
   ScanLine,
   BarChart3,
   UserCheck,
@@ -601,7 +600,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   disabled={isScanning}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md transition-all active:scale-95 disabled:opacity-50"
                 >
-                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <UserCheck className="w-4 h-4 text-white" />
                   <span>
                     {isScanning ? 'Verifying with Terminal...' : 'Simulate Professor Biometric Scan'}
                   </span>

@@ -15,7 +15,6 @@ import {
   FolderDown,
   CreditCard,
   Bell,
-  Sparkles,
   AlertTriangle,
   BrainCircuit,
   Search,
@@ -992,7 +991,7 @@ export const AdminPortal: React.FC = () => {
     { id: 'materials', label: '10. Study Materials', icon: FolderDown, count: materials.length },
     { id: 'fees', label: '11. Fees & Finance', icon: CreditCard },
     { id: 'notices', label: '12. Notice Board', icon: Bell, count: notices.length },
-    { id: 'events', label: '13. Events & Activities', icon: Sparkles, count: events.length },
+    { id: 'events', label: '13. Events & Activities', icon: Calendar, count: events.length },
     { id: 'complaints', label: 'Grievance Redressal', icon: AlertTriangle, count: complaints.filter(c => c.status === 'In Progress').length, badgeColor: 'bg-amber-500' },
     { id: 'ml-research', label: 'AI Research Lab (ML)', icon: BrainCircuit, badgeColor: 'bg-purple-600' },
   ];
@@ -1487,7 +1486,7 @@ export const AdminPortal: React.FC = () => {
                       {/* Class Teacher Badge */}
                       {fac.classTeacherOf ? (
                         <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-xl text-[10px] font-bold">
-                          <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                          <Award className="w-3 h-3 text-amber-600 shrink-0" />
                           <span className="truncate">Class Teacher: {fac.classTeacherOf}</span>
                         </div>
                       ) : (
@@ -2072,8 +2071,8 @@ export const AdminPortal: React.FC = () => {
 
               {events.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 p-6 space-y-3">
-                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
-                    <Sparkles className="w-6 h-6" />
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <Calendar className="w-6 h-6" />
                   </div>
                   <div>
                     <h4 className="font-bold text-sm text-slate-800">No events published yet</h4>
@@ -2371,7 +2370,7 @@ export const AdminPortal: React.FC = () => {
                 <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
-                      <Sparkles className="w-4 h-4 text-purple-600" />
+                      <BrainCircuit className="w-4 h-4 text-purple-600" />
                       <span>Model Inference Output</span>
                     </h4>
 
@@ -3270,7 +3269,7 @@ export const AdminPortal: React.FC = () => {
                   disabled={isSubmittingEvent}
                   className="w-full sm:w-auto px-5 py-2 rounded-xl text-white bg-purple-600 hover:bg-purple-700 font-bold shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   <span>{isSubmittingEvent ? 'Saving Live...' : 'Publish Event'}</span>
                 </button>
               </div>
@@ -4439,7 +4438,7 @@ export const AdminPortal: React.FC = () => {
               {/* CLASS TEACHER ASSIGNMENT */}
               <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1.5">
                 <label className="font-bold text-amber-900 block flex items-center space-x-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <Award className="w-4 h-4 text-amber-600" />
                   <span>Class Teacher Appointment</span>
                 </label>
                 <select

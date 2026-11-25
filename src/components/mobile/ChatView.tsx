@@ -6,7 +6,6 @@ import {
   Send,
   User,
   GraduationCap,
-  Sparkles,
   Search,
   MessageSquare,
   ArrowLeft,

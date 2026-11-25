@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import CollegeLogo from '@/components/common/CollegeLogo';
-import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, X, LogIn, QrCode, Sparkles, UploadCloud } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, X, LogIn, QrCode, ShieldCheck, UploadCloud } from 'lucide-react';
 import { sendResetPassword } from '@/services/authService';
 
 export const LoginScreen: React.FC = () => {
@@ -91,7 +91,7 @@ export const LoginScreen: React.FC = () => {
         </div>
 
         <div className="mt-2.5 inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-200/90 px-3 py-1 rounded-full shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-700" />
           <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider">
             Smart Campus ERP Portal
           </span>
@@ -347,7 +347,7 @@ export const LoginScreen: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <QrCode className="w-3.5 h-3.5 text-blue-200" />
                     <span>Login via QR Token</span>
                   </>
                 )}
