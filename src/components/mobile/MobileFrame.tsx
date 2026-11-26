@@ -174,23 +174,15 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
-  // Intercept mobile hardware back button to close QR modal
+  // Close QR modal on Escape key press
   useEffect(() => {
-    if (showQrModal) {
-      if (typeof window !== 'undefined') {
-        window.history.pushState({ modal: 'attendanceQr' }, '', window.location.href);
-      }
-      const handleModalPop = () => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showQrModal) {
         setShowQrModal(false);
-      };
-      window.addEventListener('popstate', handleModalPop, { once: true });
-      return () => {
-        window.removeEventListener('popstate', handleModalPop);
-        if (typeof window !== 'undefined' && window.history.state?.modal === 'attendanceQr') {
-          window.history.back();
-        }
-      };
-    }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showQrModal]);
 
   const currentStudent = students.find((s) => s.id === currentUser.id) || students[0];
@@ -690,25 +682,27 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
 
             {/* Bottom Actions */}
             <div className="p-3 border-t border-slate-100 bg-slate-50 space-y-2 shrink-0">
-              {/* Switch to Desktop ERP */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsDrawerOpen(false);
-                  setViewMode('desktop');
-                }}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-xs font-bold"
-              >
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0 border border-white/20">
-                    <Monitor className="w-3.5 h-3.5 text-blue-200" />
+              {/* Switch to Desktop ERP (Admins only) */}
+              {currentUser.role === 'admin' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDrawerOpen(false);
+                    setViewMode('desktop');
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-xs font-bold"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0 border border-white/20">
+                      <Monitor className="w-3.5 h-3.5 text-blue-200" />
+                    </div>
+                    <span>Desktop ERP Portal</span>
                   </div>
-                  <span>Desktop ERP Portal</span>
-                </div>
-                <span className="text-[9px] bg-blue-500/80 px-2 py-0.5 rounded-md font-mono border border-blue-300/30">
-                  OPEN ↗
-                </span>
-              </button>
+                  <span className="text-[9px] bg-blue-500/80 px-2 py-0.5 rounded-md font-mono border border-blue-300/30">
+                    OPEN ↗
+                  </span>
+                </button>
+              )}
 
               {/* Logout Button */}
               <button

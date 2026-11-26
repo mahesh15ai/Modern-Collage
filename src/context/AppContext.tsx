@@ -268,22 +268,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const lastBackPressRef = useRef<number>(0);
 
-  // Helper to open / close drawer with history awareness
+  // Helper to open / close drawer cleanly without history race conditions
   const setIsDrawerOpen = useCallback((open: boolean) => {
-    if (open && !isDrawerOpenRef.current) {
-      if (typeof window !== 'undefined') {
-        window.history.pushState(
-          { screen: activeScreenRef.current, drawer: true },
-          '',
-          window.location.href
-        );
-      }
-    } else if (!open && isDrawerOpenRef.current) {
-      if (typeof window !== 'undefined' && window.history.state?.drawer) {
-        window.history.back();
-        return;
-      }
-    }
     setIsDrawerOpenState(open);
   }, []);
 
