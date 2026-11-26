@@ -1202,6 +1202,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newStudent: StudentRecord = {
       ...studentData,
       id: studentId,
+      password: tempPassword,
       status: 'Active',
       admissionDate: new Date().toISOString().split('T')[0],
       documents: studentData.documents || [
@@ -1431,6 +1432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newFaculty: FacultyRecord = {
       ...facultyData,
       id: facultyId,
+      password: tempPassword,
       status: 'Active',
     };
 

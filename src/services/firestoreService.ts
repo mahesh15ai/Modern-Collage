@@ -261,7 +261,10 @@ export async function saveStudentToFirestore(
   if (!isFirebaseConfigured) return;
   try {
     await setDoc(doc(db, COLLECTIONS.STUDENTS, student.id), student);
-    await setDoc(doc(db, COLLECTIONS.USERS, profile.id), profile);
+    await setDoc(doc(db, COLLECTIONS.USERS, profile.id), {
+      ...profile,
+      ...(student.password ? { password: student.password } : {}),
+    }, { merge: true });
   } catch (error: any) {
     console.warn('Error saving student to Firestore:', error?.message);
     throw error;
@@ -637,7 +640,7 @@ export function subscribeToStudentAttendance(
   studentId: string,
   callback: (attendance: AttendanceSummary | null) => void
 ): () => void {
-  if (!isFirebaseConfigured || !studentId) return () => {};
+  if (!isFirebaseConfigured || !studentId) return () => { };
   try {
     const docRef = doc(db, COLLECTIONS.ATTENDANCE, studentId);
     return onSnapshot(
@@ -655,7 +658,7 @@ export function subscribeToStudentAttendance(
     );
   } catch (err: any) {
     console.warn('Could not attach attendance realtime listener:', err?.message);
-    return () => {};
+    return () => { };
   }
 }
 
@@ -681,7 +684,7 @@ export function subscribeToLectureAttendanceSession(
   sessionId: string,
   callback: (session: LectureAttendanceSession | null) => void
 ): () => void {
-  if (!isFirebaseConfigured || !sessionId) return () => {};
+  if (!isFirebaseConfigured || !sessionId) return () => { };
   try {
     const docRef = doc(db, COLLECTIONS.LECTURE_ATTENDANCE, sessionId);
     return onSnapshot(
@@ -699,7 +702,7 @@ export function subscribeToLectureAttendanceSession(
     );
   } catch (err: any) {
     console.warn('Could not attach lecture session listener:', err?.message);
-    return () => {};
+    return () => { };
   }
 }
 
@@ -710,7 +713,7 @@ export function subscribeToClassLectureSessions(
   className: string,
   callback: (sessions: LectureAttendanceSession[]) => void
 ): () => void {
-  if (!isFirebaseConfigured) return () => {};
+  if (!isFirebaseConfigured) return () => { };
   try {
     const q = collection(db, COLLECTIONS.LECTURE_ATTENDANCE);
     return onSnapshot(
@@ -727,7 +730,7 @@ export function subscribeToClassLectureSessions(
     );
   } catch (err: any) {
     console.warn('Could not attach class lecture sessions listener:', err?.message);
-    return () => {};
+    return () => { };
   }
 }
 
