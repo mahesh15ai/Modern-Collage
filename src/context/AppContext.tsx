@@ -666,8 +666,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const senderName = currentUser.name || (isStudent ? 'Mahesh Gomaskar' : 'Faculty Member');
-    const senderId = currentUser.id || (isStudent ? 'STU-001' : 'FAC-2024-009');
+    // Resolve official sender profile to match Firestore records
+    const studentRecord = isStudent
+      ? students.find(
+          (s) =>
+            s.id === currentUser.id ||
+            (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+            (currentUser.rollNo && s.rollNo === currentUser.rollNo) ||
+            (currentUser.name && s.name?.toLowerCase().includes(currentUser.name.toLowerCase()))
+        )
+      : null;
+
+    const facultyRecord = !isStudent
+      ? facultyList.find(
+          (f) =>
+            f.id === currentUser.id ||
+            (currentUser.email && f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@')) ||
+            (currentUser.name && f.name?.toLowerCase() === currentUser.name.toLowerCase())
+        )
+      : null;
+
+    const senderName = isStudent
+      ? (studentRecord?.name || currentUser.name || 'Student')
+      : (facultyRecord?.name || currentUser.name || 'Faculty Member');
+    const senderId = isStudent
+      ? (studentRecord?.id || currentUser.id || 'STU-001')
+      : (facultyRecord?.id || currentUser.id || 'FAC-321');
     const receiverId = activeChatRecipient.id;
     const receiverName = activeChatRecipient.name;
     const receiverRole = isGroupChannel ? 'group' : isStudent ? 'faculty' : 'student';
@@ -808,6 +832,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (stuMatch) {
               const updatedUser: UserProfile = {
                 ...current,
+                id: stuMatch.id || current.id,
                 name: stuMatch.name || current.name,
                 role: 'student',
                 department: stuMatch.department,
@@ -849,6 +874,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (facMatch) {
               const updatedUser: UserProfile = {
                 ...current,
+                id: facMatch.id || current.id,
                 name: facMatch.name || current.name,
                 role: 'faculty',
                 department: facMatch.department,

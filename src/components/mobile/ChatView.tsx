@@ -24,12 +24,73 @@ import {
   Sparkles,
   MessageCircle,
 } from 'lucide-react';
-import { FacultyRecord, StudentRecord, ChatMessage, ClassGroupChannel } from '@/types';
+import { FacultyRecord, StudentRecord, ChatMessage, ClassGroupChannel, UserProfile } from '@/types';
 
 interface StudentConversation {
   student: StudentRecord;
   lastMessage: ChatMessage;
   unreadCount: number;
+}
+
+// Helper to check if two names refer to the same person (handles full vs short names like "Mahesh Gomaskar" vs "Mahesh Kishan Gomaskar")
+function namesMatch(name1?: string, name2?: string): boolean {
+  if (!name1 || !name2) return false;
+  const a = name1.toLowerCase().trim();
+  const b = name2.toLowerCase().trim();
+  if (a === b) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  const wordsA = a.split(/\s+/).filter((w) => w.length > 2);
+  const wordsB = b.split(/\s+/).filter((w) => w.length > 2);
+  if (wordsA.length >= 2 && wordsB.length >= 2) {
+    if (wordsA[0] === wordsB[0] && wordsA[wordsA.length - 1] === wordsB[wordsB.length - 1]) {
+      return true;
+    }
+    const common = wordsA.filter((w) => wordsB.includes(w));
+    if (common.length >= 2) return true;
+  }
+  return false;
+}
+
+// Helper to check if a message participant (sender or receiver) matches a faculty member
+function matchesFaculty(
+  id?: string,
+  name?: string,
+  faculty?: FacultyRecord | UserProfile | null
+): boolean {
+  if (!faculty) return false;
+  if (id && (
+    id === faculty.id ||
+    (faculty as any).employeeId === id ||
+    (faculty.email && id.toLowerCase() === faculty.email.toLowerCase()) ||
+    (faculty.email && id.toLowerCase().replace(/\.@/, '@') === faculty.email.toLowerCase().replace(/\.@/, '@'))
+  )) {
+    return true;
+  }
+  if (name && namesMatch(name, faculty.name)) {
+    return true;
+  }
+  return false;
+}
+
+// Helper to check if a message participant (sender or receiver) matches a student
+function matchesStudent(
+  id?: string,
+  name?: string,
+  student?: StudentRecord | UserProfile | null
+): boolean {
+  if (!student) return false;
+  if (id && (
+    id === student.id ||
+    (student as any).rollNo === id ||
+    (student as any).prn === id ||
+    (student.email && id.toLowerCase() === student.email.toLowerCase())
+  )) {
+    return true;
+  }
+  if (name && namesMatch(name, student.name)) {
+    return true;
+  }
+  return false;
 }
 
 export const ChatView: React.FC = () => {
@@ -53,13 +114,24 @@ export const ChatView: React.FC = () => {
   const isStudent = currentUser.role === 'student';
   const isFaculty = currentUser.role === 'faculty';
 
-  // Current faculty record if logged in as teacher
-  const teacherFaculty: FacultyRecord | undefined = facultyList.find(
-    (f) =>
-      f.id === currentUser.id ||
-      (currentUser.email && f.email?.toLowerCase() === currentUser.email?.toLowerCase()) ||
-      (currentUser.name && f.name?.toLowerCase() === currentUser.name?.toLowerCase())
-  );
+  // Resolved student record if logged in as student
+  const currentStudentRecord: StudentRecord | undefined = isStudent
+    ? students.find(
+        (s) =>
+          matchesStudent(currentUser.id, currentUser.name, s) ||
+          (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase())
+      )
+    : undefined;
+
+  // Resolved faculty record if logged in as teacher
+  const teacherFaculty: FacultyRecord | undefined = isFaculty
+    ? facultyList.find(
+        (f) =>
+          matchesFaculty(currentUser.id, currentUser.name, f) ||
+          (currentUser.email &&
+            f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@'))
+      )
+    : undefined;
 
   // Teacher assigned class
   const teacherClassName =
@@ -83,9 +155,7 @@ export const ChatView: React.FC = () => {
   const subjectTeachers: FacultyRecord[] = facultyList.filter(
     (f) =>
       (!classTeacher || f.id !== classTeacher.id) &&
-      f.id !== currentUser.id &&
-      (!currentUser.email || f.email?.toLowerCase() !== currentUser.email?.toLowerCase()) &&
-      (!currentUser.name || f.name?.toLowerCase() !== currentUser.name?.toLowerCase())
+      !matchesFaculty(f.id, f.name, currentUser)
   );
 
   // Class Group Channel definition
@@ -107,11 +177,9 @@ export const ChatView: React.FC = () => {
   };
 
   const isGroupActive = (activeChatRecipient as any)?.type === 'group';
-
-  // Filter messages between current user and active recipient (or group messages)
-  const currentUserId = currentUser.id || (isStudent ? 'STU-001' : 'FAC-2024-009');
   const activeRecipientId = activeChatRecipient?.id;
 
+  // Filter messages between current user and active recipient (or group messages)
   const conversationMessages = chatMessages.filter((msg) => {
     if (!activeRecipientId) return false;
     if (isGroupActive) {
@@ -121,26 +189,37 @@ export const ChatView: React.FC = () => {
         msg.receiverRole === 'group'
       );
     }
-    // Direct 1-on-1 chat
-    const isCurrentSender =
-      msg.senderId === currentUserId ||
-      (currentUser.name && msg.senderName?.toLowerCase() === currentUser.name?.toLowerCase()) ||
-      (teacherFaculty && msg.senderId === teacherFaculty.id);
 
-    const isCurrentReceiver =
-      msg.receiverId === currentUserId ||
-      (currentUser.name && msg.receiverName?.toLowerCase() === currentUser.name?.toLowerCase()) ||
-      (teacherFaculty && msg.receiverId === teacherFaculty.id);
+    // 1-on-1 direct conversation
+    if (isStudent) {
+      // Current user is student, active recipient is faculty
+      const activeFaculty = activeChatRecipient as FacultyRecord;
+      const myStudentProfile = currentStudentRecord || currentUser;
 
-    const isRecipientSender =
-      msg.senderId === activeRecipientId ||
-      (activeChatRecipient.name && msg.senderName?.toLowerCase() === activeChatRecipient.name?.toLowerCase());
+      const isFromMeToTeacher =
+        matchesStudent(msg.senderId, msg.senderName, myStudentProfile) &&
+        matchesFaculty(msg.receiverId, msg.receiverName, activeFaculty);
 
-    const isRecipientReceiver =
-      msg.receiverId === activeRecipientId ||
-      (activeChatRecipient.name && msg.receiverName?.toLowerCase() === activeChatRecipient.name?.toLowerCase());
+      const isFromTeacherToMe =
+        matchesFaculty(msg.senderId, msg.senderName, activeFaculty) &&
+        matchesStudent(msg.receiverId, msg.receiverName, myStudentProfile);
 
-    return (isCurrentSender && isRecipientReceiver) || (isRecipientSender && isCurrentReceiver);
+      return isFromMeToTeacher || isFromTeacherToMe;
+    } else {
+      // Current user is faculty, active recipient is student
+      const activeStudent = activeChatRecipient as StudentRecord;
+      const myFacultyProfile = teacherFaculty || currentUser;
+
+      const isFromMeToStudent =
+        matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile) &&
+        matchesStudent(msg.receiverId, msg.receiverName, activeStudent);
+
+      const isFromStudentToMe =
+        matchesStudent(msg.senderId, msg.senderName, activeStudent) &&
+        matchesFaculty(msg.receiverId, msg.receiverName, myFacultyProfile);
+
+      return isFromMeToStudent || isFromStudentToMe;
+    }
   });
 
   // Auto-scroll to bottom of conversation
@@ -175,30 +254,20 @@ export const ChatView: React.FC = () => {
   const studentConversations: StudentConversation[] = React.useMemo(() => {
     if (!isFaculty) return [];
 
+    const myFacultyProfile = teacherFaculty || currentUser;
+
     // All 1-on-1 messages involving the current faculty member
     const facultyDirectMessages = chatMessages.filter((msg) => {
       if (msg.isGroupMessage || msg.receiverRole === 'group') return false;
-      const matchesSender =
-        msg.senderId === currentUserId ||
-        (currentUser.name && msg.senderName?.toLowerCase() === currentUser.name?.toLowerCase()) ||
-        (teacherFaculty && msg.senderId === teacherFaculty.id);
-
-      const matchesReceiver =
-        msg.receiverId === currentUserId ||
-        (currentUser.name && msg.receiverName?.toLowerCase() === currentUser.name?.toLowerCase()) ||
-        (teacherFaculty && msg.receiverId === teacherFaculty.id);
-
-      return matchesSender || matchesReceiver;
+      const isTeacherSender = matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile);
+      const isTeacherReceiver = matchesFaculty(msg.receiverId, msg.receiverName, myFacultyProfile);
+      return isTeacherSender || isTeacherReceiver;
     });
 
     const conversationMap = new Map<string, { student: StudentRecord; messages: ChatMessage[] }>();
 
     facultyDirectMessages.forEach((msg) => {
-      const isTeacherSender =
-        msg.senderId === currentUserId ||
-        (currentUser.name && msg.senderName?.toLowerCase() === currentUser.name?.toLowerCase()) ||
-        (teacherFaculty && msg.senderId === teacherFaculty.id);
-
+      const isTeacherSender = matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile);
       const otherId = isTeacherSender ? msg.receiverId : msg.senderId;
       const otherName = isTeacherSender ? msg.receiverName : msg.senderName;
       const otherRole = isTeacherSender ? msg.receiverRole : msg.senderRole;
@@ -208,11 +277,7 @@ export const ChatView: React.FC = () => {
 
       // Match with enrolled student in database
       const matchedStudent: StudentRecord =
-        students.find(
-          (s) =>
-            s.id === otherId ||
-            (otherName && s.name?.toLowerCase() === otherName.toLowerCase())
-        ) || {
+        students.find((s) => matchesStudent(otherId, otherName, s)) || {
           id: otherId,
           name: otherName || 'Student',
           rollNo: 'CS-Student',
@@ -237,21 +302,21 @@ export const ChatView: React.FC = () => {
     const result: StudentConversation[] = Array.from(conversationMap.values()).map(
       ({ student, messages }) => {
         // Sort chronologically to find last message
-        const sorted = [...messages].sort((a, b) => a.id.localeCompare(b.id));
+        const sorted = [...messages].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
         const lastMessage = sorted[sorted.length - 1];
         const unreadCount = sorted.filter(
           (m) =>
             !m.isRead &&
             m.senderRole === 'student' &&
-            m.senderId !== currentUserId
+            !matchesFaculty(m.senderId, m.senderName, myFacultyProfile)
         ).length;
         return { student, lastMessage, unreadCount };
       }
     );
 
     // Sort conversations: newest message first
-    return result.sort((a, b) => b.lastMessage.id.localeCompare(a.lastMessage.id));
-  }, [chatMessages, isFaculty, currentUserId, currentUser.name, teacherFaculty, students, teacherClassName]);
+    return result.sort((a, b) => (b.lastMessage.id || '').localeCompare(a.lastMessage.id || ''));
+  }, [chatMessages, isFaculty, currentUser, teacherFaculty, students, teacherClassName]);
 
   // Enrolled students belonging to teacher's class
   const classStudents = React.useMemo(() => {
@@ -444,9 +509,9 @@ export const ChatView: React.FC = () => {
           {/* Chat Messages */}
           {conversationMessages.length > 0 ? (
             conversationMessages.map((msg) => {
-              const isMine =
-                msg.senderId === currentUserId ||
-                (currentUser.name && msg.senderName?.toLowerCase() === currentUser.name?.toLowerCase());
+              const isMine = isStudent
+                ? matchesStudent(msg.senderId, msg.senderName, currentStudentRecord || currentUser)
+                : matchesFaculty(msg.senderId, msg.senderName, teacherFaculty || currentUser);
 
               return (
                 <div
@@ -677,9 +742,11 @@ export const ChatView: React.FC = () => {
           {filteredStudentConversations.length > 0 ? (
             <div className="space-y-2.5">
               {filteredStudentConversations.map(({ student, lastMessage, unreadCount }) => {
-                const isSentByTeacher =
-                  lastMessage.senderId === currentUserId ||
-                  (currentUser.name && lastMessage.senderName?.toLowerCase() === currentUser.name?.toLowerCase());
+                const isSentByTeacher = matchesFaculty(
+                  lastMessage.senderId,
+                  lastMessage.senderName,
+                  teacherFaculty || currentUser
+                );
 
                 return (
                   <div

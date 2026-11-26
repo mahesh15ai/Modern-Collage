@@ -76,7 +76,7 @@ export function subscribeToStudents(
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const items = snapshot.docs.map((d) => d.data() as StudentRecord);
+        const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as StudentRecord));
         callback(items);
       },
       (error) => {
@@ -102,7 +102,7 @@ export function subscribeToFaculty(
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const items = snapshot.docs.map((d) => d.data() as FacultyRecord);
+        const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FacultyRecord));
         callback(items);
       },
       (error) => {
@@ -860,11 +860,13 @@ export function subscribeToChatMessages(
     return () => { };
   }
   try {
-    const q = query(collection(db, COLLECTIONS.CHATS), orderBy('timestamp', 'asc'));
+    const q = collection(db, COLLECTIONS.CHATS);
     return onSnapshot(
       q,
       (snapshot) => {
-        const messages = snapshot.docs.map((doc) => doc.data() as ChatMessage);
+        const messages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ChatMessage));
+        // Sort chronologically by message ID (MSG-<timestamp>)
+        messages.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
         callback(messages);
       },
       (error) => {
