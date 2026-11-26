@@ -169,8 +169,6 @@ export const AdminPortal: React.FC = () => {
   const [stuClassYear, setStuClassYear] = useState('First Year (FY)');
   const [stuDept, setStuDept] = useState('Computer Science');
   const [stuCourse, setStuCourse] = useState('B.Sc Computer Science');
-  const [stuSemester, setStuSemester] = useState('Semester I');
-  const [stuFacultyMentor, setStuFacultyMentor] = useState('Prof. Rajesh Kulkarni (HOD)');
   const [stuRollNo, setStuRollNo] = useState('');
   const [stuPrn, setStuPrn] = useState('');
   const [stuPassword, setStuPassword] = useState('');
@@ -717,7 +715,7 @@ export const AdminPortal: React.FC = () => {
           phone: stuPhone.trim() || '+91 98765 00000',
           department: stuDept,
           course: `${stuCourse} (${stuClassYear})`,
-          semester: stuSemester,
+          semester: stuClassYear || 'Academic Year 2026-27',
           rollNo: stuRollNo,
           prn: stuPrn,
           admissionDate: new Date().toISOString().split('T')[0],
@@ -1404,7 +1402,7 @@ export const AdminPortal: React.FC = () => {
                             <td className="py-3 px-4 font-mono text-slate-600">{stu.prn}</td>
                             <td className="py-3 px-4">
                               <div className="font-semibold text-slate-800">{stu.course}</div>
-                              <div className="text-[10px] text-slate-400">{stu.semester}</div>
+                              <div className="text-[10px] text-slate-400">{stu.department || stu.semester}</div>
                             </td>
                             <td className="py-3 px-4 text-slate-600">{stu.phone}</td>
                             <td className="py-3 px-4">
@@ -2562,8 +2560,8 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Course & Semester & Department */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Course & Department */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Enrolled Course *</label>
                   <select
@@ -2575,22 +2573,6 @@ export const AdminPortal: React.FC = () => {
                     <option value="B.Sc Information Technology">B.Sc IT</option>
                     <option value="Bachelor of Computer Applications (BCA)">BCA</option>
                     <option value="M.Sc Computer Science">M.Sc Computer Science</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Semester *</label>
-                  <select
-                    value={stuSemester}
-                    onChange={(e) => setStuSemester(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-semibold"
-                  >
-                    <option value="Semester I">Semester I</option>
-                    <option value="Semester II">Semester II</option>
-                    <option value="Semester III">Semester III</option>
-                    <option value="Semester IV">Semester IV</option>
-                    <option value="Semester V">Semester V</option>
-                    <option value="Semester VI">Semester VI</option>
                   </select>
                 </div>
 
@@ -2609,22 +2591,8 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Faculty Mentor & Roll No */}
+              {/* Roll Number & PRN */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Faculty Mentor / In-Charge</label>
-                  <select
-                    value={stuFacultyMentor}
-                    onChange={(e) => setStuFacultyMentor(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-semibold"
-                  >
-                    <option value="Prof. Rajesh Kulkarni (HOD)">Prof. Rajesh Kulkarni (HOD)</option>
-                    <option value="Dr. A. P. Patil">Dr. A. P. Patil</option>
-                    <option value="Prof. Sneha Deshmukh">Prof. Sneha Deshmukh</option>
-                    <option value="Prof. Vikas Joshi">Prof. Vikas Joshi</option>
-                  </select>
-                </div>
-
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Assigned Roll Number</label>
                   <input
@@ -2634,10 +2602,7 @@ export const AdminPortal: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   />
                 </div>
-              </div>
 
-              {/* University PRN & Random Password */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">University PRN Number</label>
                   <input
@@ -2647,31 +2612,32 @@ export const AdminPortal: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-slate-700">Randomly Generated Password</label>
-                    <button
-                      type="button"
-                      onClick={() => setStuPassword(generateRandomStudentPassword())}
-                      className="text-[10px] text-blue-600 hover:text-blue-800 font-bold underline"
-                    >
-                      🎲 Re-roll Random
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      readOnly
-                      value={stuPassword}
-                      className="w-full px-3 py-2 bg-amber-50/60 border border-amber-300 rounded-xl font-mono text-blue-950 font-black tracking-wider focus:outline-none cursor-default"
-                    />
-                    <Key className="w-3.5 h-3.5 absolute right-3 top-2.5 text-amber-600" />
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    Auto-generated secure password (will be emailed to student)
-                  </p>
+              {/* Random Password */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700">Randomly Generated Password</label>
+                  <button
+                    type="button"
+                    onClick={() => setStuPassword(generateRandomStudentPassword())}
+                    className="text-[10px] text-blue-600 hover:text-blue-800 font-bold underline"
+                  >
+                    🎲 Re-roll Random
+                  </button>
                 </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value={stuPassword}
+                    className="w-full px-3 py-2 bg-amber-50/60 border border-amber-300 rounded-xl font-mono text-blue-950 font-black tracking-wider focus:outline-none cursor-default"
+                  />
+                  <Key className="w-3.5 h-3.5 absolute right-3 top-2.5 text-amber-600" />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Auto-generated secure password (will be emailed to student)
+                </p>
               </div>
 
               {/* Email Dispatch Notice */}
@@ -4155,7 +4121,7 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Enrolled Course *</label>
                   <select
@@ -4167,22 +4133,6 @@ export const AdminPortal: React.FC = () => {
                     <option value="B.Sc Information Technology">B.Sc IT</option>
                     <option value="Bachelor of Computer Applications (BCA)">BCA</option>
                     <option value="M.Sc Computer Science">M.Sc Computer Science</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Semester *</label>
-                  <select
-                    value={editSemester}
-                    onChange={(e) => setEditSemester(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-semibold"
-                  >
-                    <option value="Semester I">Semester I</option>
-                    <option value="Semester II">Semester II</option>
-                    <option value="Semester III">Semester III</option>
-                    <option value="Semester IV">Semester IV</option>
-                    <option value="Semester V">Semester V</option>
-                    <option value="Semester VI">Semester VI</option>
                   </select>
                 </div>
 

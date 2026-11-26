@@ -64,8 +64,8 @@ export const AttendanceView: React.FC = () => {
     attendance.overallPercentage !== undefined && attendance.overallPercentage !== null
       ? Math.min(100, Math.max(0, attendance.overallPercentage))
       : totalClasses > 0
-      ? Math.min(100, Math.round((presentCount / totalClasses) * 100))
-      : 0;
+        ? Math.min(100, Math.round((presentCount / totalClasses) * 100))
+        : 0;
 
   // Selected Month metadata from full academic year
   const currentMonth = useMemo(() => {
@@ -91,8 +91,8 @@ export const AttendanceView: React.FC = () => {
   const monthPercentage = isCurrentMonth
     ? overallPercentage
     : monthTrendRecord
-    ? monthTrendRecord.percentage
-    : 0;
+      ? monthTrendRecord.percentage
+      : 0;
 
   const monthTotal = isCurrentMonth ? totalClasses : 0;
   const monthPresent = isCurrentMonth ? presentCount : 0;
@@ -498,11 +498,10 @@ export const AttendanceView: React.FC = () => {
                     setSelectedDay(1);
                     setShowMonthDropdown(false);
                   }}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                    m.key === selectedMonthKey
+                  className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${m.key === selectedMonthKey
                       ? 'bg-blue-600 text-white font-bold'
                       : 'text-slate-700 hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   <span>{m.name}</span>
                   {m.key === '2026-11' && (
@@ -525,11 +524,10 @@ export const AttendanceView: React.FC = () => {
                     setSelectedDay(1);
                     setShowMonthDropdown(false);
                   }}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                    m.key === selectedMonthKey
+                  className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${m.key === selectedMonthKey
                       ? 'bg-blue-600 text-white font-bold'
                       : 'text-slate-700 hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   <span>{m.name}</span>
                 </button>
