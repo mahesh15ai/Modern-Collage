@@ -15,8 +15,6 @@ import {
   ChevronRight,
   Info,
   AlertCircle,
-  CalendarDays,
-  Sparkles,
 } from 'lucide-react';
 
 interface MonthMeta {
@@ -40,11 +38,10 @@ export const AttendanceView: React.FC = () => {
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('2026-11');
   const [selectedDay, setSelectedDay] = useState<number>(26); // Default 26th
   const [showMonthDropdown, setShowMonthDropdown] = useState<boolean>(false);
-  const [viewScope, setViewScope] = useState<'selected' | 'overall'>('selected');
   const [showAllSubjects, setShowAllSubjects] = useState<boolean>(false);
 
   // ---------------------------------------------------------------------------
-  // 1. ALL SEMESTER MONTHS DATA (July 2026 to December 2026)
+  // ALL SEMESTER MONTHS DATA (July 2026 to December 2026)
   // ---------------------------------------------------------------------------
   const semesterMonths: MonthMeta[] = useMemo(() => {
     // Current live data from attendance context (for November 2026)
@@ -110,7 +107,7 @@ export const AttendanceView: React.FC = () => {
       {
         key: '2026-11',
         name: 'November 2026',
-        shortName: 'Nov (Current)',
+        shortName: 'Nov',
         year: 2026,
         monthIndex: 10,
         totalDays: 30,
@@ -123,7 +120,7 @@ export const AttendanceView: React.FC = () => {
       {
         key: '2026-12',
         name: 'December 2026',
-        shortName: 'Dec (Upcoming)',
+        shortName: 'Dec',
         year: 2026,
         monthIndex: 11,
         totalDays: 31,
@@ -144,36 +141,14 @@ export const AttendanceView: React.FC = () => {
     );
   }, [selectedMonthKey, semesterMonths]);
 
-  // Cumulative Semester Totals
-  const semesterTotals = useMemo(() => {
-    const activeMonths = semesterMonths.filter((m) => m.key !== '2026-12');
-    const totalPresent = activeMonths.reduce((acc, m) => acc + m.present, 0);
-    const totalAbsent = activeMonths.reduce((acc, m) => acc + m.absent, 0);
-    const totalLate = activeMonths.reduce((acc, m) => acc + m.late, 0);
-    const totalClasses = activeMonths.reduce((acc, m) => acc + m.totalClasses, 0);
-    const overallPct =
-      totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 100;
-
-    return {
-      present: totalPresent,
-      absent: totalAbsent,
-      late: totalLate,
-      totalClasses,
-      percentage: overallPct,
-    };
-  }, [semesterMonths]);
-
-  // Determine what to display based on scope ('selected' or 'overall')
-  const displayMetrics =
-    viewScope === 'overall'
-      ? semesterTotals
-      : {
-          present: currentMonthData.present,
-          absent: currentMonthData.absent,
-          late: currentMonthData.late,
-          totalClasses: currentMonthData.totalClasses,
-          percentage: currentMonthData.percentage,
-        };
+  // Display metrics based on selected month
+  const displayMetrics = {
+    present: currentMonthData.present,
+    absent: currentMonthData.absent,
+    late: currentMonthData.late,
+    totalClasses: currentMonthData.totalClasses,
+    percentage: currentMonthData.percentage,
+  };
 
   // Circular Gauge Calculations
   const radius = 38;
@@ -202,7 +177,7 @@ export const AttendanceView: React.FC = () => {
   };
 
   // ---------------------------------------------------------------------------
-  // 2. CALENDAR DAYS GENERATOR FOR SELECTED MONTH
+  // CALENDAR DAYS GENERATOR FOR SELECTED MONTH
   // ---------------------------------------------------------------------------
   const { calendarCells, startDayOffset } = useMemo(() => {
     const year = currentMonthData.year;
@@ -249,7 +224,7 @@ export const AttendanceView: React.FC = () => {
         else if (d === 24) status = 'late';
         else status = 'present';
       } else if (currentMonthData.key === '2026-08') {
-        if (d === 15) status = 'holiday'; // Independence day
+        if (d === 15) status = 'holiday'; // Independence Day
         else if (d === 18 || d === 25) status = 'absent';
         else status = 'present';
       } else if (currentMonthData.key === '2026-07') {
@@ -269,7 +244,7 @@ export const AttendanceView: React.FC = () => {
     if (!found) return null;
 
     const dateStr = `${selectedDay} ${currentMonthData.name}`;
-    let label = 'Present (Marked via QR Pass)';
+    let label = 'Present (Verified by Class Teacher QR Scan)';
     let color = 'text-emerald-700 bg-emerald-50 border-emerald-200';
 
     if (found.status === 'holiday') {
@@ -279,7 +254,7 @@ export const AttendanceView: React.FC = () => {
       label = 'Absent (Class Teacher Scan Missed)';
       color = 'text-rose-700 bg-rose-50 border-rose-200';
     } else if (found.status === 'late') {
-      label = 'Late Attendance Logged';
+      label = 'Late Attendance Recorded';
       color = 'text-amber-700 bg-amber-50 border-amber-200';
     } else if (found.status === 'future') {
       label = 'Scheduled Upcoming Lecture';
@@ -313,34 +288,6 @@ export const AttendanceView: React.FC = () => {
 
   return (
     <div className="w-full min-h-full p-4 space-y-4 bg-slate-50 font-sans pb-12">
-      {/* =========================================================================
-          VIEW SCOPE SELECTOR TABS: SELECTED MONTH vs ALL SEMESTER
-         ========================================================================= */}
-      <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center justify-between text-xs font-bold text-slate-600 shadow-inner">
-        <button
-          type="button"
-          onClick={() => setViewScope('selected')}
-          className={`flex-1 py-2 text-center rounded-xl transition-all ${
-            viewScope === 'selected'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'hover:text-slate-900'
-          }`}
-        >
-          {currentMonthData.name} View
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewScope('overall')}
-          className={`flex-1 py-2 text-center rounded-xl transition-all ${
-            viewScope === 'overall'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'hover:text-slate-900'
-          }`}
-        >
-          All Months (Full Semester)
-        </button>
-      </div>
-
       {/* =========================================================================
           1. TOP HERO CARD: CIRCULAR GAUGE & OVERALL STANDING
          ========================================================================= */}
@@ -388,11 +335,9 @@ export const AttendanceView: React.FC = () => {
 
           {/* Right: Attendance Standing & Details */}
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">
-                {viewScope === 'overall' ? 'Cumulative Semester Attendance' : 'Monthly Attendance'}
-              </span>
-            </div>
+            <span className="text-xs font-semibold text-slate-500">
+              Overall Attendance
+            </span>
 
             <div className="flex items-center space-x-1.5 mt-1">
               {isGoodStanding ? (
@@ -472,91 +417,55 @@ export const AttendanceView: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          3. ALL MONTHS SEMESTER BREAKDOWN (सत्रनिहाय सर्व महिन्यांची उपस्थिती)
+          3. SUBJECT-WISE BREAKDOWN CARD
          ========================================================================= */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <CalendarDays className="w-4 h-4 text-blue-900 stroke-[2.5]" />
+            <BarChart2 className="w-5 h-5 text-slate-900 stroke-[2.5]" />
             <h3 className="font-extrabold text-sm text-slate-900">
-              All Months Attendance (सत्र उपस्थिती)
+              Subject-Wise Breakdown
             </h3>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Academic 2026-27
-          </span>
+
+          {subjectsList.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setShowAllSubjects(!showAllSubjects)}
+              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition-colors"
+            >
+              <span>{showAllSubjects ? 'View Less' : 'View All'}</span>
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+            </button>
+          )}
         </div>
 
-        {/* List of All Semester Months with One-Click Calendar Switch */}
-        <div className="space-y-2.5 pt-1">
-          {semesterMonths.map((m) => {
-            const isSelected = m.key === selectedMonthKey;
-            const isFuture = m.key === '2026-12';
-
-            return (
-              <div
-                key={m.key}
-                onClick={() => {
-                  setSelectedMonthKey(m.key);
-                  setSelectedDay(1);
-                  setViewScope('selected');
-                }}
-                className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col space-y-2 ${
-                  isSelected
-                    ? 'bg-blue-50/70 border-blue-200 shadow-xs ring-1 ring-blue-300/60'
-                    : 'bg-slate-50/60 hover:bg-slate-100/80 border-slate-200/60'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold text-slate-900">
-                      {m.name}
-                    </span>
-                    {m.key === '2026-11' && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-100 text-blue-800">
-                        Current
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs font-semibold text-slate-500">
-                      {isFuture ? 'Upcoming' : `${m.present} / ${m.totalClasses} classes`}
-                    </span>
-                    <span
-                      className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
-                        isFuture
-                          ? 'bg-slate-200 text-slate-600'
-                          : m.percentage >= 75
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : m.percentage >= 60
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
-                    >
-                      {isFuture ? '0%' : `${m.percentage}%`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-700 ${
-                      isFuture
-                        ? 'bg-slate-300'
-                        : m.percentage >= 75
-                        ? 'bg-emerald-500'
-                        : m.percentage >= 60
-                        ? 'bg-amber-500'
-                        : 'bg-rose-500'
-                    }`}
-                    style={{ width: `${Math.min(100, m.percentage)}%` }}
-                  />
-                </div>
+        <div className="space-y-4 pt-1">
+          {displayedSubjects.map((sub, idx) => (
+            <div key={idx} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-900 truncate pr-2">
+                  {sub.subjectName}
+                </span>
+                <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0">
+                  {sub.percentage}%
+                </span>
               </div>
-            );
-          })}
+
+              {/* classes count */}
+              <div className="text-[11px] text-slate-400 font-medium text-right -mt-0.5">
+                {sub.attended}/{sub.total} Classes
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min(100, sub.percentage)}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -736,60 +645,7 @@ export const AttendanceView: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          5. SUBJECT-WISE BREAKDOWN CARD
-         ========================================================================= */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <BarChart2 className="w-5 h-5 text-slate-900 stroke-[2.5]" />
-            <h3 className="font-extrabold text-sm text-slate-900">
-              Subject-Wise Breakdown
-            </h3>
-          </div>
-
-          {subjectsList.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setShowAllSubjects(!showAllSubjects)}
-              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition-colors"
-            >
-              <span>{showAllSubjects ? 'View Less' : 'View All'}</span>
-              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-4 pt-1">
-          {displayedSubjects.map((sub, idx) => (
-            <div key={idx} className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-900 truncate pr-2">
-                  {sub.subjectName}
-                </span>
-                <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0">
-                  {sub.percentage}%
-                </span>
-              </div>
-
-              {/* classes count */}
-              <div className="text-[11px] text-slate-400 font-medium text-right -mt-0.5">
-                {sub.attended}/{sub.total} Classes
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.min(100, sub.percentage)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* =========================================================================
-          6. UNIVERSITY ATTENDANCE RULE NOTICE ALERT
+          5. UNIVERSITY ATTENDANCE RULE NOTICE ALERT
          ========================================================================= */}
       <div className="bg-amber-50/80 border border-amber-200/70 rounded-2xl p-3.5 flex items-start space-x-3 shadow-2xs">
         <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
