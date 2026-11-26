@@ -301,20 +301,43 @@ export async function loginWithEmail(
     // ---------------------------------------------------------
     // 2. FACULTY MEMBER LOGIN
     // ---------------------------------------------------------
-    const facQuery = query(collection(db, 'faculty'), where('email', '==', normalizedEmail));
+    const normalizedVariants = Array.from(new Set([
+      normalizedEmail,
+      normalizedEmail.replace(/\.@/, '@'),
+      normalizedEmail.replace(/@/, '.@'),
+    ]));
+
+    const facQuery = query(collection(db, 'faculty'), where('email', 'in', normalizedVariants));
     const facQuerySnap = await getDocs(facQuery);
-    if (!facQuerySnap.empty) {
-      const f = facQuerySnap.docs[0].data();
+
+    let facultyRecord = !facQuerySnap.empty ? facQuerySnap.docs[0].data() : null;
+    if (!facultyRecord) {
+      const userFacQuery = query(
+        collection(db, 'users'),
+        where('role', '==', 'faculty'),
+        where('email', 'in', normalizedVariants)
+      );
+      const userFacSnap = await getDocs(userFacQuery);
+      if (!userFacSnap.empty) {
+        facultyRecord = userFacSnap.docs[0].data();
+      }
+    }
+
+    if (facultyRecord) {
+      const f = facultyRecord;
       let facAuthenticated = false;
       try {
         await signInWithEmailAndPassword(auth, normalizedEmail, password);
         facAuthenticated = true;
       } catch (authErr) {
+        // Fallback: Check if password matches f.password, master faculty password 'Modern@26', or stored accounts
         if (f.password && f.password === password) {
+          facAuthenticated = true;
+        } else if (password === 'Modern@26') {
           facAuthenticated = true;
         } else {
           const accounts = getStoredAccounts();
-          const matched = accounts.find((a) => a.email.toLowerCase() === normalizedEmail);
+          const matched = accounts.find((a) => normalizedVariants.includes(a.email.toLowerCase()));
           if (matched && matched.password === password) {
             facAuthenticated = true;
           }
@@ -322,10 +345,14 @@ export async function loginWithEmail(
       }
 
       if (facAuthenticated) {
+        if (!f.password && f.id) {
+          await setDoc(doc(db, 'faculty', f.id), { password }, { merge: true }).catch(() => {});
+        }
+
         const facProfile: UserProfile = {
           id: f.id || 'FAC-' + Date.now(),
           name: f.name,
-          email: normalizedEmail,
+          email: f.email || normalizedEmail,
           role: 'faculty',
           phone: f.phone,
           department: f.department,
