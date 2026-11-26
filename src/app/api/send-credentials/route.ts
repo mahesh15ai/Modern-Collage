@@ -197,11 +197,11 @@ export async function POST(req: NextRequest) {
     `;
 
     // 5. Send Email via Nodemailer with QR Attachments
-    const rawUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER;
-    const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS;
-    const rawHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
-    const rawPort = process.env.SMTP_PORT || process.env.EMAIL_PORT;
-    const rawFrom = process.env.SMTP_FROM || process.env.EMAIL_FROM;
+    const rawUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || 'moderncsitned@gmail.com';
+    const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS || 'qbiomjeswkllrgwp';
+    const rawHost = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com';
+    const rawPort = process.env.SMTP_PORT || process.env.EMAIL_PORT || '465';
+    const rawFrom = process.env.SMTP_FROM || process.env.EMAIL_FROM || '"Modern College of CS & IT, Nanded" <moderncsitned@gmail.com>';
 
     let emailSent = false;
     let message = 'Admission QR Pass successfully dispatched to student.';

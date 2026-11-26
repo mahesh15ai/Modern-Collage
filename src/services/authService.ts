@@ -395,7 +395,7 @@ export async function loginWithEmail(
     // 4. STUDENT RECORD NOT FOUND IN COLLEGE DIRECTORY
     // ---------------------------------------------------------
     // The student was deleted or has not been admitted by Admin.
-    await firebaseSignOut(auth).catch(() => {});
+    await firebaseSignOut(auth).catch(() => { });
     removeStoredAccount(normalizedEmail);
     throw new Error(
       'Student admission record not found. Your student account has been removed or revoked by College Administration.'
