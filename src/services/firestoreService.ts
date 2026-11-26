@@ -843,9 +843,10 @@ export async function clearAllFirestoreData(): Promise<{ deleted: number }> {
 export async function sendChatMessageToFirestore(message: ChatMessage): Promise<void> {
   if (!isFirebaseConfigured) return;
   try {
-    await setDoc(doc(db, COLLECTIONS.CHATS, message.id), message);
+    const cleanData = JSON.parse(JSON.stringify(message));
+    await setDoc(doc(db, COLLECTIONS.CHATS, message.id), cleanData);
   } catch (error: any) {
-    console.warn('Error saving chat message to Firestore:', error?.message);
+    console.error('Error saving chat message to Firestore:', error);
     throw error;
   }
 }

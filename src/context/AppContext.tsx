@@ -669,21 +669,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Resolve official sender profile to match Firestore records
     const studentRecord = isStudent
       ? students.find(
-          (s) =>
-            s.id === currentUser.id ||
-            (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-            (currentUser.rollNo && s.rollNo === currentUser.rollNo) ||
-            (currentUser.name && s.name?.toLowerCase().includes(currentUser.name.toLowerCase()))
-        )
+        (s) =>
+          s.id === currentUser.id ||
+          (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+          (currentUser.rollNo && s.rollNo === currentUser.rollNo) ||
+          (currentUser.name && s.name?.toLowerCase().includes(currentUser.name.toLowerCase()))
+      )
       : null;
 
     const facultyRecord = !isStudent
       ? facultyList.find(
-          (f) =>
-            f.id === currentUser.id ||
-            (currentUser.email && f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@')) ||
-            (currentUser.name && f.name?.toLowerCase() === currentUser.name.toLowerCase())
-        )
+        (f) =>
+          f.id === currentUser.id ||
+          (currentUser.email && f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@')) ||
+          (currentUser.name && f.name?.toLowerCase() === currentUser.name.toLowerCase())
+      )
       : null;
 
     const senderName = isStudent
@@ -708,8 +708,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isRead: false,
-      isGroupMessage: isGroupChannel,
-      groupId: isGroupChannel ? receiverId : undefined,
+      isGroupMessage: Boolean(isGroupChannel),
+      ...(isGroupChannel && receiverId ? { groupId: receiverId } : {}),
     };
 
     setChatMessages((prev) => {
@@ -722,9 +722,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updated;
     });
 
-    await sendChatMessageToFirestore(newMsg).catch((err) =>
-      console.warn('Firestore sendChatMessage note:', err)
-    );
+    try {
+      await sendChatMessageToFirestore(newMsg);
+    } catch (err) {
+      console.error('Failed to send chat message to Firestore:', err);
+    }
   };
   const [dispatchedEmails, setDispatchedEmails] = useState<DispatchedEmail[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);

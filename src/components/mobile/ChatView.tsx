@@ -35,19 +35,19 @@ interface StudentConversation {
 // Helper to check if two names refer to the same person (handles full vs short names like "Mahesh Gomaskar" vs "Mahesh Kishan Gomaskar")
 function namesMatch(name1?: string, name2?: string): boolean {
   if (!name1 || !name2) return false;
-  const a = name1.toLowerCase().trim();
-  const b = name2.toLowerCase().trim();
+  const a = name1.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  const b = name2.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
   if (a === b) return true;
   if (a.includes(b) || b.includes(a)) return true;
-  const wordsA = a.split(/\s+/).filter((w) => w.length > 2);
-  const wordsB = b.split(/\s+/).filter((w) => w.length > 2);
+  const wordsA = a.split(/\s+/).filter((w) => w.length > 1);
+  const wordsB = b.split(/\s+/).filter((w) => w.length > 1);
   if (wordsA.length >= 2 && wordsB.length >= 2) {
     if (wordsA[0] === wordsB[0] && wordsA[wordsA.length - 1] === wordsB[wordsB.length - 1]) {
       return true;
     }
-    const common = wordsA.filter((w) => wordsB.includes(w));
-    if (common.length >= 2) return true;
   }
+  const distinctMatch = wordsA.some((wa) => wa.length >= 4 && wordsB.includes(wa));
+  if (distinctMatch) return true;
   return false;
 }
 
@@ -55,18 +55,28 @@ function namesMatch(name1?: string, name2?: string): boolean {
 function matchesFaculty(
   id?: string,
   name?: string,
-  faculty?: FacultyRecord | UserProfile | null
+  faculty?: FacultyRecord | UserProfile | null,
+  fallbackUser?: UserProfile | null
 ): boolean {
-  if (!faculty) return false;
-  if (id && (
-    id === faculty.id ||
-    (faculty as any).employeeId === id ||
-    (faculty.email && id.toLowerCase() === faculty.email.toLowerCase()) ||
-    (faculty.email && id.toLowerCase().replace(/\.@/, '@') === faculty.email.toLowerCase().replace(/\.@/, '@'))
-  )) {
-    return true;
+  if (!faculty && !fallbackUser) return false;
+  const f = faculty || fallbackUser;
+  if (!f) return false;
+  if (id) {
+    const idLower = id.toLowerCase();
+    const idNorm = idLower.replace(/\.@/, '@');
+    if (
+      id === f.id ||
+      (fallbackUser && id === fallbackUser.id) ||
+      ((f as any).employeeId && (f as any).employeeId.toLowerCase() === idLower) ||
+      (f.email && f.email.toLowerCase() === idLower) ||
+      (f.email && f.email.toLowerCase().replace(/\.@/, '@') === idNorm) ||
+      (fallbackUser?.email && fallbackUser.email.toLowerCase() === idLower) ||
+      (fallbackUser?.email && fallbackUser.email.toLowerCase().replace(/\.@/, '@') === idNorm)
+    ) {
+      return true;
+    }
   }
-  if (name && namesMatch(name, faculty.name)) {
+  if (name && (namesMatch(name, f.name) || (fallbackUser && namesMatch(name, fallbackUser.name)))) {
     return true;
   }
   return false;
@@ -76,18 +86,26 @@ function matchesFaculty(
 function matchesStudent(
   id?: string,
   name?: string,
-  student?: StudentRecord | UserProfile | null
+  student?: StudentRecord | UserProfile | null,
+  fallbackUser?: UserProfile | null
 ): boolean {
-  if (!student) return false;
-  if (id && (
-    id === student.id ||
-    (student as any).rollNo === id ||
-    (student as any).prn === id ||
-    (student.email && id.toLowerCase() === student.email.toLowerCase())
-  )) {
-    return true;
+  if (!student && !fallbackUser) return false;
+  const s = student || fallbackUser;
+  if (!s) return false;
+  if (id) {
+    const idLower = id.toLowerCase();
+    if (
+      id === s.id ||
+      (fallbackUser && id === fallbackUser.id) ||
+      ((s as any).rollNo && (s as any).rollNo.toLowerCase() === idLower) ||
+      ((s as any).prn && (s as any).prn.toLowerCase() === idLower) ||
+      (s.email && s.email.toLowerCase() === idLower) ||
+      (fallbackUser?.email && fallbackUser.email.toLowerCase() === idLower)
+    ) {
+      return true;
+    }
   }
-  if (name && namesMatch(name, student.name)) {
+  if (name && (namesMatch(name, s.name) || (fallbackUser && namesMatch(name, fallbackUser.name)))) {
     return true;
   }
   return false;
@@ -117,20 +135,20 @@ export const ChatView: React.FC = () => {
   // Resolved student record if logged in as student
   const currentStudentRecord: StudentRecord | undefined = isStudent
     ? students.find(
-        (s) =>
-          matchesStudent(currentUser.id, currentUser.name, s) ||
-          (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase())
-      )
+      (s) =>
+        matchesStudent(currentUser.id, currentUser.name, s) ||
+        (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase())
+    )
     : undefined;
 
   // Resolved faculty record if logged in as teacher
   const teacherFaculty: FacultyRecord | undefined = isFaculty
     ? facultyList.find(
-        (f) =>
-          matchesFaculty(currentUser.id, currentUser.name, f) ||
-          (currentUser.email &&
-            f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@'))
-      )
+      (f) =>
+        matchesFaculty(currentUser.id, currentUser.name, f) ||
+        (currentUser.email &&
+          f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@'))
+    )
     : undefined;
 
   // Teacher assigned class
@@ -197,12 +215,12 @@ export const ChatView: React.FC = () => {
       const myStudentProfile = currentStudentRecord || currentUser;
 
       const isFromMeToTeacher =
-        matchesStudent(msg.senderId, msg.senderName, myStudentProfile) &&
+        matchesStudent(msg.senderId, msg.senderName, myStudentProfile, currentUser) &&
         matchesFaculty(msg.receiverId, msg.receiverName, activeFaculty);
 
       const isFromTeacherToMe =
         matchesFaculty(msg.senderId, msg.senderName, activeFaculty) &&
-        matchesStudent(msg.receiverId, msg.receiverName, myStudentProfile);
+        matchesStudent(msg.receiverId, msg.receiverName, myStudentProfile, currentUser);
 
       return isFromMeToTeacher || isFromTeacherToMe;
     } else {
@@ -211,12 +229,12 @@ export const ChatView: React.FC = () => {
       const myFacultyProfile = teacherFaculty || currentUser;
 
       const isFromMeToStudent =
-        matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile) &&
+        matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile, currentUser) &&
         matchesStudent(msg.receiverId, msg.receiverName, activeStudent);
 
       const isFromStudentToMe =
         matchesStudent(msg.senderId, msg.senderName, activeStudent) &&
-        matchesFaculty(msg.receiverId, msg.receiverName, myFacultyProfile);
+        matchesFaculty(msg.receiverId, msg.receiverName, myFacultyProfile, currentUser);
 
       return isFromMeToStudent || isFromStudentToMe;
     }
@@ -259,15 +277,15 @@ export const ChatView: React.FC = () => {
     // All 1-on-1 messages involving the current faculty member
     const facultyDirectMessages = chatMessages.filter((msg) => {
       if (msg.isGroupMessage || msg.receiverRole === 'group') return false;
-      const isTeacherSender = matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile);
-      const isTeacherReceiver = matchesFaculty(msg.receiverId, msg.receiverName, myFacultyProfile);
+      const isTeacherSender = matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile, currentUser);
+      const isTeacherReceiver = matchesFaculty(msg.receiverId, msg.receiverName, myFacultyProfile, currentUser);
       return isTeacherSender || isTeacherReceiver;
     });
 
     const conversationMap = new Map<string, { student: StudentRecord; messages: ChatMessage[] }>();
 
     facultyDirectMessages.forEach((msg) => {
-      const isTeacherSender = matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile);
+      const isTeacherSender = matchesFaculty(msg.senderId, msg.senderName, myFacultyProfile, currentUser);
       const otherId = isTeacherSender ? msg.receiverId : msg.senderId;
       const otherName = isTeacherSender ? msg.receiverName : msg.senderName;
       const otherRole = isTeacherSender ? msg.receiverRole : msg.senderRole;
@@ -308,7 +326,7 @@ export const ChatView: React.FC = () => {
           (m) =>
             !m.isRead &&
             m.senderRole === 'student' &&
-            !matchesFaculty(m.senderId, m.senderName, myFacultyProfile)
+            !matchesFaculty(m.senderId, m.senderName, myFacultyProfile, currentUser)
         ).length;
         return { student, lastMessage, unreadCount };
       }
@@ -385,24 +403,24 @@ export const ChatView: React.FC = () => {
 
     const quickChips = isGroupActive
       ? [
-          '📢 Attendance shortage review meeting today',
-          '📝 Practical journal submission deadline',
-          '⚠️ Timetable adjustment notice for tomorrow',
-          '✅ Internal examination schedule published',
-        ]
+        '📢 Attendance shortage review meeting today',
+        '📝 Practical journal submission deadline',
+        '⚠️ Timetable adjustment notice for tomorrow',
+        '✅ Internal examination schedule published',
+      ]
       : isStudent
         ? [
-            'Sir, I have a doubt in Unit 2',
-            'When is the assignment deadline?',
-            'Can you share the lecture slides?',
-            'Is the lab manual submission this week?',
-          ]
+          'Sir, I have a doubt in Unit 2',
+          'When is the assignment deadline?',
+          'Can you share the lecture slides?',
+          'Is the lab manual submission this week?',
+        ]
         : [
-            '✅ Noted, let us discuss during practical session',
-            '📝 Please submit the assignment by tomorrow',
-            '📚 Check the lecture slides in Study Materials',
-            '📍 Please meet me in the staff room during break',
-          ];
+          '✅ Noted, let us discuss during practical session',
+          '📝 Please submit the assignment by tomorrow',
+          '📚 Check the lecture slides in Study Materials',
+          '📍 Please meet me in the staff room during break',
+        ];
 
     return (
       <div className="fixed inset-0 z-40 max-w-lg mx-auto flex flex-col bg-slate-50 overflow-hidden font-sans h-full shadow-2xl">
@@ -510,8 +528,8 @@ export const ChatView: React.FC = () => {
           {conversationMessages.length > 0 ? (
             conversationMessages.map((msg) => {
               const isMine = isStudent
-                ? matchesStudent(msg.senderId, msg.senderName, currentStudentRecord || currentUser)
-                : matchesFaculty(msg.senderId, msg.senderName, teacherFaculty || currentUser);
+                ? matchesStudent(msg.senderId, msg.senderName, currentStudentRecord, currentUser)
+                : matchesFaculty(msg.senderId, msg.senderName, teacherFaculty, currentUser);
 
               return (
                 <div
@@ -519,11 +537,10 @@ export const ChatView: React.FC = () => {
                   className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${
-                      isMine
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${isMine
                         ? 'bg-[#1d4ed8] text-white rounded-br-xs'
                         : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs shadow-sm'
-                    }`}
+                      }`}
                   >
                     {!isMine && (
                       <span className="text-[9.5px] font-bold text-blue-700 block mb-0.5">
@@ -534,9 +551,8 @@ export const ChatView: React.FC = () => {
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
                     <div
-                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${
-                        isMine ? 'text-blue-200' : 'text-slate-400'
-                      }`}
+                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${isMine ? 'text-blue-200' : 'text-slate-400'
+                        }`}
                     >
                       <span>{msg.timestamp}</span>
                       {isMine && <CheckCheck className="w-3 h-3 text-blue-300" />}
@@ -745,7 +761,8 @@ export const ChatView: React.FC = () => {
                 const isSentByTeacher = matchesFaculty(
                   lastMessage.senderId,
                   lastMessage.senderName,
-                  teacherFaculty || currentUser
+                  teacherFaculty,
+                  currentUser
                 );
 
                 return (
@@ -799,11 +816,10 @@ export const ChatView: React.FC = () => {
                             <CheckCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                           )}
                           <p
-                            className={`truncate text-[11px] ${
-                              unreadCount > 0 && !isSentByTeacher
+                            className={`truncate text-[11px] ${unreadCount > 0 && !isSentByTeacher
                                 ? 'font-bold text-slate-900'
                                 : 'font-normal text-slate-500'
-                            }`}
+                              }`}
                           >
                             {isSentByTeacher ? `You: ${lastMessage.text}` : lastMessage.text}
                           </p>
