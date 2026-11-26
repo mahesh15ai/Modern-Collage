@@ -10,7 +10,7 @@ import {
   getAuth,
 } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
 import { UserProfile, UserRole } from '@/types';
 import {
@@ -85,6 +85,35 @@ export function saveStoredAccounts(accounts: RegisteredAccount[]): void {
     localStorage.setItem('smart_campus_accounts', JSON.stringify(accounts));
   } catch (e) {
     console.warn('Could not save accounts', e);
+  }
+}
+
+export function removeStoredAccount(email: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const normalized = email.trim().toLowerCase();
+    const accounts = getStoredAccounts();
+    const filtered = accounts.filter((a) => a.email.toLowerCase() !== normalized);
+    saveStoredAccounts(filtered);
+  } catch (e) {
+    console.warn('Could not remove stored account', e);
+  }
+}
+
+export function purgeUnregisteredStudentAccounts(validStudentEmails: string[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const validSet = new Set(validStudentEmails.map((e) => e.trim().toLowerCase()));
+    const accounts = getStoredAccounts();
+    const filtered = accounts.filter((a) => {
+      // Keep admin and faculty accounts
+      if (a.profile.role === 'admin' || a.profile.role === 'faculty') return true;
+      // Only keep student accounts that are explicitly enrolled in students list
+      return validSet.has(a.email.trim().toLowerCase());
+    });
+    saveStoredAccounts(filtered);
+  } catch (e) {
+    console.warn('Could not purge unregistered student accounts', e);
   }
 }
 
@@ -233,41 +262,30 @@ export async function loginWithEmail(
 
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
+      const existingUser = userDocSnap.exists() ? (userDocSnap.data() as UserProfile) : null;
 
-      if (userDocSnap.exists()) {
-        return userDocSnap.data() as UserProfile;
-      }
-
-      // Check users collection by email
-      const usersQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
-      const userQuerySnap = await getDocs(usersQuery);
-      if (!userQuerySnap.empty) {
-        return userQuerySnap.docs[0].data() as UserProfile;
-      }
-
-      // Check students collection by email
-      const stuQuery = query(collection(db, 'students'), where('email', '==', normalizedEmail));
-      const stuQuerySnap = await getDocs(stuQuery);
-      if (!stuQuerySnap.empty) {
-        const s = stuQuerySnap.docs[0].data();
-        const studentProfile: UserProfile = {
+      // 1. Check if this is an Admin account
+      if (
+        normalizedEmail === 'moderncsitned@gmail.com' ||
+        normalizedEmail.includes('admin') ||
+        existingUser?.role === 'admin'
+      ) {
+        if (existingUser) return existingUser;
+        const adminProfile: UserProfile = {
           id: user.uid,
-          name: s.name,
+          name: 'Modern College Administration',
           email: normalizedEmail,
-          role: 'student',
-          phone: s.phone,
-          department: s.department,
-          course: s.course,
-          semester: s.semester,
-          rollNo: s.rollNo,
-          prn: s.prn,
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          role: 'admin',
+          department: 'Administration',
+          designation: 'Principal & Chief Administrator',
+          phone: '+91 94220 99887',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
         };
-        await setDoc(userDocRef, studentProfile, { merge: true });
-        return studentProfile;
+        await setDoc(userDocRef, adminProfile, { merge: true });
+        return adminProfile;
       }
 
-      // Check faculty collection by email
+      // 2. Check if this is a Faculty account
       const facQuery = query(collection(db, 'faculty'), where('email', '==', normalizedEmail));
       const facQuerySnap = await getDocs(facQuery);
       if (!facQuerySnap.empty) {
@@ -281,33 +299,62 @@ export async function loginWithEmail(
           department: f.department,
           designation: f.designation,
           workloadHours: f.workloadHours,
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+          classTeacherOf: f.classTeacherOf,
+          subjectsAssigned: f.subjectsAssigned,
+          employeeId: f.employeeId,
+          avatar: f.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
         };
         await setDoc(userDocRef, facProfile, { merge: true });
         return facProfile;
       }
 
-      const inferredRole: UserRole =
-        requestedRole ||
-        (normalizedEmail.includes('admin') || normalizedEmail.includes('principal')
-          ? 'admin'
-          : 'student');
+      // 3. Check if this is an active enrolled Student in students collection
+      const stuQuery = query(collection(db, 'students'), where('email', '==', normalizedEmail));
+      const stuQuerySnap = await getDocs(stuQuery);
+      if (!stuQuerySnap.empty) {
+        const s = stuQuerySnap.docs[0].data();
+        if (s.status === 'Suspended') {
+          await firebaseSignOut(auth);
+          throw new Error('Your student account has been suspended by College Administration.');
+        }
 
-      const newProfile: UserProfile = {
-        id: user.uid,
-        name: user.displayName || normalizedEmail.split('@')[0],
-        email: normalizedEmail,
-        role: inferredRole,
-        avatar: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      };
-      await setDoc(userDocRef, newProfile);
-      return newProfile;
+        const studentProfile: UserProfile = {
+          id: user.uid,
+          name: s.name,
+          email: normalizedEmail,
+          role: 'student',
+          phone: s.phone,
+          department: s.department,
+          course: s.course,
+          semester: s.semester,
+          rollNo: s.rollNo,
+          prn: s.prn,
+          avatar: s.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        };
+        await setDoc(userDocRef, studentProfile, { merge: true });
+        return studentProfile;
+      }
+
+      // 4. User authenticated in Firebase Auth, but does NOT exist in students/faculty/admin!
+      // This means the student record was DELETED by the admin from the ERP.
+      await firebaseSignOut(auth);
+      await deleteDoc(userDocRef).catch(() => {});
+      removeStoredAccount(normalizedEmail);
+      throw new Error(
+        'Student admission record not found. Your student account has been removed or revoked by College Administration.'
+      );
     } catch (error: any) {
+      if (
+        error?.message?.includes('admission record not found') ||
+        error?.message?.includes('suspended')
+      ) {
+        throw error;
+      }
       console.warn("Firebase Auth error, checking local registry:", error?.message);
     }
   }
 
-  // Check persistent registry for registered students/faculty/admins
+  // Check persistent registry for registered students/faculty/admins (offline / local fallback)
   const accounts = getStoredAccounts();
   const matched = accounts.find(
     (acc) => acc.email.toLowerCase() === normalizedEmail
@@ -338,8 +385,8 @@ export async function loginWithGoogle(preferredRole: UserRole = 'student'): Prom
       const userDocSnap = await getDoc(userDocRef);
       const userEmail = (user.email || '').toLowerCase().trim();
 
-      // Priority 1: Check if this user exists in faculty collection
       if (userEmail) {
+        // Priority 1: Check if this user exists in faculty collection
         const facQuery = query(collection(db, 'faculty'), where('email', '==', userEmail));
         const facSnap = await getDocs(facQuery);
         if (!facSnap.empty) {
@@ -368,6 +415,10 @@ export async function loginWithGoogle(preferredRole: UserRole = 'student'): Prom
         const stuSnap = await getDocs(stuQuery);
         if (!stuSnap.empty) {
           const s = stuSnap.docs[0].data();
+          if (s.status === 'Suspended') {
+            await firebaseSignOut(auth);
+            throw new Error('Your student account has been suspended by College Administration.');
+          }
           const stuProfile: UserProfile = {
             id: user.uid,
             name: s.name || user.displayName || 'Student',
@@ -384,28 +435,39 @@ export async function loginWithGoogle(preferredRole: UserRole = 'student'): Prom
           await setDoc(userDocRef, stuProfile, { merge: true });
           return stuProfile;
         }
-      }
 
-      if (userDocSnap.exists()) {
-        const existingData = userDocSnap.data() as UserProfile;
-        if (preferredRole && preferredRole !== existingData.role) {
-          const updated = { ...existingData, role: preferredRole };
-          await setDoc(userDocRef, updated, { merge: true });
-          return updated;
+        // Priority 3: Check if Admin
+        if (
+          userEmail === 'moderncsitned@gmail.com' ||
+          userEmail.includes('admin') ||
+          (userDocSnap.exists() && (userDocSnap.data() as UserProfile).role === 'admin')
+        ) {
+          const adminProfile: UserProfile = {
+            id: user.uid,
+            name: user.displayName || 'Modern College Administration',
+            email: userEmail,
+            role: 'admin',
+            department: 'Administration',
+            designation: 'Principal & Chief Administrator',
+          };
+          await setDoc(userDocRef, adminProfile, { merge: true });
+          return adminProfile;
         }
-        return existingData;
-      }
 
-      const newProfile: UserProfile = {
-        id: user.uid,
-        name: user.displayName || 'Campus User',
-        email: user.email || '',
-        role: preferredRole,
-        avatar: user.photoURL || undefined,
-      };
-      await setDoc(userDocRef, newProfile);
-      return newProfile;
+        // Non-admin, non-faculty, non-student: Block access
+        await firebaseSignOut(auth);
+        await deleteDoc(userDocRef).catch(() => {});
+        throw new Error(
+          'Student admission record not found for this Google account. Please contact College Administration.'
+        );
+      }
     } catch (error: any) {
+      if (
+        error?.message?.includes('admission record not found') ||
+        error?.message?.includes('suspended')
+      ) {
+        throw error;
+      }
       console.warn("Google Sign-In error:", error?.message);
     }
   }

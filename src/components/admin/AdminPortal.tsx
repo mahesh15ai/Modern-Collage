@@ -809,7 +809,7 @@ export const AdminPortal: React.FC = () => {
       `Are you sure you want to permanently delete student "${stu.name}" (${stu.rollNo}) from the college database?`
     );
     if (!confirmed) return;
-    await deleteStudent(stu.id);
+    await deleteStudent(stu.id, stu.email);
   };
 
   // CRUD: Open View Student Dossier
@@ -3366,8 +3366,8 @@ export const AdminPortal: React.FC = () => {
                       type="button"
                       onClick={() => setEditBannerUploadType('upload')}
                       className={`px-2.5 py-0.5 rounded-md transition-all ${editBannerUploadType === 'upload'
-                          ? 'bg-white text-blue-700 font-bold shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                        ? 'bg-white text-blue-700 font-bold shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 font-medium'
                         }`}
                     >
                       Upload File
@@ -3376,8 +3376,8 @@ export const AdminPortal: React.FC = () => {
                       type="button"
                       onClick={() => setEditBannerUploadType('url')}
                       className={`px-2.5 py-0.5 rounded-md transition-all ${editBannerUploadType === 'url'
-                          ? 'bg-white text-blue-700 font-bold shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800 font-medium'
+                        ? 'bg-white text-blue-700 font-bold shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 font-medium'
                         }`}
                     >
                       Image URL

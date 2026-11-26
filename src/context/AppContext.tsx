@@ -48,6 +48,8 @@ import {
   subscribeToAuthState,
   registerNewUserAccount,
   createAdminAccount,
+  removeStoredAccount,
+  purgeUnregisteredStudentAccounts,
 } from '@/services/authService';
 import {
   saveStudentToFirestore,
@@ -197,7 +199,7 @@ interface AppContextType {
   complaints: ComplaintItem[];
   // Realtime Actions
   updateStudent: (student: StudentRecord) => Promise<void>;
-  deleteStudent: (studentId: string) => Promise<void>;
+  deleteStudent: (studentId: string, studentEmail?: string) => Promise<void>;
   updateFaculty: (faculty: FacultyRecord) => Promise<void>;
   addTimetableSlot: (slot: Omit<TimetableSlot, 'id'>) => Promise<void>;
   updateTimetableSlot: (slot: TimetableSlot) => Promise<void>;
@@ -787,17 +789,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setStudents(remoteStudents);
         setStats((prev) => ({ ...prev, totalStudents: remoteStudents.length }));
 
-        // Realtime automatic role sync: if current user is in students, ensure student role and details
+        // Purge any unregistered student accounts from local offline registry
+        const enrolledEmails = remoteStudents.map((s) => s.email?.toLowerCase()).filter(Boolean) as string[];
+        purgeUnregisteredStudentAccounts(enrolledEmails);
+
+        // Realtime automatic role sync & active session revocation for deleted students
         try {
           const savedSession = localStorage.getItem('smart_campus_session');
           const current = savedSession ? JSON.parse(savedSession)?.user : null;
-          if (current && current.role !== 'admin' && current.role !== 'faculty') {
+          if (current && current.role === 'student' && current.id && current.id !== 'STU-EMPTY') {
             const stuMatch = remoteStudents.find(
               (s) =>
                 (s.email && current.email && s.email.toLowerCase() === current.email.toLowerCase()) ||
-                (s.name && current.name && s.name.toLowerCase() === current.name.toLowerCase()) ||
-                (current.name && s.name && current.name.toLowerCase().includes(s.name.toLowerCase()))
+                (s.rollNo && current.rollNo && s.rollNo.toLowerCase() === current.rollNo.toLowerCase()) ||
+                (s.prn && current.prn && s.prn === current.prn)
             );
+
             if (stuMatch) {
               const updatedUser: UserProfile = {
                 ...current,
@@ -812,6 +819,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setCurrentUser(updatedUser);
               setRoleState('student');
               localStorage.setItem('smart_campus_session', JSON.stringify({ user: updatedUser, timestamp: Date.now() }));
+            } else {
+              // Current student was deleted by Admin! Immediately terminate session and redirect to login
+              console.warn('Student record revoked by Admin. Terminating session.');
+              logout();
+              setAuthError('Your student account has been removed by College Administration.');
             }
           }
         } catch (e) { }
@@ -1379,13 +1391,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // CRUD: Delete Student Record
-  const deleteStudent = async (studentId: string) => {
+  const deleteStudent = async (studentId: string, studentEmail?: string) => {
+    const targetStudent = students.find((s) => s.id === studentId);
+    const targetEmail = (studentEmail || targetStudent?.email || '').trim().toLowerCase();
+
     setStudents((prev) => prev.filter((s) => s.id !== studentId));
     setStats((prev) => ({
       ...prev,
       totalStudents: Math.max(0, prev.totalStudents - 1),
     }));
-    await deleteStudentFromFirestore(studentId).catch((err) =>
+
+    // If currently logged-in user is this student, immediately terminate their session
+    if (
+      currentUser.role === 'student' &&
+      (currentUser.id === studentId ||
+        (targetEmail && currentUser.email?.toLowerCase() === targetEmail))
+    ) {
+      logout();
+    }
+
+    // Purge from offline stored accounts registry
+    if (targetEmail) {
+      removeStoredAccount(targetEmail);
+    }
+
+    await deleteStudentFromFirestore(studentId, targetEmail).catch((err) =>
       console.warn('Firestore deleteStudent note:', err)
     );
   };

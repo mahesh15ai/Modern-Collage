@@ -10,6 +10,7 @@ import {
   query,
   orderBy,
   Unsubscribe,
+  where,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -299,14 +300,36 @@ export async function updateStudentInFirestore(
 
 /**
  * Delete student record from Cloud Firestore (CRUD: Delete)
+ * Also removes any associated profile from users collection.
  */
 export async function deleteStudentFromFirestore(
-  studentId: string
+  studentId: string,
+  studentEmail?: string
 ): Promise<void> {
   if (!isFirebaseConfigured) return;
   try {
-    await deleteDoc(doc(db, COLLECTIONS.STUDENTS, studentId));
+    // 1. Delete student doc by studentId
+    await deleteDoc(doc(db, COLLECTIONS.STUDENTS, studentId)).catch(() => { });
     await deleteDoc(doc(db, COLLECTIONS.USERS, studentId)).catch(() => { });
+
+    // 2. If studentEmail is provided, purge any docs matching this email
+    if (studentEmail) {
+      const normalized = studentEmail.trim().toLowerCase();
+
+      // Delete from students collection
+      const stuQ = query(collection(db, COLLECTIONS.STUDENTS), where('email', '==', normalized));
+      const stuSnap = await getDocs(stuQ);
+      for (const d of stuSnap.docs) {
+        await deleteDoc(d.ref).catch(() => { });
+      }
+
+      // Delete from users collection
+      const userQ = query(collection(db, COLLECTIONS.USERS), where('email', '==', normalized));
+      const userSnap = await getDocs(userQ);
+      for (const d of userSnap.docs) {
+        await deleteDoc(d.ref).catch(() => { });
+      }
+    }
   } catch (error: any) {
     console.warn('Error deleting student from Firestore:', error?.message);
     throw error;
