@@ -14,22 +14,33 @@ import {
   ChevronRight,
   Info,
   AlertCircle,
+  GraduationCap,
 } from 'lucide-react';
 
 interface AcademicMonth {
   key: string;
   name: string;
   year: number;
-  monthIndex: number; // 0-based: 6=July, 10=Nov
+  monthIndex: number; // 0-based: 0=Jan, 5=June, 10=Nov
+  semester: string;
 }
 
-const ACADEMIC_MONTHS: AcademicMonth[] = [
-  { key: '2026-07', name: 'July 2026', year: 2026, monthIndex: 6 },
-  { key: '2026-08', name: 'August 2026', year: 2026, monthIndex: 7 },
-  { key: '2026-09', name: 'September 2026', year: 2026, monthIndex: 8 },
-  { key: '2026-10', name: 'October 2026', year: 2026, monthIndex: 9 },
-  { key: '2026-11', name: 'November 2026', year: 2026, monthIndex: 10 },
-  { key: '2026-12', name: 'December 2026', year: 2026, monthIndex: 11 },
+// Full 12-Month Academic Year 2026-2027 (Both Semesters / Full Year)
+const ACADEMIC_YEAR_MONTHS: AcademicMonth[] = [
+  // Odd Semester / Term 1
+  { key: '2026-06', name: 'June 2026', year: 2026, monthIndex: 5, semester: 'Odd Semester (Term 1)' },
+  { key: '2026-07', name: 'July 2026', year: 2026, monthIndex: 6, semester: 'Odd Semester (Term 1)' },
+  { key: '2026-08', name: 'August 2026', year: 2026, monthIndex: 7, semester: 'Odd Semester (Term 1)' },
+  { key: '2026-09', name: 'September 2026', year: 2026, monthIndex: 8, semester: 'Odd Semester (Term 1)' },
+  { key: '2026-10', name: 'October 2026', year: 2026, monthIndex: 9, semester: 'Odd Semester (Term 1)' },
+  { key: '2026-11', name: 'November 2026', year: 2026, monthIndex: 10, semester: 'Odd Semester (Term 1)' },
+  // Even Semester / Term 2
+  { key: '2026-12', name: 'December 2026', year: 2026, monthIndex: 11, semester: 'Even Semester (Term 2)' },
+  { key: '2027-01', name: 'January 2027', year: 2027, monthIndex: 0, semester: 'Even Semester (Term 2)' },
+  { key: '2027-02', name: 'February 2027', year: 2027, monthIndex: 1, semester: 'Even Semester (Term 2)' },
+  { key: '2027-03', name: 'March 2027', year: 2027, monthIndex: 2, semester: 'Even Semester (Term 2)' },
+  { key: '2027-04', name: 'April 2027', year: 2027, monthIndex: 3, semester: 'Even Semester (Term 2)' },
+  { key: '2027-05', name: 'May 2027', year: 2027, monthIndex: 4, semester: 'Even Semester (Term 2)' },
 ];
 
 export const AttendanceView: React.FC = () => {
@@ -56,17 +67,17 @@ export const AttendanceView: React.FC = () => {
       ? Math.min(100, Math.round((presentCount / totalClasses) * 100))
       : 0;
 
-  // Selected Month metadata
+  // Selected Month metadata from full academic year
   const currentMonth = useMemo(() => {
     return (
-      ACADEMIC_MONTHS.find((m) => m.key === selectedMonthKey) ||
-      ACADEMIC_MONTHS[4] // Default: November 2026
+      ACADEMIC_YEAR_MONTHS.find((m) => m.key === selectedMonthKey) ||
+      ACADEMIC_YEAR_MONTHS[5] // Default: November 2026
     );
   }, [selectedMonthKey]);
 
   const isCurrentMonth = currentMonth.key === '2026-11';
 
-  // Check if monthlyTrend from Firestore has data for the selected month
+  // Check if monthlyTrend from Firestore has specific data for the selected month
   const monthTrendRecord = useMemo(() => {
     if (!attendance.monthlyTrend || attendance.monthlyTrend.length === 0) return null;
     return attendance.monthlyTrend.find(
@@ -86,31 +97,31 @@ export const AttendanceView: React.FC = () => {
   const monthTotal = isCurrentMonth ? totalClasses : 0;
   const monthPresent = isCurrentMonth ? presentCount : 0;
 
-  // Circular Gauge Calculations
+  // Circular Gauge Calculations (Academic Year Overall)
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (monthPercentage / 100) * circumference;
+  const strokeDashoffset = circumference - (overallPercentage / 100) * circumference;
 
-  const isGoodStanding = monthTotal > 0 && monthPercentage >= 75;
-  const isAverage = monthTotal > 0 && monthPercentage >= 60 && monthPercentage < 75;
+  const isGoodStanding = totalClasses > 0 && overallPercentage >= 75;
+  const isAverage = totalClasses > 0 && overallPercentage >= 60 && overallPercentage < 75;
 
-  // Month navigation helpers
-  const currentMonthIdx = ACADEMIC_MONTHS.findIndex((m) => m.key === selectedMonthKey);
+  // Month navigation across all 12 academic months
+  const currentMonthIdx = ACADEMIC_YEAR_MONTHS.findIndex((m) => m.key === selectedMonthKey);
   const handlePrevMonth = () => {
     if (currentMonthIdx > 0) {
-      setSelectedMonthKey(ACADEMIC_MONTHS[currentMonthIdx - 1].key);
+      setSelectedMonthKey(ACADEMIC_YEAR_MONTHS[currentMonthIdx - 1].key);
       setSelectedDay(1);
     }
   };
   const handleNextMonth = () => {
-    if (currentMonthIdx < ACADEMIC_MONTHS.length - 1) {
-      setSelectedMonthKey(ACADEMIC_MONTHS[currentMonthIdx + 1].key);
+    if (currentMonthIdx < ACADEMIC_YEAR_MONTHS.length - 1) {
+      setSelectedMonthKey(ACADEMIC_YEAR_MONTHS[currentMonthIdx + 1].key);
       setSelectedDay(1);
     }
   };
 
   // ---------------------------------------------------------------------------
-  // CALENDAR DAYS GENERATOR (Dynamic for selected month)
+  // CALENDAR DAYS GENERATOR (Dynamic for all 12 months)
   // ---------------------------------------------------------------------------
   const { calendarCells, startDayOffset } = useMemo(() => {
     const year = currentMonth.year;
@@ -137,14 +148,14 @@ export const AttendanceView: React.FC = () => {
         status = 'holiday';
       } else if (currentMonth.key === '2026-11') {
         if (d === 26) {
-          // Today: If student has present attendance, mark present
+          // Today: Present if student has verified present scan
           status = presentCount > 0 ? 'present' : 'none';
         } else if (d > 26) {
           status = 'future';
         } else {
           status = 'none';
         }
-      } else if (currentMonth.monthIndex > 10) {
+      } else if (currentMonth.year > 2026 || (currentMonth.year === 2026 && currentMonth.monthIndex > 10)) {
         status = 'future';
       } else {
         status = 'none';
@@ -177,7 +188,7 @@ export const AttendanceView: React.FC = () => {
         color = 'text-amber-700 bg-amber-50 border-amber-200';
       }
     } else if (found.status === 'future') {
-      label = 'Upcoming Working Day';
+      label = 'Scheduled Upcoming Lecture';
       color = 'text-blue-700 bg-blue-50 border-blue-200';
     }
 
@@ -194,15 +205,26 @@ export const AttendanceView: React.FC = () => {
   return (
     <div className="w-full min-h-full p-4 space-y-4 bg-slate-50 font-sans pb-12">
       {/* =========================================================================
-          1. TOP HERO CARD: CIRCULAR GAUGE & OVERALL STANDING
+          1. TOP HERO CARD: ACADEMIC YEAR (ANNUAL) ATTENDANCE
          ========================================================================= */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm relative overflow-hidden">
-        {/* Soft decorative background blurs */}
+        {/* Academic Year Header Chip */}
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-1.5 text-blue-900 font-extrabold text-xs">
+            <GraduationCap className="w-4 h-4 text-blue-700" />
+            <span>Academic Year 2026 - 2027</span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-full">
+            Full Year Session
+          </span>
+        </div>
+
+        {/* Ambient background blurs */}
         <div className="absolute -top-12 -right-12 w-36 h-36 bg-emerald-100/50 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-teal-100/40 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex items-center justify-between">
-          {/* Left: Circular Percentage Ring */}
+          {/* Left: Circular Percentage Ring (Full Academic Year) */}
           <div className="relative w-[96px] h-[96px] shrink-0 flex items-center justify-center">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
               {/* Background Track Circle */}
@@ -230,7 +252,7 @@ export const AttendanceView: React.FC = () => {
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
               <span className="text-2xl font-black text-slate-900 tracking-tight">
-                {monthPercentage}%
+                {overallPercentage}%
               </span>
             </div>
           </div>
@@ -238,14 +260,14 @@ export const AttendanceView: React.FC = () => {
           {/* Subtle Vertical Divider */}
           <div className="w-px h-16 bg-slate-200/80 mx-3 sm:mx-5 shrink-0" />
 
-          {/* Right: Attendance Standing & Details */}
+          {/* Right: Academic Year Standing & Details */}
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <span className="text-xs font-semibold text-slate-500">
-              Overall Attendance
+              Academic Year Attendance
             </span>
 
             <div className="flex items-center space-x-1.5 mt-1">
-              {monthTotal === 0 ? (
+              {totalClasses === 0 ? (
                 <>
                   <Clock className="w-5 h-5 text-slate-400 shrink-0" />
                   <span className="text-base sm:text-lg font-bold text-slate-700 tracking-tight truncate">
@@ -277,15 +299,15 @@ export const AttendanceView: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 font-medium mt-1 truncate">
-              {monthPresent} attended out of {monthTotal} class
-              {monthTotal === 1 ? '' : 'es'}
+              {presentCount} attended out of {totalClasses} class
+              {totalClasses === 1 ? '' : 'es'}
             </p>
           </div>
         </div>
       </div>
 
       {/* =========================================================================
-          2. THREE COUNTER PILLS: PRESENT, ABSENT, LATE (REAL NUMBERS)
+          2. THREE COUNTER PILLS: PRESENT, ABSENT, LATE (ACADEMIC YEAR TOTALS)
          ========================================================================= */}
       <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
         {/* Present Card */}
@@ -405,19 +427,24 @@ export const AttendanceView: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          4. ATTENDANCE CALENDAR (INTERACTIVE MONTH NAVIGATOR)
+          4. ATTENDANCE CALENDAR (ALL 12 MONTHS OF ACADEMIC YEAR 2026-2027)
          ========================================================================= */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5 relative">
         {/* Calendar Header with Left/Right Arrows & Month Selector Pill */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-slate-900 stroke-[2.2]" />
-            <h3 className="font-extrabold text-sm text-slate-900">
-              Attendance Calendar
-            </h3>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                Attendance Calendar
+              </h3>
+              <p className="text-[10px] text-slate-400 font-medium">
+                {currentMonth.semester}
+              </p>
+            </div>
           </div>
 
-          {/* Month Selector Pill with Arrow Navigation */}
+          {/* Month Selector Pill with 12-Month Arrow Navigation */}
           <div className="flex items-center space-x-1">
             <button
               type="button"
@@ -441,7 +468,7 @@ export const AttendanceView: React.FC = () => {
             <button
               type="button"
               onClick={handleNextMonth}
-              disabled={currentMonthIdx === ACADEMIC_MONTHS.length - 1}
+              disabled={currentMonthIdx === ACADEMIC_YEAR_MONTHS.length - 1}
               className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 text-slate-600 transition-colors"
               title="Next Month"
             >
@@ -450,30 +477,64 @@ export const AttendanceView: React.FC = () => {
           </div>
         </div>
 
-        {/* Month Selector Dropdown Menu */}
+        {/* 12-Month Academic Year Dropdown Menu */}
         {showMonthDropdown && (
-          <div className="absolute top-14 right-4 z-30 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 w-48 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Select Semester Month
+          <div className="absolute top-14 right-4 z-30 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 w-56 max-h-72 overflow-y-auto space-y-1 animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-2.5 py-1 text-[10px] font-bold text-blue-900 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+              <span>Academic Year 2026-27</span>
+              <span>12 Months</span>
             </div>
-            {ACADEMIC_MONTHS.map((m) => (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() => {
-                  setSelectedMonthKey(m.key);
-                  setSelectedDay(1);
-                  setShowMonthDropdown(false);
-                }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                  m.key === selectedMonthKey
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span>{m.name}</span>
-              </button>
-            ))}
+
+            <div className="pt-1">
+              <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                Odd Semester (Term 1)
+              </div>
+              {ACADEMIC_YEAR_MONTHS.slice(0, 6).map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMonthKey(m.key);
+                    setSelectedDay(1);
+                    setShowMonthDropdown(false);
+                  }}
+                  className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                    m.key === selectedMonthKey
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>{m.name}</span>
+                  {m.key === '2026-11' && (
+                    <span className="text-[9px] font-bold opacity-90 bg-white/20 px-1.5 py-0.5 rounded">
+                      Current
+                    </span>
+                  )}
+                </button>
+              ))}
+
+              <div className="px-2 pt-2 pb-0.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider border-t border-slate-100 mt-1">
+                Even Semester (Term 2)
+              </div>
+              {ACADEMIC_YEAR_MONTHS.slice(6).map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMonthKey(m.key);
+                    setSelectedDay(1);
+                    setShowMonthDropdown(false);
+                  }}
+                  className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                    m.key === selectedMonthKey
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>{m.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
