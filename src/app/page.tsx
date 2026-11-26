@@ -115,7 +115,7 @@ export default function Home() {
 
   const renderActiveMobileScreen = () => {
     // Unauthenticated guard: Any logout or unauthenticated session redirects to LoginScreen
-    if (!isAuthenticated && activeScreen !== 'splash') {
+    if (!isAuthenticated) {
       return <LoginScreen />;
     }
 

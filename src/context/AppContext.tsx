@@ -240,20 +240,27 @@ interface AppContextType {
   openChatWithTeacher: (faculty: FacultyRecord) => void;
 }
 
+const EMPTY_USER: UserProfile = {
+  id: '',
+  name: '',
+  email: '',
+  role: 'student',
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRoleState] = useState<UserRole>('student');
-  const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_STUDENT_USER);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(EMPTY_USER);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authLoading, setAuthLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [activeScreen, setActiveScreenState] = useState<MobileScreen>('dashboard');
+  const [activeScreen, setActiveScreenState] = useState<MobileScreen>('login');
   const [isDrawerOpen, setIsDrawerOpenState] = useState<boolean>(false);
   const [backExitToast, setBackExitToast] = useState<boolean>(false);
 
-  const activeScreenRef = useRef<MobileScreen>('dashboard');
+  const activeScreenRef = useRef<MobileScreen>('login');
   activeScreenRef.current = activeScreen;
 
   const isDrawerOpenRef = useRef<boolean>(false);
@@ -712,11 +719,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Restore saved session on client mount
   useEffect(() => {
+    let sessionRestored = false;
     try {
       const savedSession = localStorage.getItem('smart_campus_session');
       if (savedSession) {
         const sessionData = JSON.parse(savedSession);
-        if (sessionData && sessionData.user) {
+        if (sessionData && sessionData.user && sessionData.user.id && sessionData.user.id !== 'STU-EMPTY') {
           const user = { ...sessionData.user };
           if (user.role === 'faculty') {
             if (!user.designation) user.designation = 'Assistant Professor';
@@ -730,7 +738,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             // Ensure faculty is in facultyList so Admin sees them
             setFacultyList((prev) => {
               const exists = prev.some(
-                (f) => f.id === user.id || f.name.toLowerCase() === user.name.toLowerCase()
+                (f) => f.id === user.id || f.name?.toLowerCase() === user.name?.toLowerCase()
               );
               if (!exists) {
                 const facRec: FacultyRecord = {
@@ -755,15 +763,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentUser(user);
           setRoleState(user.role);
           setIsAuthenticated(true);
+          setActiveScreenState('dashboard');
+          if (user.role === 'admin') {
+            setViewMode('desktop');
+          }
+          sessionRestored = true;
         }
       }
     } catch (e) {
       console.warn("Session restore error", e);
     }
 
+    if (!sessionRestored) {
+      setIsAuthenticated(false);
+      setActiveScreenState('login');
+      setCurrentUser(EMPTY_USER);
+    }
+
     const unsubscribeAuth = subscribeToAuthState((firebaseUser) => {
       if (firebaseUser) {
         setIsAuthenticated(true);
+      } else {
+        const hasSession = typeof window !== 'undefined' ? localStorage.getItem('smart_campus_session') : null;
+        if (!hasSession) {
+          setIsAuthenticated(false);
+          setActiveScreenState('login');
+          setCurrentUser(EMPTY_USER);
+        }
       }
     });
 
@@ -927,6 +953,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Realtime Student Attendance Subscription from Cloud Firestore
   useEffect(() => {
+    if (!isAuthenticated || currentUser.role !== 'student' || !currentUser.id) return;
+
     const studentMatch = students.find(
       (s) =>
         s.id === currentUser.id ||
@@ -1117,8 +1145,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) { }
     }
 
-    // 2. Set authentication to false
+    // 2. Set authentication to false and reset user
     setIsAuthenticated(false);
+    setCurrentUser(EMPTY_USER);
 
     // 3. Reset viewMode to 'mobile' (so Admin Portal immediately closes)
     setViewMode('mobile');
