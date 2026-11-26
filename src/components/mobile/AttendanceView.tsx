@@ -8,7 +8,6 @@ import {
   X,
   Clock,
   BarChart2,
-  ArrowRight,
   Calendar,
   ChevronDown,
   ChevronLeft,
@@ -17,171 +16,105 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-interface MonthMeta {
+interface AcademicMonth {
   key: string;
   name: string;
-  shortName: string;
   year: number;
-  monthIndex: number; // 0 = Jan, 10 = Nov
-  totalDays: number;
-  totalClasses: number;
-  present: number;
-  absent: number;
-  late: number;
-  percentage: number;
+  monthIndex: number; // 0-based: 6=July, 10=Nov
 }
+
+const ACADEMIC_MONTHS: AcademicMonth[] = [
+  { key: '2026-07', name: 'July 2026', year: 2026, monthIndex: 6 },
+  { key: '2026-08', name: 'August 2026', year: 2026, monthIndex: 7 },
+  { key: '2026-09', name: 'September 2026', year: 2026, monthIndex: 8 },
+  { key: '2026-10', name: 'October 2026', year: 2026, monthIndex: 9 },
+  { key: '2026-11', name: 'November 2026', year: 2026, monthIndex: 10 },
+  { key: '2026-12', name: 'December 2026', year: 2026, monthIndex: 11 },
+];
 
 export const AttendanceView: React.FC = () => {
   const { attendance, currentUser } = useApp();
 
-  // Selected Month state (Default to current month: November 2026)
+  // Active Month (Default to current month: November 2026)
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('2026-11');
   const [selectedDay, setSelectedDay] = useState<number>(26); // Default 26th
   const [showMonthDropdown, setShowMonthDropdown] = useState<boolean>(false);
-  const [showAllSubjects, setShowAllSubjects] = useState<boolean>(false);
 
-  // ---------------------------------------------------------------------------
-  // ALL SEMESTER MONTHS DATA (July 2026 to December 2026)
-  // ---------------------------------------------------------------------------
-  const semesterMonths: MonthMeta[] = useMemo(() => {
-    // Current live data from attendance context (for November 2026)
-    const novPresent = Math.max(1, attendance.present || 1);
-    const novAbsent = attendance.absent || 0;
-    const novLate = attendance.late || 0;
-    const novTotal = Math.max(novPresent + novAbsent + novLate, attendance.totalClasses || 1);
-    const novPct = Math.round((novPresent / novTotal) * 100);
+  // Real attendance metrics directly from Firestore / AppContext
+  const presentCount = attendance.present || 0;
+  const absentCount = attendance.absent || 0;
+  const lateCount = attendance.late || 0;
+  const totalClasses =
+    attendance.totalClasses !== undefined && attendance.totalClasses !== null
+      ? attendance.totalClasses
+      : presentCount + absentCount + lateCount;
 
-    return [
-      {
-        key: '2026-07',
-        name: 'July 2026',
-        shortName: 'Jul',
-        year: 2026,
-        monthIndex: 6,
-        totalDays: 31,
-        totalClasses: 24,
-        present: 23,
-        absent: 1,
-        late: 0,
-        percentage: 96,
-      },
-      {
-        key: '2026-08',
-        name: 'August 2026',
-        shortName: 'Aug',
-        year: 2026,
-        monthIndex: 7,
-        totalDays: 31,
-        totalClasses: 26,
-        present: 24,
-        absent: 2,
-        late: 0,
-        percentage: 92,
-      },
-      {
-        key: '2026-09',
-        name: 'September 2026',
-        shortName: 'Sep',
-        year: 2026,
-        monthIndex: 8,
-        totalDays: 30,
-        totalClasses: 25,
-        present: 23,
-        absent: 1,
-        late: 1,
-        percentage: 92,
-      },
-      {
-        key: '2026-10',
-        name: 'October 2026',
-        shortName: 'Oct',
-        year: 2026,
-        monthIndex: 9,
-        totalDays: 31,
-        totalClasses: 25,
-        present: 22,
-        absent: 3,
-        late: 0,
-        percentage: 88,
-      },
-      {
-        key: '2026-11',
-        name: 'November 2026',
-        shortName: 'Nov',
-        year: 2026,
-        monthIndex: 10,
-        totalDays: 30,
-        totalClasses: novTotal,
-        present: novPresent,
-        absent: novAbsent,
-        late: novLate,
-        percentage: novPct,
-      },
-      {
-        key: '2026-12',
-        name: 'December 2026',
-        shortName: 'Dec',
-        year: 2026,
-        monthIndex: 11,
-        totalDays: 31,
-        totalClasses: 0,
-        present: 0,
-        absent: 0,
-        late: 0,
-        percentage: 0,
-      },
-    ];
-  }, [attendance]);
+  const overallPercentage =
+    attendance.overallPercentage !== undefined && attendance.overallPercentage !== null
+      ? Math.min(100, Math.max(0, attendance.overallPercentage))
+      : totalClasses > 0
+      ? Math.min(100, Math.round((presentCount / totalClasses) * 100))
+      : 0;
 
-  // Current active month object
-  const currentMonthData = useMemo(() => {
+  // Selected Month metadata
+  const currentMonth = useMemo(() => {
     return (
-      semesterMonths.find((m) => m.key === selectedMonthKey) ||
-      semesterMonths[4] // Fallback to November 2026
+      ACADEMIC_MONTHS.find((m) => m.key === selectedMonthKey) ||
+      ACADEMIC_MONTHS[4] // Default: November 2026
     );
-  }, [selectedMonthKey, semesterMonths]);
+  }, [selectedMonthKey]);
 
-  // Display metrics based on selected month
-  const displayMetrics = {
-    present: currentMonthData.present,
-    absent: currentMonthData.absent,
-    late: currentMonthData.late,
-    totalClasses: currentMonthData.totalClasses,
-    percentage: currentMonthData.percentage,
-  };
+  const isCurrentMonth = currentMonth.key === '2026-11';
+
+  // Check if monthlyTrend from Firestore has data for the selected month
+  const monthTrendRecord = useMemo(() => {
+    if (!attendance.monthlyTrend || attendance.monthlyTrend.length === 0) return null;
+    return attendance.monthlyTrend.find(
+      (m) =>
+        m.month.toLowerCase().includes(currentMonth.name.split(' ')[0].toLowerCase()) ||
+        m.month === currentMonth.key
+    );
+  }, [attendance.monthlyTrend, currentMonth]);
+
+  // Display metrics for the selected month (Pure real data)
+  const monthPercentage = isCurrentMonth
+    ? overallPercentage
+    : monthTrendRecord
+    ? monthTrendRecord.percentage
+    : 0;
+
+  const monthTotal = isCurrentMonth ? totalClasses : 0;
+  const monthPresent = isCurrentMonth ? presentCount : 0;
 
   // Circular Gauge Calculations
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
-  const gaugePct = Math.min(100, Math.max(0, displayMetrics.percentage || 0));
-  const strokeDashoffset = circumference - (gaugePct / 100) * circumference;
+  const strokeDashoffset = circumference - (monthPercentage / 100) * circumference;
 
-  const isGoodStanding = gaugePct >= 75;
-  const isAverage = gaugePct >= 60 && gaugePct < 75;
+  const isGoodStanding = monthTotal > 0 && monthPercentage >= 75;
+  const isAverage = monthTotal > 0 && monthPercentage >= 60 && monthPercentage < 75;
 
   // Month navigation helpers
-  const currentMonthIdx = semesterMonths.findIndex((m) => m.key === selectedMonthKey);
+  const currentMonthIdx = ACADEMIC_MONTHS.findIndex((m) => m.key === selectedMonthKey);
   const handlePrevMonth = () => {
     if (currentMonthIdx > 0) {
-      const prev = semesterMonths[currentMonthIdx - 1];
-      setSelectedMonthKey(prev.key);
+      setSelectedMonthKey(ACADEMIC_MONTHS[currentMonthIdx - 1].key);
       setSelectedDay(1);
     }
   };
   const handleNextMonth = () => {
-    if (currentMonthIdx < semesterMonths.length - 1) {
-      const next = semesterMonths[currentMonthIdx + 1];
-      setSelectedMonthKey(next.key);
+    if (currentMonthIdx < ACADEMIC_MONTHS.length - 1) {
+      setSelectedMonthKey(ACADEMIC_MONTHS[currentMonthIdx + 1].key);
       setSelectedDay(1);
     }
   };
 
   // ---------------------------------------------------------------------------
-  // CALENDAR DAYS GENERATOR FOR SELECTED MONTH
+  // CALENDAR DAYS GENERATOR (Dynamic for selected month)
   // ---------------------------------------------------------------------------
   const { calendarCells, startDayOffset } = useMemo(() => {
-    const year = currentMonthData.year;
-    const month = currentMonthData.monthIndex;
+    const year = currentMonth.year;
+    const month = currentMonth.monthIndex;
     const totalDays = new Date(year, month + 1, 0).getDate();
 
     // Monday-based day of week for 1st of month: 0=Mon, 1=Tue, ..., 6=Sun
@@ -191,73 +124,60 @@ export const AttendanceView: React.FC = () => {
     const cells: {
       day: number;
       isSunday: boolean;
-      status: 'present' | 'absent' | 'late' | 'holiday' | 'future';
+      status: 'present' | 'absent' | 'late' | 'holiday' | 'none' | 'future';
     }[] = [];
 
     for (let d = 1; d <= totalDays; d++) {
       const dateObj = new Date(year, month, d);
       const isSunday = dateObj.getDay() === 0;
 
-      let status: 'present' | 'absent' | 'late' | 'holiday' | 'future' = 'present';
+      let status: 'present' | 'absent' | 'late' | 'holiday' | 'none' | 'future' = 'none';
 
-      if (currentMonthData.key === '2026-12') {
-        status = 'future';
-      } else if (isSunday) {
+      if (isSunday) {
         status = 'holiday';
-      } else if (currentMonthData.key === '2026-11') {
+      } else if (currentMonth.key === '2026-11') {
         if (d === 26) {
-          status = 'present'; // Verified marked present today
+          // Today: If student has present attendance, mark present
+          status = presentCount > 0 ? 'present' : 'none';
         } else if (d > 26) {
           status = 'future';
-        } else if (d === 14) {
-          status = 'absent';
-        } else if (d === 19) {
-          status = 'late';
         } else {
-          status = 'present';
+          status = 'none';
         }
-      } else if (currentMonthData.key === '2026-10') {
-        if (d === 5 || d === 12 || d === 20) status = 'absent';
-        else status = 'present';
-      } else if (currentMonthData.key === '2026-09') {
-        if (d === 11) status = 'absent';
-        else if (d === 24) status = 'late';
-        else status = 'present';
-      } else if (currentMonthData.key === '2026-08') {
-        if (d === 15) status = 'holiday'; // Independence Day
-        else if (d === 18 || d === 25) status = 'absent';
-        else status = 'present';
-      } else if (currentMonthData.key === '2026-07') {
-        if (d === 22) status = 'absent';
-        else status = 'present';
+      } else if (currentMonth.monthIndex > 10) {
+        status = 'future';
+      } else {
+        status = 'none';
       }
 
       cells.push({ day: d, isSunday, status });
     }
 
     return { calendarCells: cells, startDayOffset: offset };
-  }, [currentMonthData]);
+  }, [currentMonth, presentCount]);
 
   // Selected Day Details
   const selectedDayInfo = useMemo(() => {
     const found = calendarCells.find((c) => c.day === selectedDay);
     if (!found) return null;
 
-    const dateStr = `${selectedDay} ${currentMonthData.name}`;
-    let label = 'Present (Verified by Class Teacher QR Scan)';
-    let color = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+    const dateStr = `${selectedDay} ${currentMonth.name}`;
+    let label = 'No Attendance Recorded';
+    let color = 'text-slate-700 bg-slate-100 border-slate-200';
 
-    if (found.status === 'holiday') {
-      label = found.isSunday ? 'Sunday (College Holiday)' : 'Institutional Holiday';
+    if (found.isSunday) {
+      label = 'Sunday (College Holiday)';
       color = 'text-slate-700 bg-slate-100 border-slate-200';
-    } else if (found.status === 'absent') {
-      label = 'Absent (Class Teacher Scan Missed)';
-      color = 'text-rose-700 bg-rose-50 border-rose-200';
-    } else if (found.status === 'late') {
-      label = 'Late Attendance Recorded';
-      color = 'text-amber-700 bg-amber-50 border-amber-200';
+    } else if (currentMonth.key === '2026-11' && selectedDay === 26) {
+      if (presentCount > 0) {
+        label = 'Present (Verified by Class Teacher QR Scanner)';
+        color = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      } else {
+        label = 'Today (Awaiting Class Teacher QR Scan)';
+        color = 'text-amber-700 bg-amber-50 border-amber-200';
+      }
     } else if (found.status === 'future') {
-      label = 'Scheduled Upcoming Lecture';
+      label = 'Upcoming Working Day';
       color = 'text-blue-700 bg-blue-50 border-blue-200';
     }
 
@@ -267,24 +187,9 @@ export const AttendanceView: React.FC = () => {
       label,
       color,
     };
-  }, [calendarCells, selectedDay, currentMonthData]);
+  }, [calendarCells, selectedDay, currentMonth, presentCount]);
 
-  // Subjects fallback
   const programName = currentUser.course || 'B.Sc Computer Science';
-  const subjectsList =
-    attendance.subjectWise && attendance.subjectWise.length > 0
-      ? attendance.subjectWise
-      : [
-          {
-            subjectName: programName,
-            subjectCode: 'CS-UG',
-            attended: displayMetrics.present || 1,
-            total: displayMetrics.totalClasses || 1,
-            percentage: displayMetrics.percentage || 100,
-          },
-        ];
-
-  const displayedSubjects = showAllSubjects ? subjectsList : subjectsList.slice(0, 3);
 
   return (
     <div className="w-full min-h-full p-4 space-y-4 bg-slate-50 font-sans pb-12">
@@ -292,7 +197,7 @@ export const AttendanceView: React.FC = () => {
           1. TOP HERO CARD: CIRCULAR GAUGE & OVERALL STANDING
          ========================================================================= */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm relative overflow-hidden">
-        {/* Ambient blurs matching reference mockup */}
+        {/* Soft decorative background blurs */}
         <div className="absolute -top-12 -right-12 w-36 h-36 bg-emerald-100/50 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-teal-100/40 rounded-full blur-2xl pointer-events-none" />
 
@@ -325,7 +230,7 @@ export const AttendanceView: React.FC = () => {
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
               <span className="text-2xl font-black text-slate-900 tracking-tight">
-                {gaugePct}%
+                {monthPercentage}%
               </span>
             </div>
           </div>
@@ -340,7 +245,14 @@ export const AttendanceView: React.FC = () => {
             </span>
 
             <div className="flex items-center space-x-1.5 mt-1">
-              {isGoodStanding ? (
+              {monthTotal === 0 ? (
+                <>
+                  <Clock className="w-5 h-5 text-slate-400 shrink-0" />
+                  <span className="text-base sm:text-lg font-bold text-slate-700 tracking-tight truncate">
+                    No Attendance Logged
+                  </span>
+                </>
+              ) : isGoodStanding ? (
                 <>
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <span className="text-base sm:text-lg font-bold text-emerald-600 tracking-tight truncate">
@@ -365,15 +277,15 @@ export const AttendanceView: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 font-medium mt-1 truncate">
-              {displayMetrics.present} attended out of {displayMetrics.totalClasses} class
-              {displayMetrics.totalClasses === 1 ? '' : 'es'}
+              {monthPresent} attended out of {monthTotal} class
+              {monthTotal === 1 ? '' : 'es'}
             </p>
           </div>
         </div>
       </div>
 
       {/* =========================================================================
-          2. THREE COUNTER PILLS: PRESENT, ABSENT, LATE
+          2. THREE COUNTER PILLS: PRESENT, ABSENT, LATE (REAL NUMBERS)
          ========================================================================= */}
       <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
         {/* Present Card */}
@@ -382,7 +294,7 @@ export const AttendanceView: React.FC = () => {
             <Check className="w-5 h-5 stroke-[2.8]" />
           </div>
           <span className="text-xl font-black text-slate-900 mt-2 leading-none">
-            {displayMetrics.present}
+            {presentCount}
           </span>
           <span className="text-xs font-medium text-slate-500 mt-1">
             Present
@@ -395,7 +307,7 @@ export const AttendanceView: React.FC = () => {
             <X className="w-5 h-5 stroke-[2.8]" />
           </div>
           <span className="text-xl font-black text-slate-900 mt-2 leading-none">
-            {displayMetrics.absent}
+            {absentCount}
           </span>
           <span className="text-xs font-medium text-slate-500 mt-1">
             Absent
@@ -408,7 +320,7 @@ export const AttendanceView: React.FC = () => {
             <Clock className="w-5 h-5 stroke-[2.8]" />
           </div>
           <span className="text-xl font-black text-slate-900 mt-2 leading-none">
-            {displayMetrics.late}
+            {lateCount}
           </span>
           <span className="text-xs font-medium text-slate-500 mt-1">
             Late
@@ -427,46 +339,69 @@ export const AttendanceView: React.FC = () => {
               Subject-Wise Breakdown
             </h3>
           </div>
-
-          {subjectsList.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setShowAllSubjects(!showAllSubjects)}
-              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition-colors"
-            >
-              <span>{showAllSubjects ? 'View Less' : 'View All'}</span>
-              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
-          )}
         </div>
 
-        <div className="space-y-4 pt-1">
-          {displayedSubjects.map((sub, idx) => (
-            <div key={idx} className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-900 truncate pr-2">
-                  {sub.subjectName}
-                </span>
-                <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0">
-                  {sub.percentage}%
-                </span>
-              </div>
+        {/* If real subjectWise records exist in attendance */}
+        {attendance.subjectWise && attendance.subjectWise.length > 0 ? (
+          <div className="space-y-4 pt-1">
+            {attendance.subjectWise.map((sub, idx) => (
+              <div key={idx} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-slate-900 truncate pr-2">
+                    {sub.subjectName}
+                  </span>
+                  <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0">
+                    {sub.percentage}%
+                  </span>
+                </div>
 
-              {/* classes count */}
-              <div className="text-[11px] text-slate-400 font-medium text-right -mt-0.5">
-                {sub.attended}/{sub.total} Classes
-              </div>
+                <div className="text-[11px] text-slate-400 font-medium text-right -mt-0.5">
+                  {sub.attended}/{sub.total} Classes
+                </div>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.min(100, sub.percentage)}%` }}
-                />
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(100, sub.percentage)}%` }}
+                  />
+                </div>
               </div>
+            ))}
+          </div>
+        ) : totalClasses > 0 ? (
+          /* Single enrolled course view with real attendance */
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-900 truncate pr-2">
+                {programName}
+              </span>
+              <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0">
+                {overallPercentage}%
+              </span>
             </div>
-          ))}
-        </div>
+
+            <div className="text-[11px] text-slate-400 font-medium text-right -mt-0.5">
+              {presentCount}/{totalClasses} Classes
+            </div>
+
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full rounded-full transition-all duration-700"
+                style={{ width: `${overallPercentage}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          /* Clean empty state when no lecture has been scanned yet */
+          <div className="py-3 text-center space-y-1">
+            <p className="text-xs font-bold text-slate-700">
+              {programName}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              No lecture sessions recorded yet. Attendance will update automatically when your Class Teacher scans your QR Pass.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* =========================================================================
@@ -499,14 +434,14 @@ export const AttendanceView: React.FC = () => {
               onClick={() => setShowMonthDropdown(!showMonthDropdown)}
               className="px-2.5 py-1 bg-teal-50/90 hover:bg-teal-100/90 border border-teal-200/60 rounded-xl text-xs font-bold text-teal-800 flex items-center space-x-1 shadow-2xs transition-all active:scale-95"
             >
-              <span>{currentMonthData.name}</span>
+              <span>{currentMonth.name}</span>
               <ChevronDown className="w-3.5 h-3.5 text-teal-700" />
             </button>
 
             <button
               type="button"
               onClick={handleNextMonth}
-              disabled={currentMonthIdx === semesterMonths.length - 1}
+              disabled={currentMonthIdx === ACADEMIC_MONTHS.length - 1}
               className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 text-slate-600 transition-colors"
               title="Next Month"
             >
@@ -521,7 +456,7 @@ export const AttendanceView: React.FC = () => {
             <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Select Semester Month
             </div>
-            {semesterMonths.map((m) => (
+            {ACADEMIC_MONTHS.map((m) => (
               <button
                 key={m.key}
                 type="button"
@@ -537,7 +472,6 @@ export const AttendanceView: React.FC = () => {
                 }`}
               >
                 <span>{m.name}</span>
-                <span className="text-[10px] opacity-80">{m.percentage}%</span>
               </button>
             ))}
           </div>
@@ -563,20 +497,19 @@ export const AttendanceView: React.FC = () => {
 
           {/* Actual Month Days */}
           {calendarCells.map((cell) => {
-            const isToday = currentMonthData.key === '2026-11' && cell.day === 26;
+            const isToday = currentMonth.key === '2026-11' && cell.day === 26;
             const isSelected = cell.day === selectedDay;
 
             let statusBg = 'text-slate-700 hover:bg-slate-100';
             if (isToday) {
-              statusBg = 'bg-[#a7f3d0] text-emerald-950 font-extrabold shadow-2xs';
+              statusBg =
+                presentCount > 0
+                  ? 'bg-[#a7f3d0] text-emerald-950 font-extrabold shadow-2xs'
+                  : 'bg-blue-50 text-blue-900 font-extrabold ring-1 ring-blue-400/60';
             } else if (isSelected) {
-              statusBg = 'bg-blue-100 text-blue-900 font-extrabold ring-2 ring-blue-500/50';
+              statusBg = 'bg-slate-200 text-slate-900 font-bold';
             } else if (cell.status === 'holiday') {
               statusBg = 'text-slate-400 hover:bg-slate-100';
-            } else if (cell.status === 'absent') {
-              statusBg = 'bg-rose-50 text-rose-700 font-semibold';
-            } else if (cell.status === 'late') {
-              statusBg = 'bg-amber-50 text-amber-700 font-semibold';
             }
 
             return (
@@ -587,19 +520,9 @@ export const AttendanceView: React.FC = () => {
                 className={`h-9 w-9 mx-auto flex flex-col items-center justify-center text-xs rounded-xl transition-all relative ${statusBg}`}
               >
                 <span>{cell.day}</span>
-                {/* Status Dot under date */}
-                {!isToday && !isSelected && cell.status !== 'future' && (
-                  <span
-                    className={`w-1 h-1 rounded-full -mt-0.5 ${
-                      cell.status === 'present'
-                        ? 'bg-emerald-500'
-                        : cell.status === 'absent'
-                        ? 'bg-rose-500'
-                        : cell.status === 'late'
-                        ? 'bg-amber-400'
-                        : 'bg-transparent'
-                    }`}
-                  />
+                {/* Present Status Dot under date if marked present */}
+                {cell.status === 'present' && !isToday && (
+                  <span className="w-1 h-1 rounded-full -mt-0.5 bg-emerald-500" />
                 )}
               </button>
             );
