@@ -111,6 +111,116 @@ function matchesStudent(
   return false;
 }
 
+// Extract numeric millisecond timestamp for strict chronological ordering
+function getMessageTimestamp(msg?: ChatMessage | null): number {
+  if (!msg) return 0;
+  if (typeof msg.createdAt === 'number' && msg.createdAt > 0) {
+    return msg.createdAt;
+  }
+  const match = (msg.id || '').match(/\d{12,14}/);
+  if (match) {
+    const parsed = parseInt(match[0], 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 0;
+}
+
+// Format message bubble time cleanly in 12-hour AM/PM format (e.g. "4:25 PM")
+function formatMessageTime(msg: ChatMessage): string {
+  const ts = getMessageTimestamp(msg);
+  if (ts > 0) {
+    const d = new Date(ts);
+    return d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+  if (msg.timestamp) {
+    const m = msg.timestamp.match(/^(\d{1,2}):(\d{2})(\s*(AM|PM))?$/i);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const min = m[2];
+      const ampm = m[4];
+      if (!ampm) {
+        const suffix = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h}:${min} ${suffix}`;
+      }
+      return `${h}:${min} ${ampm.toUpperCase()}`;
+    }
+    return msg.timestamp;
+  }
+  return '';
+}
+
+// Format calendar date label for WhatsApp-style date separators ("Today", "Yesterday", "26 Nov 2026")
+function getMessageDateLabel(msg: ChatMessage): string {
+  const ts = getMessageTimestamp(msg);
+  if (ts <= 0) return '';
+  const d = new Date(ts);
+  const now = new Date();
+
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+
+  if (isToday) return 'Today';
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear();
+
+  if (isYesterday) return 'Yesterday';
+
+  return d.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  });
+}
+
+// Format inbox last message timestamp (e.g. "4:26 PM", "Yesterday", "26 Nov")
+function formatConversationTime(lastMsg?: ChatMessage): string {
+  if (!lastMsg) return '';
+  const ts = getMessageTimestamp(lastMsg);
+  if (ts <= 0) return formatMessageTime(lastMsg);
+  const d = new Date(ts);
+  const now = new Date();
+
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+
+  if (isToday) {
+    return d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear()
+  ) {
+    return 'Yesterday';
+  }
+
+  return d.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 export const ChatView: React.FC = () => {
   const {
     currentUser,
@@ -238,7 +348,7 @@ export const ChatView: React.FC = () => {
 
       return isFromMeToStudent || isFromStudentToMe;
     }
-  });
+  }).sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -319,8 +429,8 @@ export const ChatView: React.FC = () => {
 
     const result: StudentConversation[] = Array.from(conversationMap.values()).map(
       ({ student, messages }) => {
-        // Sort chronologically to find last message
-        const sorted = [...messages].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+        // Sort chronologically by numeric timestamp to find last message
+        const sorted = [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
         const lastMessage = sorted[sorted.length - 1];
         const unreadCount = sorted.filter(
           (m) =>
@@ -332,8 +442,8 @@ export const ChatView: React.FC = () => {
       }
     );
 
-    // Sort conversations: newest message first
-    return result.sort((a, b) => (b.lastMessage.id || '').localeCompare(a.lastMessage.id || ''));
+    // Sort conversations: newest conversation first
+    return result.sort((a, b) => getMessageTimestamp(b.lastMessage) - getMessageTimestamp(a.lastMessage));
   }, [chatMessages, isFaculty, currentUser, teacherFaculty, students, teacherClassName]);
 
   // Enrolled students belonging to teacher's class
@@ -526,39 +636,53 @@ export const ChatView: React.FC = () => {
 
           {/* Chat Messages */}
           {conversationMessages.length > 0 ? (
-            conversationMessages.map((msg) => {
+            conversationMessages.map((msg, index) => {
               const isMine = isStudent
                 ? matchesStudent(msg.senderId, msg.senderName, currentStudentRecord, currentUser)
                 : matchesFaculty(msg.senderId, msg.senderName, teacherFaculty, currentUser);
 
+              const dateLabel = getMessageDateLabel(msg);
+              const prevMsg = index > 0 ? conversationMessages[index - 1] : null;
+              const prevDateLabel = prevMsg ? getMessageDateLabel(prevMsg) : null;
+              const isNewDay = Boolean(dateLabel && dateLabel !== prevDateLabel);
+
               return (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
-                >
+                <React.Fragment key={msg.id}>
+                  {isNewDay && (
+                    <div className="flex items-center justify-center my-2.5">
+                      <span className="bg-slate-200/90 text-slate-700 font-semibold text-[10.5px] px-3 py-0.5 rounded-full shadow-2xs">
+                        {dateLabel}
+                      </span>
+                    </div>
+                  )}
+
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${isMine
+                    className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs transition-all ${isMine
                         ? 'bg-[#1d4ed8] text-white rounded-br-xs'
                         : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs shadow-sm'
-                      }`}
-                  >
-                    {!isMine && (
-                      <span className="text-[9.5px] font-bold text-blue-700 block mb-0.5">
-                        {msg.senderName}
-                      </span>
-                    )}
-
-                    <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-
-                    <div
-                      className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${isMine ? 'text-blue-200' : 'text-slate-400'
                         }`}
                     >
-                      <span>{msg.timestamp}</span>
-                      {isMine && <CheckCheck className="w-3 h-3 text-blue-300" />}
+                      {!isMine && (
+                        <span className="text-[9.5px] font-bold text-blue-700 block mb-0.5">
+                          {msg.senderName}
+                        </span>
+                      )}
+
+                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+
+                      <div
+                        className={`flex items-center justify-end space-x-1 text-[9.5px] mt-1 ${isMine ? 'text-blue-200' : 'text-slate-400'
+                          }`}
+                      >
+                        <span>{formatMessageTime(msg)}</span>
+                        {isMine && <CheckCheck className="w-3 h-3 text-blue-300" />}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </React.Fragment>
               );
             })
           ) : (
@@ -797,7 +921,7 @@ export const ChatView: React.FC = () => {
                             {student.name}
                           </h4>
                           <span className="text-[10px] font-medium text-slate-400 shrink-0">
-                            {lastMessage.timestamp}
+                            {formatConversationTime(lastMessage)}
                           </span>
                         </div>
 
@@ -817,8 +941,8 @@ export const ChatView: React.FC = () => {
                           )}
                           <p
                             className={`truncate text-[11px] ${unreadCount > 0 && !isSentByTeacher
-                                ? 'font-bold text-slate-900'
-                                : 'font-normal text-slate-500'
+                              ? 'font-bold text-slate-900'
+                              : 'font-normal text-slate-500'
                               }`}
                           >
                             {isSentByTeacher ? `You: ${lastMessage.text}` : lastMessage.text}

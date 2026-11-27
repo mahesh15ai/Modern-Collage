@@ -696,8 +696,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const receiverName = activeChatRecipient.name;
     const receiverRole = isGroupChannel ? 'group' : isStudent ? 'faculty' : 'student';
 
+    const now = Date.now();
+    const formattedTime = new Date(now).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
     const newMsg: ChatMessage = {
-      id: `MSG-${Date.now()}`,
+      id: `MSG-${now}`,
+      createdAt: now,
       senderId,
       senderName: isGroupChannel ? `${senderName} (Class Teacher)` : senderName,
       senderRole: isStudent ? 'student' : 'faculty',
@@ -706,7 +714,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       receiverRole,
       subjectName: isGroupChannel ? 'Official Class Announcement' : (subjectName || (activeChatRecipient as FacultyRecord).subjectsAssigned?.[0] || 'Academic Doubt'),
       text: text.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: formattedTime,
       isRead: false,
       isGroupMessage: Boolean(isGroupChannel),
       ...(isGroupChannel && receiverId ? { groupId: receiverId } : {}),
@@ -714,6 +722,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setChatMessages((prev) => {
       const updated = [...prev, newMsg];
+      updated.sort((a, b) => {
+        const tA = typeof a.createdAt === 'number' && a.createdAt > 0
+          ? a.createdAt
+          : parseInt((a.id || '').match(/\d{12,14}/)?.[0] || '0', 10);
+        const tB = typeof b.createdAt === 'number' && b.createdAt > 0
+          ? b.createdAt
+          : parseInt((b.id || '').match(/\d{12,14}/)?.[0] || '0', 10);
+        return tA - tB;
+      });
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('smart_campus_chat_messages', JSON.stringify(updated));

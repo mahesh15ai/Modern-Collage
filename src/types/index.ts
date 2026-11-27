@@ -334,6 +334,7 @@ export interface ChatMessage {
   receiverRole: 'student' | 'faculty' | 'group';
   text: string;
   timestamp: string;
+  createdAt?: number;
   subjectName?: string;
   isRead?: boolean;
   isGroupMessage?: boolean;

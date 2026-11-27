@@ -866,8 +866,16 @@ export function subscribeToChatMessages(
       q,
       (snapshot) => {
         const messages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ChatMessage));
-        // Sort chronologically by message ID (MSG-<timestamp>)
-        messages.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+        // Sort strictly chronologically by numeric timestamp
+        messages.sort((a, b) => {
+          const tA = typeof a.createdAt === 'number' && a.createdAt > 0
+            ? a.createdAt
+            : parseInt((a.id || '').match(/\d{12,14}/)?.[0] || '0', 10);
+          const tB = typeof b.createdAt === 'number' && b.createdAt > 0
+            ? b.createdAt
+            : parseInt((b.id || '').match(/\d{12,14}/)?.[0] || '0', 10);
+          return tA - tB;
+        });
         callback(messages);
       },
       (error) => {
