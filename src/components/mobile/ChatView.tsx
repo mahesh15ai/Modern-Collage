@@ -230,6 +230,7 @@ export const ChatView: React.FC = () => {
     activeChatRecipient,
     setActiveChatRecipient,
     sendChatMessage,
+    markMessagesAsRead,
   } = useApp();
 
   const [inputMessage, setInputMessage] = useState('');
@@ -354,6 +355,13 @@ export const ChatView: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationMessages]);
+
+  // Automatically mark incoming 1-on-1 messages as read while viewing the conversation
+  useEffect(() => {
+    if (activeChatRecipient && (activeChatRecipient as any).type !== 'group') {
+      markMessagesAsRead(activeChatRecipient);
+    }
+  }, [activeChatRecipient, conversationMessages.length, markMessagesAsRead]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -892,7 +900,10 @@ export const ChatView: React.FC = () => {
                 return (
                   <div
                     key={student.id || student.name}
-                    onClick={() => setActiveChatRecipient(student)}
+                    onClick={() => {
+                      setActiveChatRecipient(student);
+                      markMessagesAsRead(student);
+                    }}
                     className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer active:scale-[0.99]"
                   >
                     <div className="flex items-center space-x-3 min-w-0 flex-1 pr-2">
@@ -963,6 +974,7 @@ export const ChatView: React.FC = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveChatRecipient(student);
+                          markMessagesAsRead(student);
                         }}
                         className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-full text-xs font-bold flex items-center space-x-1 shadow-sm active:scale-95 transition-all"
                       >
@@ -1014,7 +1026,10 @@ export const ChatView: React.FC = () => {
                   (student) => (
                     <div
                       key={student.id || student.name}
-                      onClick={() => setActiveChatRecipient(student)}
+                      onClick={() => {
+                        setActiveChatRecipient(student);
+                        markMessagesAsRead(student);
+                      }}
                       className="bg-white rounded-xl border border-slate-100 shadow-2xs p-3 flex items-center justify-between hover:border-blue-200 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center space-x-2.5 min-w-0 flex-1 pr-2">
@@ -1044,6 +1059,7 @@ export const ChatView: React.FC = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveChatRecipient(student);
+                          markMessagesAsRead(student);
                         }}
                         className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-[#1d4ed8] border border-blue-200/80 rounded-full text-[11px] font-bold flex items-center space-x-1 shrink-0 transition-colors"
                       >
@@ -1131,7 +1147,10 @@ export const ChatView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => setActiveChatRecipient(classTeacher)}
+                  onClick={() => {
+                    setActiveChatRecipient(classTeacher);
+                    markMessagesAsRead(classTeacher);
+                  }}
                   className="px-3.5 py-1.5 bg-[#1d4ed8] hover:bg-blue-700 text-white rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 shadow-sm active:scale-95 transition-all"
                 >
                   <MessageSquare className="w-3.5 h-3.5 fill-white/20 text-white" />
@@ -1200,7 +1219,10 @@ export const ChatView: React.FC = () => {
 
                     <button
                       type="button"
-                      onClick={() => setActiveChatRecipient(faculty)}
+                      onClick={() => {
+                        setActiveChatRecipient(faculty);
+                        markMessagesAsRead(faculty);
+                      }}
                       className="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1d4ed8] border border-[#1d4ed8] rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 active:scale-95 transition-all"
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-[#1d4ed8]" />

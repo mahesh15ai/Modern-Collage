@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   UserProfile,
   UserRole,
@@ -84,6 +84,7 @@ import {
   deleteTimetableSlotFromFirestore,
   sendChatMessageToFirestore,
   subscribeToChatMessages,
+  markChatMessagesAsReadInFirestore,
 } from '@/services/firestoreService';
 
 export type MobileScreen =
@@ -236,10 +237,12 @@ interface AppContextType {
   payFees: (feeId: string) => void;
   // Realtime Academic Chat
   chatMessages: ChatMessage[];
+  unreadChatCount: number;
   activeChatRecipient: FacultyRecord | StudentRecord | ClassGroupChannel | null;
   setActiveChatRecipient: (recipient: FacultyRecord | StudentRecord | ClassGroupChannel | null) => void;
   sendChatMessage: (text: string, subjectName?: string) => Promise<void>;
   openChatWithTeacher: (faculty: FacultyRecord) => void;
+  markMessagesAsRead: (recipientOrSender: StudentRecord | FacultyRecord | ClassGroupChannel | string | string[] | any) => Promise<void>;
 }
 
 const EMPTY_USER: UserProfile = {
@@ -649,11 +652,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     activeChatRecipientRef.current = recipient;
   }, []);
 
-  const openChatWithTeacher = (faculty: FacultyRecord) => {
-    setActiveChatRecipient(faculty);
-    setActiveScreen('chat');
-  };
-
   const sendChatMessage = async (text: string, subjectName?: string): Promise<void> => {
     if (!text.trim() || !activeChatRecipient) return;
 
@@ -745,6 +743,191 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to send chat message to Firestore:', err);
     }
   };
+
+  const markMessagesAsRead = useCallback(
+    async (recipientOrSender: StudentRecord | FacultyRecord | ClassGroupChannel | string | string[] | any) => {
+      if (!recipientOrSender || !currentUser || !currentUser.id) return;
+
+      let explicitIds: string[] = [];
+      let targetId = '';
+      let targetName = '';
+      let targetRoll = '';
+      let targetEmail = '';
+
+      if (Array.isArray(recipientOrSender)) {
+        explicitIds = recipientOrSender;
+      } else if (typeof recipientOrSender === 'string') {
+        targetId = recipientOrSender;
+      } else {
+        if ((recipientOrSender as any).type === 'group') return;
+        targetId = (recipientOrSender as any).id || '';
+        targetName = (recipientOrSender as any).name || '';
+        targetRoll = (recipientOrSender as any).rollNo || '';
+        targetEmail = ((recipientOrSender as any).email || '').toLowerCase();
+      }
+
+      const isFaculty = currentUser.role === 'faculty';
+      const isStudent = currentUser.role === 'student';
+
+      const studentRecord = isStudent
+        ? students.find(
+            (s) =>
+              s.id === currentUser.id ||
+              (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+              (currentUser.rollNo && s.rollNo === currentUser.rollNo)
+          )
+        : null;
+
+      const facultyRecord = isFaculty
+        ? facultyList.find(
+            (f) =>
+              f.id === currentUser.id ||
+              (currentUser.email && f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@')) ||
+              (currentUser.name && f.name?.toLowerCase() === currentUser.name.toLowerCase())
+          )
+        : null;
+
+      const unreadIds: string[] = [];
+
+      setChatMessages((prev) => {
+        let changed = false;
+        const updated = prev.map((msg) => {
+          if (msg.isRead) return msg;
+          if (msg.isGroupMessage || msg.receiverRole === 'group') return msg;
+
+          if (explicitIds.length > 0) {
+            if (explicitIds.includes(msg.id)) {
+              changed = true;
+              unreadIds.push(msg.id);
+              return { ...msg, isRead: true };
+            }
+            return msg;
+          }
+
+          // Check if message was sent from target partner
+          const senderMatchesTarget =
+            (targetId && msg.senderId === targetId) ||
+            (targetRoll && msg.senderId === targetRoll) ||
+            (targetEmail && msg.senderId.toLowerCase() === targetEmail) ||
+            (targetName && (
+              msg.senderName?.toLowerCase().includes(targetName.toLowerCase()) ||
+              targetName.toLowerCase().includes(msg.senderName?.toLowerCase() || '') ||
+              (targetName.split(' ')[0].length > 2 && msg.senderName?.toLowerCase().startsWith(targetName.split(' ')[0].toLowerCase()))
+            ));
+
+          if (!senderMatchesTarget) return msg;
+
+          // Check if recipient is current user
+          const receiverMatchesMe = isFaculty
+            ? (
+                msg.receiverRole === 'faculty' ||
+                msg.receiverId === currentUser.id ||
+                (facultyRecord && (msg.receiverId === facultyRecord.id || msg.receiverId === facultyRecord.employeeId)) ||
+                (currentUser.email && msg.receiverId.toLowerCase() === currentUser.email.toLowerCase()) ||
+                (currentUser.name && (
+                  msg.receiverName?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+                  currentUser.name.toLowerCase().includes(msg.receiverName?.toLowerCase() || '')
+                ))
+              )
+            : (
+                msg.receiverRole === 'student' ||
+                msg.receiverId === currentUser.id ||
+                (studentRecord && (msg.receiverId === studentRecord.id || msg.receiverId === studentRecord.rollNo)) ||
+                (currentUser.email && msg.receiverId.toLowerCase() === currentUser.email.toLowerCase()) ||
+                (currentUser.name && (
+                  msg.receiverName?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+                  currentUser.name.toLowerCase().includes(msg.receiverName?.toLowerCase() || '')
+                ))
+              );
+
+          if (receiverMatchesMe) {
+            changed = true;
+            unreadIds.push(msg.id);
+            return { ...msg, isRead: true };
+          }
+          return msg;
+        });
+
+        if (!changed) return prev;
+
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('smart_campus_chat_messages', JSON.stringify(updated));
+          } catch (e) { }
+        }
+        return updated;
+      });
+
+      // Update in Firestore
+      if (unreadIds.length > 0) {
+        await markChatMessagesAsReadInFirestore(unreadIds);
+      }
+    },
+    [currentUser, students, facultyList]
+  );
+
+  const unreadChatCount = useMemo(() => {
+    if (!currentUser || !currentUser.id || currentUser.id === 'STU-EMPTY') return 0;
+    const isStudent = currentUser.role === 'student';
+    const isFaculty = currentUser.role === 'faculty';
+    if (!isStudent && !isFaculty) return 0;
+
+    const studentRecord = isStudent
+      ? students.find(
+          (s) =>
+            s.id === currentUser.id ||
+            (currentUser.email && s.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+            (currentUser.rollNo && s.rollNo === currentUser.rollNo)
+        )
+      : null;
+
+    const facultyRecord = isFaculty
+      ? facultyList.find(
+          (f) =>
+            f.id === currentUser.id ||
+            (currentUser.email && f.email?.toLowerCase().replace(/\.@/, '@') === currentUser.email.toLowerCase().replace(/\.@/, '@')) ||
+            (currentUser.name && f.name?.toLowerCase() === currentUser.name.toLowerCase())
+        )
+      : null;
+
+    return chatMessages.filter((msg) => {
+      if (msg.isRead) return false;
+      if (msg.isGroupMessage || msg.receiverRole === 'group') return false;
+
+      if (isFaculty) {
+        if (msg.senderRole !== 'student') return false;
+        const matchesId =
+          msg.receiverId === currentUser.id ||
+          (facultyRecord && (msg.receiverId === facultyRecord.id || msg.receiverId === facultyRecord.employeeId)) ||
+          (currentUser.email && msg.receiverId.toLowerCase() === currentUser.email.toLowerCase());
+        const matchesName =
+          currentUser.name &&
+          (msg.receiverName?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+            currentUser.name.toLowerCase().includes(msg.receiverName?.toLowerCase() || ''));
+        return matchesId || matchesName || msg.receiverRole === 'faculty';
+      } else {
+        if (msg.senderRole !== 'faculty') return false;
+        const matchesId =
+          msg.receiverId === currentUser.id ||
+          (studentRecord && (msg.receiverId === studentRecord.id || msg.receiverId === studentRecord.rollNo)) ||
+          (currentUser.email && msg.receiverId.toLowerCase() === currentUser.email.toLowerCase());
+        const matchesName =
+          currentUser.name &&
+          (msg.receiverName?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+            currentUser.name.toLowerCase().includes(msg.receiverName?.toLowerCase() || ''));
+        return matchesId || matchesName || msg.receiverRole === 'student';
+      }
+    }).length;
+  }, [chatMessages, currentUser, students, facultyList]);
+
+  const openChatWithTeacher = useCallback(
+    (faculty: FacultyRecord) => {
+      setActiveChatRecipient(faculty);
+      setActiveScreen('chat');
+      markMessagesAsRead(faculty);
+    },
+    [setActiveChatRecipient, markMessagesAsRead]
+  );
   const [dispatchedEmails, setDispatchedEmails] = useState<DispatchedEmail[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -1886,10 +2069,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         uploadMaterial,
         payFees,
         chatMessages,
+        unreadChatCount,
         activeChatRecipient,
         setActiveChatRecipient,
         sendChatMessage,
         openChatWithTeacher,
+        markMessagesAsRead,
       }}
     >
       {children}

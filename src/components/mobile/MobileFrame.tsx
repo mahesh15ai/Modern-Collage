@@ -59,6 +59,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
     fees,
     notices,
     unreadNoticesCount,
+    unreadChatCount,
     events,
     recordAttendance,
     isDrawerOpen,
@@ -123,7 +124,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           label: isFaculty ? 'Student Doubts & Queries' : 'Ask Subject / Class Teacher',
           icon: MessageSquare,
           screen: 'chat' as const,
-          badge: 'Live',
+          badge: unreadChatCount > 0 ? `${unreadChatCount} New` : null,
           color: 'text-blue-600 bg-blue-50',
         },
       ],
@@ -318,12 +319,20 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
               onClick={() => setActiveScreen('chat')}
               className="flex-1 flex flex-col items-center justify-center py-1 transition-all group active:scale-95"
             >
-              <MessageSquare
-                className={`w-6 h-6 transition-colors ${activeScreen === 'chat'
-                  ? 'text-[#2563eb] stroke-[2.4]'
-                  : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
-                  }`}
-              />
+              <div className="relative">
+                <MessageSquare
+                  className={`w-6 h-6 transition-colors ${activeScreen === 'chat'
+                    ? 'text-[#2563eb] stroke-[2.4]'
+                    : 'text-slate-400 group-hover:text-slate-600 stroke-[2]'
+                    }`}
+                />
+                {/* Red unread badge on Chat icon when unread messages exist */}
+                {unreadChatCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 bg-[#ef4444] text-white font-extrabold text-[9.5px] rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                    {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                  </span>
+                )}
+              </div>
               <span
                 className={`text-[11px] mt-0.5 leading-none transition-colors ${activeScreen === 'chat'
                   ? 'font-bold text-[#2563eb]'

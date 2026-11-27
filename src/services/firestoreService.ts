@@ -852,6 +852,22 @@ export async function sendChatMessageToFirestore(message: ChatMessage): Promise<
 }
 
 /**
+ * Mark chat messages as read in Cloud Firestore
+ */
+export async function markChatMessagesAsReadInFirestore(messageIds: string[]): Promise<void> {
+  if (!isFirebaseConfigured || !messageIds || messageIds.length === 0) return;
+  try {
+    await Promise.all(
+      messageIds.map((msgId) =>
+        setDoc(doc(db, COLLECTIONS.CHATS, msgId), { isRead: true }, { merge: true }).catch(() => {})
+      )
+    );
+  } catch (error: any) {
+    console.warn('Error marking chat messages as read in Firestore:', error);
+  }
+}
+
+/**
  * Subscribe to realtime chat messages
  */
 export function subscribeToChatMessages(
